@@ -50,7 +50,7 @@ md::BaseUnit::BaseUnit(sm::SecurityManager* s, ExchangeType exchTy, InstType ins
 #endif
 }
 
-BaseUnit::~BaseUnit() {
+md::BaseUnit::~BaseUnit() {
     
 }
 
