@@ -11,6 +11,7 @@ md::BaseUnit::BaseUnit(sm::SecurityManager* s, ExchangeType exchTy, InstType ins
     std::cout << "==========================" << std::endl;
     redisClient = new RedisClient(host, port, password, false, true);
     latestDataUpdateTime = 0;
+    pWsClient = nullptr;
 
     std::cout << "start create shm" << "  vInstInfo size: " << vInstInfo.size() << std::endl;
 
@@ -225,8 +226,9 @@ void md::BaseUnit::onCloseMsg(web::websockets::client::websocket_close_status st
     }
 }
 
-md::BaseMarket::BaseMarket(sm::SecurityManager* s, std::vector<std::string>& instTypeVec, std::vector<std::string>& marketTypeVec, std::vector<std::string>& instIdVec, int lot, const char* host, int port, const char* passwd) {
+md::BaseMarket::BaseMarket(sm::SecurityManager* s, const char* exId, std::vector<std::string>& instTypeVec, std::vector<std::string>& marketTypeVec, std::vector<std::string>& instIdVec, int lot, const char* host, int port, const char* passwd) {
     smc = s;
+    strcpy(exchId, exId);
     _instTypeVec = instTypeVec;
     _marketTypeVec = marketTypeVec;
     _instIdVec = instIdVec;

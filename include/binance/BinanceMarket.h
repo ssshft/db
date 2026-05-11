@@ -6,7 +6,9 @@
 
 constexpr auto BINANCE_WS_PUBLIC_SPOT = "wss://stream.binance.com:9443/stream?";
 
-constexpr auto BINANCE_WS_PUBLIC_USDT_SWAP_FUTURES = "wss://fstream.binancefuture.com/stream?";
+constexpr auto BINANCE_WS_PUBLIC_USDT_SWAP_FUTURES_PUBLIC = "wss://fstream.binancefuture.com/public/stream?";
+
+constexpr auto BINANCE_WS_PUBLIC_USDT_SWAP_FUTURES_MARKET = "wss://fstream.binancefuture.com/market/stream?";
 
 constexpr auto BINANCE_WS_PUBLIC_USD_SWAP_FUTURES = "wss://dstream.binancefuture.com/stream?";
 
@@ -14,7 +16,9 @@ constexpr auto BINANCE_WS_PUBLIC_USD_SWAP_FUTURES = "wss://dstream.binancefuture
 
 constexpr auto BINANCE_WS_PUBLIC_SPOT = "wss://stream.binance.com:443/stream?";
 
-constexpr auto BINANCE_WS_PUBLIC_USDT_SWAP_FUTURES = "wss://fstream.binance.com/stream?";
+constexpr auto BINANCE_WS_PUBLIC_USDT_SWAP_FUTURES_PUBLIC = "wss://fstream.binance.com/public/stream?";
+
+constexpr auto BINANCE_WS_PUBLIC_USDT_SWAP_FUTURES_MARKET = "wss://fstream.binance.com/market/stream?";
 
 constexpr auto BINANCE_WS_PUBLIC_USD_SWAP_FUTURES = "wss://dstream.binance.com/stream?";
 
@@ -43,7 +47,7 @@ namespace md {
 
     class BinanceMarket : public BaseMarket {
     public:
-        BinanceMarket(sm::SecurityManager* s, std::vector<std::string>& instTypeVec, std::vector<std::string>& marketTypeVec, std::vector<std::string>& instIdVec, int lot = 30, const char* host = "127.0.0.1", const int port = 9379, const char* passwd = "");
+        BinanceMarket(sm::SecurityManager* s, const char* exId, std::vector<std::string>& instTypeVec, std::vector<std::string>& marketTypeVec, std::vector<std::string>& instIdVec, int lot = 30, const char* host = "127.0.0.1", const int port = 9379, const char* passwd = "");
         ~BinanceMarket();
         virtual void start();
 

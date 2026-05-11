@@ -50,8 +50,8 @@ aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src/base     DIR_BASE_SRCS)
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src/operation  DIR_OPERATION_SRCS)
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src/binance   DIR_BINANCE_SRCS)
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src/gateio    DIR_GATEIO_SRCS)
-# aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src/okx     DIR_OKX_SRCS)
-# aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src/bybit    DIR_BYBIT_SRCS)
+aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src/okx     DIR_OKX_SRCS)
+aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src/bybit    DIR_BYBIT_SRCS)
 
 
 
@@ -82,6 +82,7 @@ link_libraries(
         fmt
         zmq
         uv
+        simdjson
 )
 
 add_executable(DB
@@ -90,11 +91,8 @@ add_executable(DB
         ${DIR_OPERATION_SRCS}
         ${DIR_BINANCE_SRCS}
         ${DIR_GATEIO_SRCS}
-        # ${HUOBI_SRCS}
-        # ${XT_SRCS}
-        # ${KUCOIN_SRCS}
-        # ${OKX_SRCS}
-        # ${BYBIT_SRCS}
+        ${DIR_OKX_SRCS}
+        ${DIR_BYBIT_SRCS}
 )
 
 add_executable(db_depth1_shm_queue_reader test/db_depth1_shm_queue_reader.cpp)

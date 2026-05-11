@@ -17,6 +17,7 @@
 #include <cpprest/http_client.h>
 #include <cpprest/ws_client.h>
 #include <cpprest/filestream.h>
+#include <simdjson.h>
 
 #include "shm_global.h"
 #include "time_util.h"
@@ -149,12 +150,14 @@ namespace md {
         std::unordered_map<std::string, std::shared_ptr<pubsub::SPMCPublisher<md::Trades>>> mTradesPublisher;
         std::unordered_map<std::string, std::shared_ptr<pubsub::SPMCPublisher<md::Kline>>> mKlinePublisher;
         std::unordered_map<std::string, std::shared_ptr<pubsub::SPMCPublisher<md::FundingRate>>> mFundingRatePublisher;
+
+        simdjson::ondemand::parser parser;
     };
 
 
     class BaseMarket {
     public:
-        BaseMarket(sm::SecurityManager* s, std::vector<std::string>& instTypeVec, std::vector<std::string>& marketTypeVec, std::vector<std::string>& instIdVec, int lot = 30, const char* host = "127.0.0.1", int port = 9379, const char* passwd = "");
+        BaseMarket(sm::SecurityManager* s, const char* exId, std::vector<std::string>& instTypeVec, std::vector<std::string>& marketTypeVec, std::vector<std::string>& instIdVec, int lot = 30, const char* host = "127.0.0.1", int port = 9379, const char* passwd = "");
         virtual ~BaseMarket();
         void generateUnitInfo();
         virtual void start() = 0;

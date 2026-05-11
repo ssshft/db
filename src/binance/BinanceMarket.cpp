@@ -4,7 +4,6 @@
 md::BinanceUnit::BinanceUnit(sm::SecurityManager* s, ExchangeType exchTy, InstType instTy, MarketType marketTy, std::vector<md::InstrumentInfo>& instInfoVec, const char* host, int port, const char* passwd) : BaseUnit(s, exchTy, instTy, marketTy, instInfoVec, host, port, passwd) {
     subCount = 0;
     subId = crypto::get_int_rand(100,10000);
-    pWsClient = nullptr;
 }
 
 void md::BinanceUnit::generateSubBody() {
@@ -18,7 +17,13 @@ void md::BinanceUnit::generateSubBody() {
         wsUrl = BINANCE_WS_PUBLIC_SPOT;
     }
     else if (instTypeEnum == USDT_SWAP || instTypeEnum == USDT_FUTURES || instTypeEnum == USDC_SWAP) {
-        wsUrl = BINANCE_WS_PUBLIC_USDT_SWAP_FUTURES;
+        if (marketTypeEnum == DEPTH1 || marketTypeEnum == DEPTH5 || marketTypeEnum == DEPTH10 || marketTypeEnum == DEPTH20 || marketTypeEnum == TRADES) {
+            wsUrl = BINANCE_WS_PUBLIC_USDT_SWAP_FUTURES_PUBLIC;
+        }
+        else {
+            wsUrl = BINANCE_WS_PUBLIC_USDT_SWAP_FUTURES_MARKET;
+        }
+        
     }
     else if (instTypeEnum == C_SWAP || instTypeEnum == C_FUTURES) {
         wsUrl = BINANCE_WS_PUBLIC_USD_SWAP_FUTURES;
@@ -155,7 +160,7 @@ void md::BinanceUnit::onWebsocketMsg(const web::websockets::client::websocket_in
             LOG_INFO("{}.{}.{} got ping, will reply pong.", ExchangeTypeEnum2StrMap[exchangeTypeEnum], InstTypeEnum2StrMap[instTypeEnum], md::MarketTypeEnum2StrMap[marketTypeEnum]);
             msg.extract_string().then([&](std::string payload) {
                 LOG_INFO("Received ping with payload: {}", payload);
-                websocket_outgoing_message pongMsg;
+                web::websockets::client::websocket_outgoing_message pongMsg;
                 pongMsg.set_pong_message(utility::conversions::to_string_t(payload));
                 return pWsClient->send(pongMsg).then([]() {
                     LOG_INFO("Sent pong with same payload.");
@@ -182,25 +187,39 @@ void md::BinanceUnit::onWebsocketMsg(const web::websockets::client::websocket_in
 void md::BinanceUnit::parseMarketData(const std::string& msg) {
     long tsNet = crypto::getCurrentTime();
 
-    rapidjson::Document d;
-    rapidjson::Value& rawData = d.Parse<rapidjson::kParseNumbersAsStringsFlag>(msg.c_str());
-
-    if (d.HasParseError() || !rawData.HasMember("data")) {
+    simdjson::padded_string paddedMsg(msg);
+    auto doc = parser.iterate(paddedMsg);
+    if (doc.error()) {
+        LOG_ERROR("simdjson parse msg: {} error: {}", msg, simdjson::error_message(doc.error()));
         return;
     }
-
-    std::string originInstId = "";
-    if (rawData["data"].HasMember("s")) {
-        originInstId = rawData["data"]["s"].GetString();
+    
+    auto data = doc["data"];
+    if (data.error()) {
+        LOG_ERROR("msg has no data field! msg: {}", msg);
+        return;
     }
-    else {
-        std::vector<std::string> v = crypto::split(rawData["stream"].GetString(), "@");
-        originInstId = crypto::to_upper(v[0]);
+    
+    std::string originInstId = "";
+    auto s_field = data["s"];
+    if (s_field.error() == simdjson::SUCCESS) {
+        std::string_view sVal;
+        if (s_field.get(sVal) == simdjson::SUCCESS) {
+            originInstId = std::string(sVal);
+        }
+    } else {
+        std::string_view streamVal;
+        if (doc["stream"].get(streamVal) == simdjson::SUCCESS) {
+            std::vector<std::string> v = crypto::split(std::string(streamVal), "@");
+            if (!v.empty()) {
+                originInstId = crypto::to_upper(v[0]);
+            }
+        }
     }
 
     md::InstrumentInfo info;
     if (smc->get_instrument_info(exchangeTypeEnum, instTypeEnum, originInstId.c_str(), info) == false){
-        LOG_ERROR("msg: {}", msg);
+        LOG_ERROR("smc cannot find originInstId: {}", originInstId);
         return;
     }
 
@@ -208,7 +227,20 @@ void md::BinanceUnit::parseMarketData(const std::string& msg) {
 
     if (instTypeEnum == SPOT) {
         if (marketTypeEnum == md::DEPTH1) {
-            const rapidjson::Value& data = rawData["data"];
+            auto bp1 = data["b"];
+            auto bv1 = data["B"];
+            auto ap1 = data["a"];
+            auto av1 = data["A"];
+            
+            std::string_view bidPriceStr;
+            std::string_view bidVolStr;
+            std::string_view askPriceStr;
+            std::string_view askVolStr;
+            if (bp1.get(bidPriceStr) || bv1.get(bidVolStr) || ap1.get(askPriceStr) || av1.get(askVolStr)) {
+                LOG_ERROR("Failed to get string values, msg: {}", msg);
+                return;
+            }
+        
             md::Depth1 depth1;
             memset(&depth1, 0, sizeof(md::Depth1));
             depth1.exchangeTypeEnum = exchangeTypeEnum;
@@ -218,18 +250,18 @@ void md::BinanceUnit::parseMarketData(const std::string& msg) {
             depth1.tsTrans = tsNet;
             depth1.tsEvent = tsNet;
             depth1.tsRecv = tsNet;
+            depth1.bp1 = crypto::fast_atod(bidPriceStr) * info.reduceNumber;
+            depth1.bv1 = crypto::fast_atod(bidVolStr) * info.magnifyNumber;
+            depth1.ap1 = crypto::fast_atod(askPriceStr) * info.reduceNumber;
+            depth1.av1 = crypto::fast_atod(askVolStr) * info.magnifyNumber;
             depth1.tsParse = crypto::getCurrentTime();
-            depth1.bp1 = std::stod(data["b"].GetString()) * info.reduceNumber;
-            depth1.bv1 = std::stod(data["B"].GetString()) * info.magnifyNumber;
-            depth1.ap1 = std::stod(data["a"].GetString()) * info.reduceNumber;
-            depth1.av1 = std::stod(data["A"].GetString()) * info.magnifyNumber;
+
+            std::cout << "--- depth1-- " << depth1.getString() << std::endl;
 #ifdef NEED_SHM
-            
             mDepth1Publisher[key]->push(depth1);                
 #endif
         }
         else if (marketTypeEnum == md::DEPTH5) {
-            const rapidjson::Value& data = rawData["data"];
             md::Depth5 depth5;
             memset(&depth5, 0, sizeof(md::Depth5));
             depth5.exchangeTypeEnum = exchangeTypeEnum;
@@ -239,41 +271,88 @@ void md::BinanceUnit::parseMarketData(const std::string& msg) {
             depth5.tsTrans = tsNet;
             depth5.tsEvent = tsNet;
             depth5.tsRecv = tsNet;
+
+            auto bidsArray = data["bids"];
+            std::string_view bidPrice[5];
+            std::string_view bidVol[5];
+
+            size_t bidsCount = 0;
+            for (auto bidLevel : bidsArray) {
+                if (bidsCount >= 5) {
+                    break;
+                }
+
+                auto it = bidLevel.begin();
+                if ((*it).get(bidPrice[bidsCount])) {
+                    break;
+                } 
+                ++it;
+                
+                if ((*it).get(bidVol[bidsCount])) {
+                    break;
+                } 
+
+                bidsCount++;
+            }
+
+            if (bidsCount == 5) {
+                depth5.bp1 = crypto::fast_atod(bidPrice[0]) * info.reduceNumber;
+                depth5.bv1 = crypto::fast_atod(bidVol[0]) * info.magnifyNumber;
+                depth5.bp2 = crypto::fast_atod(bidPrice[1]) * info.reduceNumber;
+                depth5.bv2 = crypto::fast_atod(bidVol[1]) * info.magnifyNumber;
+                depth5.bp3 = crypto::fast_atod(bidPrice[2]) * info.reduceNumber;
+                depth5.bv3 = crypto::fast_atod(bidVol[2]) * info.magnifyNumber;
+                depth5.bp4 = crypto::fast_atod(bidPrice[3]) * info.reduceNumber;
+                depth5.bv4 = crypto::fast_atod(bidVol[3]) * info.magnifyNumber;
+                depth5.bp5 = crypto::fast_atod(bidPrice[4]) * info.reduceNumber;
+                depth5.bv5 = crypto::fast_atod(bidVol[4]) * info.magnifyNumber;
+            }
+
+            auto asksArray = data["asks"];
+            std::string_view askPrice[5];
+            std::string_view askVol[5];
+
+            size_t asksCount = 0;
+            for (auto askLevel : asksArray) {
+                if (asksCount >= 5) {
+                    break;
+                }
+
+                auto it = askLevel.begin();
+                if ((*it).get(askPrice[asksCount])) {
+                    break;
+                } 
+                ++it;
+                
+                if ((*it).get(askVol[asksCount])) {
+                    break;
+                } 
+
+                asksCount++;
+            }
+
+            if (asksCount == 5) {
+                depth5.ap1 = crypto::fast_atod(askPrice[0]) * info.reduceNumber;
+                depth5.av1 = crypto::fast_atod(askVol[0]) * info.magnifyNumber;
+                depth5.ap2 = crypto::fast_atod(askPrice[1]) * info.reduceNumber;
+                depth5.av2 = crypto::fast_atod(askVol[1]) * info.magnifyNumber;
+                depth5.ap3 = crypto::fast_atod(askPrice[2]) * info.reduceNumber;
+                depth5.av3 = crypto::fast_atod(askVol[2]) * info.magnifyNumber;
+                depth5.ap4 = crypto::fast_atod(askPrice[3]) * info.reduceNumber;
+                depth5.av4 = crypto::fast_atod(askVol[3]) * info.magnifyNumber;
+                depth5.ap5 = crypto::fast_atod(askPrice[4]) * info.reduceNumber;
+                depth5.av5 = crypto::fast_atod(askVol[4]) * info.magnifyNumber;
+            }
+
             depth5.tsParse = crypto::getCurrentTime();
 
-            int asksSize = data["asks"].Size();
-            int bidsSize = data["bids"].Size();
-
-            if (asksSize >= 5 && bidsSize >= 5) {
-                depth5.bp1 = std::stod(data["bids"][0][0].GetString());
-                depth5.bv1 = std::stod(data["bids"][0][1].GetString());
-                depth5.bp2 = std::stod(data["bids"][1][0].GetString());
-                depth5.bv2 = std::stod(data["bids"][1][1].GetString());
-                depth5.bp3 = std::stod(data["bids"][2][0].GetString());
-                depth5.bv3 = std::stod(data["bids"][2][1].GetString());
-                depth5.bp4 = std::stod(data["bids"][3][0].GetString());
-                depth5.bv4 = std::stod(data["bids"][3][1].GetString());
-                depth5.bp5 = std::stod(data["bids"][4][0].GetString());
-                depth5.bv5 = std::stod(data["bids"][4][1].GetString());
-
-                depth5.ap1 = std::stod(data["asks"][0][0].GetString());
-                depth5.av1 = std::stod(data["asks"][0][1].GetString());
-                depth5.ap2 = std::stod(data["asks"][1][0].GetString());
-                depth5.av2 = std::stod(data["asks"][1][1].GetString());
-                depth5.ap3 = std::stod(data["asks"][2][0].GetString());
-                depth5.av3 = std::stod(data["asks"][2][1].GetString());
-                depth5.ap4 = std::stod(data["asks"][3][0].GetString());
-                depth5.av4 = std::stod(data["asks"][3][1].GetString());
-                depth5.ap5 = std::stod(data["asks"][4][0].GetString());
-                depth5.av5 = std::stod(data["asks"][4][1].GetString());
-            }
+            std::cout << "--- depth5-- " << depth5.getString() << std::endl;
 
 #ifdef NEED_SHM
             mDepth5Publisher[key]->push(depth5);                
 #endif
         }
         else if (marketTypeEnum == md::DEPTH10) {
-            const rapidjson::Value& data = rawData["data"];
             md::Depth10 depth10;
             memset(&depth10, 0, sizeof(md::Depth10));
             depth10.exchangeTypeEnum = exchangeTypeEnum;
@@ -283,61 +362,108 @@ void md::BinanceUnit::parseMarketData(const std::string& msg) {
             depth10.tsTrans = tsNet;
             depth10.tsEvent = tsNet;
             depth10.tsRecv = tsNet;
+
+            auto bidsArray = data["bids"];
+            std::string_view bidPrice[10];
+            std::string_view bidVol[10];
+
+            size_t bidsCount = 0;
+            for (auto bidLevel : bidsArray) {
+                if (bidsCount >= 10) {
+                    break;
+                }
+                
+                auto it = bidLevel.begin();
+                if ((*it).get(bidPrice[bidsCount])) {
+                    break;
+                } 
+                ++it;
+                
+                if ((*it).get(bidVol[bidsCount])) {
+                    break;
+                }
+
+                bidsCount++;
+            }
+
+            if (bidsCount == 10) {
+                depth10.bp1 = crypto::fast_atod(bidPrice[0]) * info.reduceNumber;
+                depth10.bv1 = crypto::fast_atod(bidVol[0]) * info.magnifyNumber;
+                depth10.bp2 = crypto::fast_atod(bidPrice[1]) * info.reduceNumber;
+                depth10.bv2 = crypto::fast_atod(bidVol[1]) * info.magnifyNumber;
+                depth10.bp3 = crypto::fast_atod(bidPrice[2]) * info.reduceNumber;
+                depth10.bv3 = crypto::fast_atod(bidVol[2]) * info.magnifyNumber;
+                depth10.bp4 = crypto::fast_atod(bidPrice[3]) * info.reduceNumber;
+                depth10.bv4 = crypto::fast_atod(bidVol[3]) * info.magnifyNumber;
+                depth10.bp5 = crypto::fast_atod(bidPrice[4]) * info.reduceNumber;
+                depth10.bv5 = crypto::fast_atod(bidVol[4]) * info.magnifyNumber;
+                depth10.bp6 = crypto::fast_atod(bidPrice[5]) * info.reduceNumber;
+                depth10.bv6 = crypto::fast_atod(bidVol[5]) * info.magnifyNumber;
+                depth10.bp7 = crypto::fast_atod(bidPrice[6]) * info.reduceNumber;
+                depth10.bv7 = crypto::fast_atod(bidVol[6]) * info.magnifyNumber;
+                depth10.bp8 = crypto::fast_atod(bidPrice[7]) * info.reduceNumber;
+                depth10.bv8 = crypto::fast_atod(bidVol[7]) * info.magnifyNumber;
+                depth10.bp9 = crypto::fast_atod(bidPrice[8]) * info.reduceNumber;
+                depth10.bv9 = crypto::fast_atod(bidVol[8]) * info.magnifyNumber;
+                depth10.bp10 = crypto::fast_atod(bidPrice[9]) * info.reduceNumber;
+                depth10.bv10 = crypto::fast_atod(bidVol[9]) * info.magnifyNumber;
+            }
+
+            auto asksArray = data["asks"];
+            std::string_view askPrice[10];
+            std::string_view askVol[10];
+
+            size_t asksCount = 0;
+            for (auto askLevel : asksArray) {
+                if (asksCount >= 10) {
+                    break;
+                }
+                
+                auto it = askLevel.begin();
+                if ((*it).get(askPrice[asksCount])) {
+                    break;
+                } 
+                ++it;
+                
+                if ((*it).get(askVol[asksCount])) {
+                    break;
+                } 
+
+                asksCount++;
+            }
+
+            if (asksCount == 10) {
+                depth10.ap1 = crypto::fast_atod(askPrice[0]) * info.reduceNumber;
+                depth10.av1 = crypto::fast_atod(askVol[0]) * info.magnifyNumber;
+                depth10.ap2 = crypto::fast_atod(askPrice[1]) * info.reduceNumber;
+                depth10.av2 = crypto::fast_atod(askVol[1]) * info.magnifyNumber;
+                depth10.ap3 = crypto::fast_atod(askPrice[2]) * info.reduceNumber;
+                depth10.av3 = crypto::fast_atod(askVol[2]) * info.magnifyNumber;
+                depth10.ap4 = crypto::fast_atod(askPrice[3]) * info.reduceNumber;
+                depth10.av4 = crypto::fast_atod(askVol[3]) * info.magnifyNumber;
+                depth10.ap5 = crypto::fast_atod(askPrice[4]) * info.reduceNumber;
+                depth10.av5 = crypto::fast_atod(askVol[4]) * info.magnifyNumber;
+                depth10.ap6 = crypto::fast_atod(askPrice[5]) * info.reduceNumber;
+                depth10.av6 = crypto::fast_atod(askVol[5]) * info.magnifyNumber;
+                depth10.ap7 = crypto::fast_atod(askPrice[6]) * info.reduceNumber;
+                depth10.av7 = crypto::fast_atod(askVol[6]) * info.magnifyNumber;
+                depth10.ap8 = crypto::fast_atod(askPrice[7]) * info.reduceNumber;
+                depth10.av8 = crypto::fast_atod(askVol[7]) * info.magnifyNumber;
+                depth10.ap9 = crypto::fast_atod(askPrice[8]) * info.reduceNumber;
+                depth10.av9 = crypto::fast_atod(askVol[8]) * info.magnifyNumber;
+                depth10.ap10 = crypto::fast_atod(askPrice[9]) * info.reduceNumber;
+                depth10.av10 = crypto::fast_atod(askVol[9]) * info.magnifyNumber;
+            }
+
             depth10.tsParse = crypto::getCurrentTime();
 
-            int asksSize = data["asks"].Size();
-            int bidsSize = data["bids"].Size();
-
-            if (asksSize >= 10 && bidsSize >= 10) {
-                depth10.bp1 = std::stod(data["bids"][0][0].GetString());
-                depth10.bv1 = std::stod(data["bids"][0][1].GetString());
-                depth10.bp2 = std::stod(data["bids"][1][0].GetString());
-                depth10.bv2 = std::stod(data["bids"][1][1].GetString());
-                depth10.bp3 = std::stod(data["bids"][2][0].GetString());
-                depth10.bv3 = std::stod(data["bids"][2][1].GetString());
-                depth10.bp4 = std::stod(data["bids"][3][0].GetString());
-                depth10.bv4 = std::stod(data["bids"][3][1].GetString());
-                depth10.bp5 = std::stod(data["bids"][4][0].GetString());
-                depth10.bv5 = std::stod(data["bids"][4][1].GetString());
-                depth10.bp6 = std::stod(data["bids"][5][0].GetString());
-                depth10.bv6 = std::stod(data["bids"][5][1].GetString());
-                depth10.bp7 = std::stod(data["bids"][6][0].GetString());
-                depth10.bv7 = std::stod(data["bids"][6][1].GetString());
-                depth10.bp8 = std::stod(data["bids"][7][0].GetString());
-                depth10.bv8 = std::stod(data["bids"][7][1].GetString());
-                depth10.bp9 = std::stod(data["bids"][8][0].GetString());
-                depth10.bv9 = std::stod(data["bids"][8][1].GetString());
-                depth10.bp10 = std::stod(data["bids"][9][0].GetString());
-                depth10.bv10 = std::stod(data["bids"][9][1].GetString());
-
-                depth10.ap1 = std::stod(data["asks"][0][0].GetString());
-                depth10.av1 = std::stod(data["asks"][0][1].GetString());
-                depth10.ap2 = std::stod(data["asks"][1][0].GetString());
-                depth10.av2 = std::stod(data["asks"][1][1].GetString());
-                depth10.ap3 = std::stod(data["asks"][2][0].GetString());
-                depth10.av3 = std::stod(data["asks"][2][1].GetString());
-                depth10.ap4 = std::stod(data["asks"][3][0].GetString());
-                depth10.av4 = std::stod(data["asks"][3][1].GetString());
-                depth10.ap5 = std::stod(data["asks"][4][0].GetString());
-                depth10.av5 = std::stod(data["asks"][4][1].GetString());
-                depth10.ap6 = std::stod(data["asks"][5][0].GetString());
-                depth10.av6 = std::stod(data["asks"][5][1].GetString());
-                depth10.ap7 = std::stod(data["asks"][6][0].GetString());
-                depth10.av7 = std::stod(data["asks"][6][1].GetString());
-                depth10.ap8 = std::stod(data["asks"][7][0].GetString());
-                depth10.av8 = std::stod(data["asks"][7][1].GetString());
-                depth10.ap9 = std::stod(data["asks"][8][0].GetString());
-                depth10.av9 = std::stod(data["asks"][8][1].GetString());
-                depth10.ap10 = std::stod(data["asks"][9][0].GetString());
-                depth10.av10 = std::stod(data["asks"][9][1].GetString());
-            }
+            std::cout << "--- depth10-- " << depth10.getString() << std::endl;
 
 #ifdef NEED_SHM
             mDepth10Publisher[key]->push(depth10);                
 #endif
         }
         else if (marketTypeEnum == md::DEPTH20) {
-            const rapidjson::Value& data = rawData["data"];
             md::Depth20 depth20;
             memset(&depth20, 0, sizeof(md::Depth20));
             depth20.exchangeTypeEnum = exchangeTypeEnum;
@@ -347,159 +473,249 @@ void md::BinanceUnit::parseMarketData(const std::string& msg) {
             depth20.tsTrans = tsNet;
             depth20.tsEvent = tsNet;
             depth20.tsRecv = tsNet;
-            depth20.tsParse = crypto::getCurrentTime();
 
-            int asksSize = data["asks"].Size();
-            int bidsSize = data["bids"].Size();
+            auto bidsArray = data["bids"];
+            std::string_view bidPrice[20];
+            std::string_view bidVol[20];
 
-            if (asksSize >= 20 && bidsSize >= 20) {
-                depth20.bp1 = std::stod(data["bids"][0][0].GetString());
-                depth20.bv1 = std::stod(data["bids"][0][1].GetString());
-                depth20.bp2 = std::stod(data["bids"][1][0].GetString());
-                depth20.bv2 = std::stod(data["bids"][1][1].GetString());
-                depth20.bp3 = std::stod(data["bids"][2][0].GetString());
-                depth20.bv3 = std::stod(data["bids"][2][1].GetString());
-                depth20.bp4 = std::stod(data["bids"][3][0].GetString());
-                depth20.bv4 = std::stod(data["bids"][3][1].GetString());
-                depth20.bp5 = std::stod(data["bids"][4][0].GetString());
-                depth20.bv5 = std::stod(data["bids"][4][1].GetString());
-                depth20.bp6 = std::stod(data["bids"][5][0].GetString());
-                depth20.bv6 = std::stod(data["bids"][5][1].GetString());
-                depth20.bp7 = std::stod(data["bids"][6][0].GetString());
-                depth20.bv7 = std::stod(data["bids"][6][1].GetString());
-                depth20.bp8 = std::stod(data["bids"][7][0].GetString());
-                depth20.bv8 = std::stod(data["bids"][7][1].GetString());
-                depth20.bp9 = std::stod(data["bids"][8][0].GetString());
-                depth20.bv9 = std::stod(data["bids"][8][1].GetString());
-                depth20.bp10 = std::stod(data["bids"][9][0].GetString());
-                depth20.bv10 = std::stod(data["bids"][9][1].GetString());
-                depth20.bp11 = std::stod(data["bids"][10][0].GetString());
-                depth20.bv11 = std::stod(data["bids"][10][1].GetString());
-                depth20.bp12 = std::stod(data["bids"][11][0].GetString());
-                depth20.bv12 = std::stod(data["bids"][11][1].GetString());
-                depth20.bp13 = std::stod(data["bids"][12][0].GetString());
-                depth20.bv13 = std::stod(data["bids"][12][1].GetString());
-                depth20.bp14 = std::stod(data["bids"][13][0].GetString());
-                depth20.bv14 = std::stod(data["bids"][13][1].GetString());
-                depth20.bp15 = std::stod(data["bids"][14][0].GetString());
-                depth20.bv15 = std::stod(data["bids"][14][1].GetString());
-                depth20.bp16 = std::stod(data["bids"][15][0].GetString());
-                depth20.bv16 = std::stod(data["bids"][15][1].GetString());
-                depth20.bp17 = std::stod(data["bids"][16][0].GetString());
-                depth20.bv17 = std::stod(data["bids"][16][1].GetString());
-                depth20.bp18 = std::stod(data["bids"][17][0].GetString());
-                depth20.bv18 = std::stod(data["bids"][17][1].GetString());
-                depth20.bp19 = std::stod(data["bids"][18][0].GetString());
-                depth20.bv19 = std::stod(data["bids"][18][1].GetString());
-                depth20.bp20 = std::stod(data["bids"][19][0].GetString());
-                depth20.bv20 = std::stod(data["bids"][19][1].GetString());
+            size_t bidsCount = 0;
+            for (auto bidLevel : bidsArray) {
+                if (bidsCount >= 20) {
+                    break;
+                }
+                
+                auto it = bidLevel.begin();
+                if ((*it).get(bidPrice[bidsCount])) {
+                    break;
+                } 
+                ++it;
+                
+                if ((*it).get(bidVol[bidsCount])) {
+                    break;
+                }
 
-                depth20.ap1 = std::stod(data["asks"][0][0].GetString());
-                depth20.av1 = std::stod(data["asks"][0][1].GetString());
-                depth20.ap2 = std::stod(data["asks"][1][0].GetString());
-                depth20.av2 = std::stod(data["asks"][1][1].GetString());
-                depth20.ap3 = std::stod(data["asks"][2][0].GetString());
-                depth20.av3 = std::stod(data["asks"][2][1].GetString());
-                depth20.ap4 = std::stod(data["asks"][3][0].GetString());
-                depth20.av4 = std::stod(data["asks"][3][1].GetString());
-                depth20.ap5 = std::stod(data["asks"][4][0].GetString());
-                depth20.av5 = std::stod(data["asks"][4][1].GetString());
-                depth20.ap6 = std::stod(data["asks"][5][0].GetString());
-                depth20.av6 = std::stod(data["asks"][5][1].GetString());
-                depth20.ap7 = std::stod(data["asks"][6][0].GetString());
-                depth20.av7 = std::stod(data["asks"][6][1].GetString());
-                depth20.ap8 = std::stod(data["asks"][7][0].GetString());
-                depth20.av8 = std::stod(data["asks"][7][1].GetString());
-                depth20.ap9 = std::stod(data["asks"][8][0].GetString());
-                depth20.av9 = std::stod(data["asks"][8][1].GetString());
-                depth20.ap10 = std::stod(data["asks"][9][0].GetString());
-                depth20.av10 = std::stod(data["asks"][9][1].GetString());
-                depth20.ap11 = std::stod(data["asks"][10][0].GetString());
-                depth20.av11 = std::stod(data["asks"][10][1].GetString());
-                depth20.ap12 = std::stod(data["asks"][11][0].GetString());
-                depth20.av12 = std::stod(data["asks"][11][1].GetString());
-                depth20.ap13 = std::stod(data["asks"][12][0].GetString());
-                depth20.av13 = std::stod(data["asks"][12][1].GetString());
-                depth20.ap14 = std::stod(data["asks"][13][0].GetString());
-                depth20.av14 = std::stod(data["asks"][13][1].GetString());
-                depth20.ap15 = std::stod(data["asks"][14][0].GetString());
-                depth20.av15 = std::stod(data["asks"][14][1].GetString());
-                depth20.ap16 = std::stod(data["asks"][15][0].GetString());
-                depth20.av16 = std::stod(data["asks"][15][1].GetString());
-                depth20.ap17 = std::stod(data["asks"][16][0].GetString());
-                depth20.av17 = std::stod(data["asks"][16][1].GetString());
-                depth20.ap18 = std::stod(data["asks"][17][0].GetString());
-                depth20.av18 = std::stod(data["asks"][17][1].GetString());
-                depth20.ap19 = std::stod(data["asks"][18][0].GetString());
-                depth20.av19 = std::stod(data["asks"][18][1].GetString());
-                depth20.ap20 = std::stod(data["asks"][19][0].GetString());
-                depth20.av20 = std::stod(data["asks"][19][1].GetString());
+                bidsCount++;
+            }
+
+            if (bidsCount == 20) {
+                depth20.bp1 = crypto::fast_atod(bidPrice[0]) * info.reduceNumber;
+                depth20.bv1 = crypto::fast_atod(bidVol[0]) * info.magnifyNumber;
+                depth20.bp2 = crypto::fast_atod(bidPrice[1]) * info.reduceNumber;
+                depth20.bv2 = crypto::fast_atod(bidVol[1]) * info.magnifyNumber;
+                depth20.bp3 = crypto::fast_atod(bidPrice[2]) * info.reduceNumber;
+                depth20.bv3 = crypto::fast_atod(bidVol[2]) * info.magnifyNumber;
+                depth20.bp4 = crypto::fast_atod(bidPrice[3]) * info.reduceNumber;
+                depth20.bv4 = crypto::fast_atod(bidVol[3]) * info.magnifyNumber;
+                depth20.bp5 = crypto::fast_atod(bidPrice[4]) * info.reduceNumber;
+                depth20.bv5 = crypto::fast_atod(bidVol[4]) * info.magnifyNumber;
+                depth20.bp6 = crypto::fast_atod(bidPrice[5]) * info.reduceNumber;
+                depth20.bv6 = crypto::fast_atod(bidVol[5]) * info.magnifyNumber;
+                depth20.bp7 = crypto::fast_atod(bidPrice[6]) * info.reduceNumber;
+                depth20.bv7 = crypto::fast_atod(bidVol[6]) * info.magnifyNumber;
+                depth20.bp8 = crypto::fast_atod(bidPrice[7]) * info.reduceNumber;
+                depth20.bv8 = crypto::fast_atod(bidVol[7]) * info.magnifyNumber;
+                depth20.bp9 = crypto::fast_atod(bidPrice[8]) * info.reduceNumber;
+                depth20.bv9 = crypto::fast_atod(bidVol[8]) * info.magnifyNumber;
+                depth20.bp10 = crypto::fast_atod(bidPrice[9]) * info.reduceNumber;
+                depth20.bv10 = crypto::fast_atod(bidVol[9]) * info.magnifyNumber;
+                depth20.bp11 = crypto::fast_atod(bidPrice[10]) * info.reduceNumber;
+                depth20.bv11 = crypto::fast_atod(bidVol[10]) * info.magnifyNumber;
+                depth20.bp12 = crypto::fast_atod(bidPrice[11]) * info.reduceNumber;
+                depth20.bv12 = crypto::fast_atod(bidVol[11]) * info.magnifyNumber;
+                depth20.bp13 = crypto::fast_atod(bidPrice[12]) * info.reduceNumber;
+                depth20.bv13 = crypto::fast_atod(bidVol[12]) * info.magnifyNumber;
+                depth20.bp14 = crypto::fast_atod(bidPrice[13]) * info.reduceNumber;
+                depth20.bv14 = crypto::fast_atod(bidVol[13]) * info.magnifyNumber;
+                depth20.bp15 = crypto::fast_atod(bidPrice[14]) * info.reduceNumber;
+                depth20.bv15 = crypto::fast_atod(bidVol[14]) * info.magnifyNumber;
+                depth20.bp16 = crypto::fast_atod(bidPrice[15]) * info.reduceNumber;
+                depth20.bv16 = crypto::fast_atod(bidVol[15]) * info.magnifyNumber;
+                depth20.bp17 = crypto::fast_atod(bidPrice[16]) * info.reduceNumber;
+                depth20.bv17 = crypto::fast_atod(bidVol[16]) * info.magnifyNumber;
+                depth20.bp18 = crypto::fast_atod(bidPrice[17]) * info.reduceNumber;
+                depth20.bv18 = crypto::fast_atod(bidVol[17]) * info.magnifyNumber;
+                depth20.bp19 = crypto::fast_atod(bidPrice[18]) * info.reduceNumber;
+                depth20.bv19 = crypto::fast_atod(bidVol[18]) * info.magnifyNumber;
+                depth20.bp20 = crypto::fast_atod(bidPrice[19]) * info.reduceNumber;
+                depth20.bv20 = crypto::fast_atod(bidVol[19]) * info.magnifyNumber;
 
             }
+
+            auto asksArray = data["asks"];
+            std::string_view askPrice[20];
+            std::string_view askVol[20];
+
+            size_t asksCount = 0;
+            for (auto askLevel : asksArray) {
+                if (asksCount >= 20) {
+                    break;
+                }
+                
+                auto it = askLevel.begin();
+                if ((*it).get(askPrice[asksCount])) {
+                    break;
+                } 
+                ++it;
+                
+                if ((*it).get(askVol[asksCount])) {
+                    break;
+                } 
+
+                asksCount++;
+            }
+
+            if (asksCount == 20) {
+                depth20.ap1 = crypto::fast_atod(askPrice[0]) * info.reduceNumber;
+                depth20.av1 = crypto::fast_atod(askVol[0]) * info.magnifyNumber;
+                depth20.ap2 = crypto::fast_atod(askPrice[1]) * info.reduceNumber;
+                depth20.av2 = crypto::fast_atod(askVol[1]) * info.magnifyNumber;
+                depth20.ap3 = crypto::fast_atod(askPrice[2]) * info.reduceNumber;
+                depth20.av3 = crypto::fast_atod(askVol[2]) * info.magnifyNumber;
+                depth20.ap4 = crypto::fast_atod(askPrice[3]) * info.reduceNumber;
+                depth20.av4 = crypto::fast_atod(askVol[3]) * info.magnifyNumber;
+                depth20.ap5 = crypto::fast_atod(askPrice[4]) * info.reduceNumber;
+                depth20.av5 = crypto::fast_atod(askVol[4]) * info.magnifyNumber;
+                depth20.ap6 = crypto::fast_atod(askPrice[5]) * info.reduceNumber;
+                depth20.av6 = crypto::fast_atod(askVol[5]) * info.magnifyNumber;
+                depth20.ap7 = crypto::fast_atod(askPrice[6]) * info.reduceNumber;
+                depth20.av7 = crypto::fast_atod(askVol[6]) * info.magnifyNumber;
+                depth20.ap8 = crypto::fast_atod(askPrice[7]) * info.reduceNumber;
+                depth20.av8 = crypto::fast_atod(askVol[7]) * info.magnifyNumber;
+                depth20.ap9 = crypto::fast_atod(askPrice[8]) * info.reduceNumber;
+                depth20.av9 = crypto::fast_atod(askVol[8]) * info.magnifyNumber;
+                depth20.ap10 = crypto::fast_atod(askPrice[9]) * info.reduceNumber;
+                depth20.av10 = crypto::fast_atod(askVol[9]) * info.magnifyNumber;
+                depth20.ap11 = crypto::fast_atod(askPrice[10]) * info.reduceNumber;
+                depth20.av11 = crypto::fast_atod(askVol[10]) * info.magnifyNumber;
+                depth20.ap12 = crypto::fast_atod(askPrice[11]) * info.reduceNumber;
+                depth20.av12 = crypto::fast_atod(askVol[11]) * info.magnifyNumber;
+                depth20.ap13 = crypto::fast_atod(askPrice[12]) * info.reduceNumber;
+                depth20.av13 = crypto::fast_atod(askVol[12]) * info.magnifyNumber;
+                depth20.ap14 = crypto::fast_atod(askPrice[13]) * info.reduceNumber;
+                depth20.av14 = crypto::fast_atod(askVol[13]) * info.magnifyNumber;
+                depth20.ap15 = crypto::fast_atod(askPrice[14]) * info.reduceNumber;
+                depth20.av15 = crypto::fast_atod(askVol[14]) * info.magnifyNumber;
+                depth20.ap16 = crypto::fast_atod(askPrice[15]) * info.reduceNumber;
+                depth20.av16 = crypto::fast_atod(askVol[15]) * info.magnifyNumber;
+                depth20.ap17 = crypto::fast_atod(askPrice[16]) * info.reduceNumber;
+                depth20.av17 = crypto::fast_atod(askVol[16]) * info.magnifyNumber;
+                depth20.ap18 = crypto::fast_atod(askPrice[17]) * info.reduceNumber;
+                depth20.av18 = crypto::fast_atod(askVol[17]) * info.magnifyNumber;
+                depth20.ap19 = crypto::fast_atod(askPrice[18]) * info.reduceNumber;
+                depth20.av19 = crypto::fast_atod(askVol[18]) * info.magnifyNumber;
+                depth20.ap20 = crypto::fast_atod(askPrice[19]) * info.reduceNumber;
+                depth20.av20 = crypto::fast_atod(askVol[19]) * info.magnifyNumber;
+            }
+
+            depth20.tsParse = crypto::getCurrentTime();
+
+            std::cout << "--- depth20-- " << depth20.getString() << std::endl;
 
 #ifdef NEED_SHM
             mDepth20Publisher[key]->push(depth20);                
 #endif
         }
         else if(marketTypeEnum == md::TRADES) {
-            const rapidjson::Value &data = rawData["data"];
-
             md::Trades trades;
             memset(&trades, 0, sizeof(md::Trades));
             trades.exchangeTypeEnum = exchangeTypeEnum;
             trades.instTypeEnum = instTypeEnum;
             trades.marketTypeEnum = marketTypeEnum;
             strncpy(trades.instId, info.instId, INSTID_SIZE);
-            trades.tsTrans = std::stol(data["T"].GetString()) * 1000;
-            trades.tsEvent = std::stol(data["E"].GetString()) * 1000;
+
+            long tsTrans = 0;
+            data["T"].get(tsTrans);
+
+            long tsEvent = 0;
+            data["E"].get(tsEvent);
+
+            trades.tsTrans = tsTrans * 1000;
+            trades.tsEvent = tsEvent * 1000;
             trades.tsRecv = tsNet;
+
+            std::string_view tradeIdStr;
+            std::string_view tradePriceStr;
+            std::string_view tradeVolStr;
+            data["t"].get(tradeIdStr);
+            data["p"].get(tradePriceStr);
+            data["q"].get(tradeVolStr);
+
+            strncpy(trades.tradeId, tradeIdStr.data(), INSTID_SIZE);
+            trades.px = crypto::fast_atod(tradePriceStr);
+            trades.sz = crypto::fast_atod(tradeVolStr);
+
+            bool direction = false;
+            data["m"].get(direction);
+            trades.direction = direction ? DT_SHORT : DT_LONG;
+
             trades.tsParse = crypto::getCurrentTime();
 
-            strncpy(trades.tradeId, data["t"].GetString(), INSTID_SIZE);
-            trades.px = std::stod(data["p"].GetString());
-            trades.sz = std::stod(data["q"].GetString());
-            bool m = data["m"].GetBool();
-            trades.direction = m ? DT_SHORT : DT_LONG;
+            std::cout << trades.getString() << std::endl;
 
 #ifdef NEED_SHM
             mTradesPublisher[key]->push(trades); 
 #endif
         }
         else if (marketTypeEnum == md::KLINE_1m) {
-            const rapidjson::Value& data = rawData["data"];
-
             md::Kline kline;
             memset(&kline, 0, sizeof(md::Kline));
             kline.exchangeTypeEnum = exchangeTypeEnum;
             kline.instTypeEnum = instTypeEnum;
             kline.marketTypeEnum = marketTypeEnum;
             strncpy(kline.instId, info.instId, INSTID_SIZE);
-            kline.tsTrans = std::stol(data["E"].GetString()) * 1000;
-            kline.tsEvent = std::stol(data["E"].GetString()) * 1000;
-            kline.tsRecv = tsNet;
-            kline.tsParse = crypto::getCurrentTime();
 
-            kline.barTime = std::stol(data["k"]["t"].GetString()) * 1000;
-            kline.highPrice = std::stod(data["k"]["h"].GetString());
-            kline.lowPrice = std::stod(data["k"]["l"].GetString());
-            kline.openPrice = std::stod(data["k"]["o"].GetString());
-            kline.closePrice = std::stod(data["k"]["c"].GetString());
+            long tsEvent = 0;
+            data["E"].get(tsEvent);
+
+            kline.tsTrans = tsEvent * 1000;
+            kline.tsEvent = tsEvent * 1000;
+            kline.tsRecv = tsNet;
+
+            auto k = data["k"];
+            
+            long barTime = 0;
+            std::string_view highPriceStr;
+            std::string_view lowPriceStr;
+            std::string_view openPriceStr;
+            std::string_view closePriceStr;
+            std::string_view amountStr;
+            std::string_view volStr;
+
+            k["t"].get(barTime);
+            k["h"].get(highPriceStr);
+            k["l"].get(lowPriceStr);
+            k["o"].get(openPriceStr);
+            k["c"].get(closePriceStr);
+            k["q"].get(amountStr);
+            k["v"].get(volStr);
+
+            kline.barTime = barTime * 1000;
+            kline.highPrice = crypto::fast_atod(highPriceStr) * info.reduceNumber;
+            kline.lowPrice = crypto::fast_atod(lowPriceStr) * info.reduceNumber;
+            kline.openPrice = crypto::fast_atod(openPriceStr) * info.reduceNumber;
+            kline.closePrice = crypto::fast_atod(closePriceStr) * info.reduceNumber;
 
             double avgPrice = 0;
-            double amount = std::stod(data["k"]["q"].GetString());
-            double volume = std::stod(data["k"]["v"].GetString());
+            double amount = crypto::fast_atod(amountStr);
+            double volume = crypto::fast_atod(volStr);
             if(amount > ZERO_NUM){
                 avgPrice = amount / volume;
             }
 
-            kline.avgPrice = avgPrice;
-            kline.totalVolume = volume;
+            kline.avgPrice = avgPrice * info.reduceNumber;
+            kline.totalVolume = volume * info.magnifyNumber;
             kline.totalAmount = amount;
 
-            kline.isFinished = data["k"]["x"].GetBool();
+            bool isFinished = false;
+            k["x"].get(isFinished);
+            kline.isFinished = isFinished;
             if (!kline.isFinished) {
                 return;
             }
+
+            kline.tsParse = crypto::getCurrentTime();
+
+            std::cout << kline.getString() << std::endl;
 
 #ifdef NEED_SHM
             mKlinePublisher[key]->push(kline); 
@@ -511,325 +727,562 @@ void md::BinanceUnit::parseMarketData(const std::string& msg) {
     }
     else if(instTypeEnum == USDT_SWAP || instTypeEnum == USDT_FUTURES || instTypeEnum == USDC_SWAP || instTypeEnum == C_SWAP || instTypeEnum == C_FUTURES) {
         if(marketTypeEnum == md::DEPTH1) {
-            const rapidjson::Value& data = rawData["data"];
-
             md::Depth1 depth1;
             memset(&depth1, 0, sizeof(md::Depth1));
             depth1.exchangeTypeEnum = exchangeTypeEnum;
             depth1.instTypeEnum = instTypeEnum;
             depth1.marketTypeEnum = marketTypeEnum;
             strncpy(depth1.instId, info.instId, INSTID_SIZE);
-            depth1.tsTrans = std::stol(data["T"].GetString()) * 1000;
-            depth1.tsEvent = std::stol(data["E"].GetString()) * 1000;
+
+            auto bp1 = data["b"];
+            auto bv1 = data["B"];
+            auto ap1 = data["a"];
+            auto av1 = data["A"];
+            
+            std::string_view bidPriceStr;
+            std::string_view bidVolStr;
+            std::string_view askPriceStr;
+            std::string_view askVolStr;
+            bp1.get(bidPriceStr);
+            bv1.get(bidVolStr);
+            ap1.get(askPriceStr);
+            av1.get(askVolStr);
+   
+            long tsTrans = 0;
+            data["T"].get(tsTrans);
+
+            long tsEvent = 0;
+            data["E"].get(tsEvent);
+
+            depth1.tsTrans = tsTrans * 1000;
+            depth1.tsEvent = tsEvent * 1000;
             depth1.tsRecv = tsNet;
+            depth1.bp1 = crypto::fast_atod(bidPriceStr) * info.reduceNumber;
+            depth1.bv1 = crypto::fast_atod(bidVolStr) * info.magnifyNumber;
+            depth1.ap1 = crypto::fast_atod(askPriceStr) * info.reduceNumber;
+            depth1.av1 = crypto::fast_atod(askVolStr) * info.magnifyNumber;
+
             depth1.tsParse = crypto::getCurrentTime();
-            depth1.bp1 = std::stod(data["b"].GetString()) * info.reduceNumber;
-            depth1.bv1 = std::stod(data["B"].GetString()) * info.magnifyNumber;
-            depth1.ap1 = std::stod(data["a"].GetString()) * info.reduceNumber;
-            depth1.av1 = std::stod(data["A"].GetString()) * info.magnifyNumber;
+
+            std::cout << depth1.getString() << std::endl;
 #ifdef NEED_SHM
             mDepth1Publisher[key]->push(depth1);             
 #endif
         }
         else if (marketTypeEnum == md::DEPTH5) {
-            const rapidjson::Value &data = rawData["data"];
-
             md::Depth5 depth5;
             memset(&depth5, 0, sizeof(md::Depth5));
             depth5.exchangeTypeEnum = exchangeTypeEnum;
             depth5.instTypeEnum = instTypeEnum;
             depth5.marketTypeEnum = marketTypeEnum;
             strncpy(depth5.instId, info.instId, INSTID_SIZE);
-            depth5.tsTrans = std::stol(data["T"].GetString()) * 1000;
-            depth5.tsEvent = std::stol(data["E"].GetString()) * 1000;
+
+            long tsTrans = 0;
+            data["T"].get(tsTrans);
+
+            long tsEvent = 0;
+            data["E"].get(tsEvent);
+
+            depth5.tsTrans = tsTrans * 1000;
+            depth5.tsEvent = tsEvent * 1000;
             depth5.tsRecv = tsNet;
+
+            auto bidsArray = data["b"];
+            std::string_view bidPrice[5];
+            std::string_view bidVol[5];
+
+            size_t bidsCount = 0;
+            for (auto bidLevel : bidsArray) {
+                if (bidsCount >= 5) {
+                    break;
+                }
+
+                auto it = bidLevel.begin();
+                if ((*it).get(bidPrice[bidsCount])) {
+                    break;
+                } 
+                ++it;
+                
+                if ((*it).get(bidVol[bidsCount])) {
+                    break;
+                } 
+
+                bidsCount++;
+            }
+
+            if (bidsCount == 5) {
+                depth5.bp1 = crypto::fast_atod(bidPrice[0]) * info.reduceNumber;
+                depth5.bv1 = crypto::fast_atod(bidVol[0]) * info.magnifyNumber;
+                depth5.bp2 = crypto::fast_atod(bidPrice[1]) * info.reduceNumber;
+                depth5.bv2 = crypto::fast_atod(bidVol[1]) * info.magnifyNumber;
+                depth5.bp3 = crypto::fast_atod(bidPrice[2]) * info.reduceNumber;
+                depth5.bv3 = crypto::fast_atod(bidVol[2]) * info.magnifyNumber;
+                depth5.bp4 = crypto::fast_atod(bidPrice[3]) * info.reduceNumber;
+                depth5.bv4 = crypto::fast_atod(bidVol[3]) * info.magnifyNumber;
+                depth5.bp5 = crypto::fast_atod(bidPrice[4]) * info.reduceNumber;
+                depth5.bv5 = crypto::fast_atod(bidVol[4]) * info.magnifyNumber;
+            }
+
+            auto asksArray = data["a"];
+            std::string_view askPrice[5];
+            std::string_view askVol[5];
+
+            size_t asksCount = 0;
+            for (auto askLevel : asksArray) {
+                if (asksCount >= 5) {
+                    break;
+                }
+
+                auto it = askLevel.begin();
+                if ((*it).get(askPrice[asksCount])) {
+                    break;
+                } 
+                ++it;
+                
+                if ((*it).get(askVol[asksCount])) {
+                    break;
+                } 
+
+                asksCount++;
+            }
+
+            if (asksCount == 5) {
+                depth5.ap1 = crypto::fast_atod(askPrice[0]) * info.reduceNumber;
+                depth5.av1 = crypto::fast_atod(askVol[0]) * info.magnifyNumber;
+                depth5.ap2 = crypto::fast_atod(askPrice[1]) * info.reduceNumber;
+                depth5.av2 = crypto::fast_atod(askVol[1]) * info.magnifyNumber;
+                depth5.ap3 = crypto::fast_atod(askPrice[2]) * info.reduceNumber;
+                depth5.av3 = crypto::fast_atod(askVol[2]) * info.magnifyNumber;
+                depth5.ap4 = crypto::fast_atod(askPrice[3]) * info.reduceNumber;
+                depth5.av4 = crypto::fast_atod(askVol[3]) * info.magnifyNumber;
+                depth5.ap5 = crypto::fast_atod(askPrice[4]) * info.reduceNumber;
+                depth5.av5 = crypto::fast_atod(askVol[4]) * info.magnifyNumber;
+            }
+
             depth5.tsParse = crypto::getCurrentTime();
 
-            int asksSize = data["a"].Size();
-            int bidsSize = data["b"].Size();
-
-            if (asksSize >= 5 && bidsSize >= 5) {
-                depth5.bp1 = std::stod(data["b"][0][0].GetString());
-                depth5.bv1 = std::stod(data["b"][0][1].GetString());
-                depth5.bp2 = std::stod(data["b"][1][0].GetString());
-                depth5.bv2 = std::stod(data["b"][1][1].GetString());
-                depth5.bp3 = std::stod(data["b"][2][0].GetString());
-                depth5.bv3 = std::stod(data["b"][2][1].GetString());
-                depth5.bp4 = std::stod(data["b"][3][0].GetString());
-                depth5.bv4 = std::stod(data["b"][3][1].GetString());
-                depth5.bp5 = std::stod(data["b"][4][0].GetString());
-                depth5.bv5 = std::stod(data["b"][4][1].GetString());
-
-                depth5.ap1 = std::stod(data["a"][0][0].GetString());
-                depth5.av1 = std::stod(data["a"][0][1].GetString());
-                depth5.ap2 = std::stod(data["a"][1][0].GetString());
-                depth5.av2 = std::stod(data["a"][1][1].GetString());
-                depth5.ap3 = std::stod(data["a"][2][0].GetString());
-                depth5.av3 = std::stod(data["a"][2][1].GetString());
-                depth5.ap4 = std::stod(data["a"][3][0].GetString());
-                depth5.av4 = std::stod(data["a"][3][1].GetString());
-                depth5.ap5 = std::stod(data["a"][4][0].GetString());
-                depth5.av5 = std::stod(data["a"][4][1].GetString());
-            }
+            std::cout << depth5.getString() << std::endl;
 
 #ifdef NEED_SHM
             mDepth5Publisher[key]->push(depth5);                
 #endif   
         }
         else if (marketTypeEnum == md::DEPTH10) {
-            const rapidjson::Value& data = rawData["data"];
             md::Depth10 depth10;
             memset(&depth10, 0, sizeof(md::Depth10));
             depth10.exchangeTypeEnum = exchangeTypeEnum;
             depth10.instTypeEnum = instTypeEnum;
             depth10.marketTypeEnum = marketTypeEnum;
             strncpy(depth10.instId, info.instId, INSTID_SIZE);
-            depth10.tsTrans = std::stol(data["T"].GetString()) * 1000;
-            depth10.tsEvent = std::stol(data["E"].GetString()) * 1000;
+
+            long tsTrans = 0;
+            data["T"].get(tsTrans);
+
+            long tsEvent = 0;
+            data["E"].get(tsEvent);
+
+            depth10.tsTrans = tsTrans * 1000;
+            depth10.tsEvent = tsEvent * 1000;
             depth10.tsRecv = tsNet;
+
+            auto bidsArray = data["b"];
+            std::string_view bidPrice[10];
+            std::string_view bidVol[10];
+
+            size_t bidsCount = 0;
+            for (auto bidLevel : bidsArray) {
+                if (bidsCount >= 10) {
+                    break;
+                }
+                
+                auto it = bidLevel.begin();
+                if ((*it).get(bidPrice[bidsCount])) {
+                    break;
+                } 
+                ++it;
+                
+                if ((*it).get(bidVol[bidsCount])) {
+                    break;
+                }
+
+                bidsCount++;
+            }
+
+            if (bidsCount == 10) {
+                depth10.bp1 = crypto::fast_atod(bidPrice[0]) * info.reduceNumber;
+                depth10.bv1 = crypto::fast_atod(bidVol[0]) * info.magnifyNumber;
+                depth10.bp2 = crypto::fast_atod(bidPrice[1]) * info.reduceNumber;
+                depth10.bv2 = crypto::fast_atod(bidVol[1]) * info.magnifyNumber;
+                depth10.bp3 = crypto::fast_atod(bidPrice[2]) * info.reduceNumber;
+                depth10.bv3 = crypto::fast_atod(bidVol[2]) * info.magnifyNumber;
+                depth10.bp4 = crypto::fast_atod(bidPrice[3]) * info.reduceNumber;
+                depth10.bv4 = crypto::fast_atod(bidVol[3]) * info.magnifyNumber;
+                depth10.bp5 = crypto::fast_atod(bidPrice[4]) * info.reduceNumber;
+                depth10.bv5 = crypto::fast_atod(bidVol[4]) * info.magnifyNumber;
+                depth10.bp6 = crypto::fast_atod(bidPrice[5]) * info.reduceNumber;
+                depth10.bv6 = crypto::fast_atod(bidVol[5]) * info.magnifyNumber;
+                depth10.bp7 = crypto::fast_atod(bidPrice[6]) * info.reduceNumber;
+                depth10.bv7 = crypto::fast_atod(bidVol[6]) * info.magnifyNumber;
+                depth10.bp8 = crypto::fast_atod(bidPrice[7]) * info.reduceNumber;
+                depth10.bv8 = crypto::fast_atod(bidVol[7]) * info.magnifyNumber;
+                depth10.bp9 = crypto::fast_atod(bidPrice[8]) * info.reduceNumber;
+                depth10.bv9 = crypto::fast_atod(bidVol[8]) * info.magnifyNumber;
+                depth10.bp10 = crypto::fast_atod(bidPrice[9]) * info.reduceNumber;
+                depth10.bv10 = crypto::fast_atod(bidVol[9]) * info.magnifyNumber;
+            }
+
+            auto asksArray = data["a"];
+            std::string_view askPrice[10];
+            std::string_view askVol[10];
+
+            size_t asksCount = 0;
+            for (auto askLevel : asksArray) {
+                if (asksCount >= 10) {
+                    break;
+                }
+                
+                auto it = askLevel.begin();
+                if ((*it).get(askPrice[asksCount])) {
+                    break;
+                } 
+                ++it;
+                
+                if ((*it).get(askVol[asksCount])) {
+                    break;
+                } 
+
+                asksCount++;
+            }
+
+            if (asksCount == 10) {
+                depth10.ap1 = crypto::fast_atod(askPrice[0]) * info.reduceNumber;
+                depth10.av1 = crypto::fast_atod(askVol[0]) * info.magnifyNumber;
+                depth10.ap2 = crypto::fast_atod(askPrice[1]) * info.reduceNumber;
+                depth10.av2 = crypto::fast_atod(askVol[1]) * info.magnifyNumber;
+                depth10.ap3 = crypto::fast_atod(askPrice[2]) * info.reduceNumber;
+                depth10.av3 = crypto::fast_atod(askVol[2]) * info.magnifyNumber;
+                depth10.ap4 = crypto::fast_atod(askPrice[3]) * info.reduceNumber;
+                depth10.av4 = crypto::fast_atod(askVol[3]) * info.magnifyNumber;
+                depth10.ap5 = crypto::fast_atod(askPrice[4]) * info.reduceNumber;
+                depth10.av5 = crypto::fast_atod(askVol[4]) * info.magnifyNumber;
+                depth10.ap6 = crypto::fast_atod(askPrice[5]) * info.reduceNumber;
+                depth10.av6 = crypto::fast_atod(askVol[5]) * info.magnifyNumber;
+                depth10.ap7 = crypto::fast_atod(askPrice[6]) * info.reduceNumber;
+                depth10.av7 = crypto::fast_atod(askVol[6]) * info.magnifyNumber;
+                depth10.ap8 = crypto::fast_atod(askPrice[7]) * info.reduceNumber;
+                depth10.av8 = crypto::fast_atod(askVol[7]) * info.magnifyNumber;
+                depth10.ap9 = crypto::fast_atod(askPrice[8]) * info.reduceNumber;
+                depth10.av9 = crypto::fast_atod(askVol[8]) * info.magnifyNumber;
+                depth10.ap10 = crypto::fast_atod(askPrice[9]) * info.reduceNumber;
+                depth10.av10 = crypto::fast_atod(askVol[9]) * info.magnifyNumber;
+            }
+
             depth10.tsParse = crypto::getCurrentTime();
 
-            int asksSize = data["a"].Size();
-            int bidsSize = data["b"].Size();
-
-            if (asksSize >= 10 && bidsSize >= 10) {
-                depth10.bp1 = std::stod(data["b"][0][0].GetString());
-                depth10.bv1 = std::stod(data["b"][0][1].GetString());
-                depth10.bp2 = std::stod(data["b"][1][0].GetString());
-                depth10.bv2 = std::stod(data["b"][1][1].GetString());
-                depth10.bp3 = std::stod(data["b"][2][0].GetString());
-                depth10.bv3 = std::stod(data["b"][2][1].GetString());
-                depth10.bp4 = std::stod(data["b"][3][0].GetString());
-                depth10.bv4 = std::stod(data["b"][3][1].GetString());
-                depth10.bp5 = std::stod(data["b"][4][0].GetString());
-                depth10.bv5 = std::stod(data["b"][4][1].GetString());
-                depth10.bp6 = std::stod(data["b"][5][0].GetString());
-                depth10.bv6 = std::stod(data["b"][5][1].GetString());
-                depth10.bp7 = std::stod(data["b"][6][0].GetString());
-                depth10.bv7 = std::stod(data["b"][6][1].GetString());
-                depth10.bp8 = std::stod(data["b"][7][0].GetString());
-                depth10.bv8 = std::stod(data["b"][7][1].GetString());
-                depth10.bp9 = std::stod(data["b"][8][0].GetString());
-                depth10.bv9 = std::stod(data["b"][8][1].GetString());
-                depth10.bp10 = std::stod(data["b"][9][0].GetString());
-                depth10.bv10 = std::stod(data["b"][9][1].GetString());
-
-                depth10.ap1 = std::stod(data["a"][0][0].GetString());
-                depth10.av1 = std::stod(data["a"][0][1].GetString());
-                depth10.ap2 = std::stod(data["a"][1][0].GetString());
-                depth10.av2 = std::stod(data["a"][1][1].GetString());
-                depth10.ap3 = std::stod(data["a"][2][0].GetString());
-                depth10.av3 = std::stod(data["a"][2][1].GetString());
-                depth10.ap4 = std::stod(data["a"][3][0].GetString());
-                depth10.av4 = std::stod(data["a"][3][1].GetString());
-                depth10.ap5 = std::stod(data["a"][4][0].GetString());
-                depth10.av5 = std::stod(data["a"][4][1].GetString());
-                depth10.ap6 = std::stod(data["a"][5][0].GetString());
-                depth10.av6 = std::stod(data["a"][5][1].GetString());
-                depth10.ap7 = std::stod(data["a"][6][0].GetString());
-                depth10.av7 = std::stod(data["a"][6][1].GetString());
-                depth10.ap8 = std::stod(data["a"][7][0].GetString());
-                depth10.av8 = std::stod(data["a"][7][1].GetString());
-                depth10.ap9 = std::stod(data["a"][8][0].GetString());
-                depth10.av9 = std::stod(data["a"][8][1].GetString());
-                depth10.ap10 = std::stod(data["a"][9][0].GetString());
-                depth10.av10 = std::stod(data["a"][9][1].GetString());
-            }
+            std::cout << depth10.getString() << std::endl;
 
 #ifdef NEED_SHM
             mDepth10Publisher[key]->push(depth10);                
 #endif
         }
         else if (marketTypeEnum == md::DEPTH20) {
-            const rapidjson::Value& data = rawData["data"];
             md::Depth20 depth20;
             memset(&depth20, 0, sizeof(md::Depth20));
             depth20.exchangeTypeEnum = exchangeTypeEnum;
             depth20.instTypeEnum = instTypeEnum;
             depth20.marketTypeEnum = marketTypeEnum;
             strncpy(depth20.instId, info.instId, INSTID_SIZE);
-            depth20.tsTrans = std::stol(data["T"].GetString()) * 1000;
-            depth20.tsEvent = std::stol(data["E"].GetString()) * 1000;
+
+            long tsTrans = 0;
+            data["T"].get(tsTrans);
+
+            long tsEvent = 0;
+            data["E"].get(tsEvent);
+
+            depth20.tsTrans = tsTrans * 1000;
+            depth20.tsEvent = tsEvent * 1000;
             depth20.tsRecv = tsNet;
+
+            auto bidsArray = data["b"];
+            std::string_view bidPrice[20];
+            std::string_view bidVol[20];
+
+            size_t bidsCount = 0;
+            for (auto bidLevel : bidsArray) {
+                if (bidsCount >= 20) {
+                    break;
+                }
+                
+                auto it = bidLevel.begin();
+                if ((*it).get(bidPrice[bidsCount])) {
+                    break;
+                } 
+                ++it;
+                
+                if ((*it).get(bidVol[bidsCount])) {
+                    break;
+                }
+
+                bidsCount++;
+            }
+
+            if (bidsCount == 20) {
+                depth20.bp1 = crypto::fast_atod(bidPrice[0]) * info.reduceNumber;
+                depth20.bv1 = crypto::fast_atod(bidVol[0]) * info.magnifyNumber;
+                depth20.bp2 = crypto::fast_atod(bidPrice[1]) * info.reduceNumber;
+                depth20.bv2 = crypto::fast_atod(bidVol[1]) * info.magnifyNumber;
+                depth20.bp3 = crypto::fast_atod(bidPrice[2]) * info.reduceNumber;
+                depth20.bv3 = crypto::fast_atod(bidVol[2]) * info.magnifyNumber;
+                depth20.bp4 = crypto::fast_atod(bidPrice[3]) * info.reduceNumber;
+                depth20.bv4 = crypto::fast_atod(bidVol[3]) * info.magnifyNumber;
+                depth20.bp5 = crypto::fast_atod(bidPrice[4]) * info.reduceNumber;
+                depth20.bv5 = crypto::fast_atod(bidVol[4]) * info.magnifyNumber;
+                depth20.bp6 = crypto::fast_atod(bidPrice[5]) * info.reduceNumber;
+                depth20.bv6 = crypto::fast_atod(bidVol[5]) * info.magnifyNumber;
+                depth20.bp7 = crypto::fast_atod(bidPrice[6]) * info.reduceNumber;
+                depth20.bv7 = crypto::fast_atod(bidVol[6]) * info.magnifyNumber;
+                depth20.bp8 = crypto::fast_atod(bidPrice[7]) * info.reduceNumber;
+                depth20.bv8 = crypto::fast_atod(bidVol[7]) * info.magnifyNumber;
+                depth20.bp9 = crypto::fast_atod(bidPrice[8]) * info.reduceNumber;
+                depth20.bv9 = crypto::fast_atod(bidVol[8]) * info.magnifyNumber;
+                depth20.bp10 = crypto::fast_atod(bidPrice[9]) * info.reduceNumber;
+                depth20.bv10 = crypto::fast_atod(bidVol[9]) * info.magnifyNumber;
+                depth20.bp11 = crypto::fast_atod(bidPrice[10]) * info.reduceNumber;
+                depth20.bv11 = crypto::fast_atod(bidVol[10]) * info.magnifyNumber;
+                depth20.bp12 = crypto::fast_atod(bidPrice[11]) * info.reduceNumber;
+                depth20.bv12 = crypto::fast_atod(bidVol[11]) * info.magnifyNumber;
+                depth20.bp13 = crypto::fast_atod(bidPrice[12]) * info.reduceNumber;
+                depth20.bv13 = crypto::fast_atod(bidVol[12]) * info.magnifyNumber;
+                depth20.bp14 = crypto::fast_atod(bidPrice[13]) * info.reduceNumber;
+                depth20.bv14 = crypto::fast_atod(bidVol[13]) * info.magnifyNumber;
+                depth20.bp15 = crypto::fast_atod(bidPrice[14]) * info.reduceNumber;
+                depth20.bv15 = crypto::fast_atod(bidVol[14]) * info.magnifyNumber;
+                depth20.bp16 = crypto::fast_atod(bidPrice[15]) * info.reduceNumber;
+                depth20.bv16 = crypto::fast_atod(bidVol[15]) * info.magnifyNumber;
+                depth20.bp17 = crypto::fast_atod(bidPrice[16]) * info.reduceNumber;
+                depth20.bv17 = crypto::fast_atod(bidVol[16]) * info.magnifyNumber;
+                depth20.bp18 = crypto::fast_atod(bidPrice[17]) * info.reduceNumber;
+                depth20.bv18 = crypto::fast_atod(bidVol[17]) * info.magnifyNumber;
+                depth20.bp19 = crypto::fast_atod(bidPrice[18]) * info.reduceNumber;
+                depth20.bv19 = crypto::fast_atod(bidVol[18]) * info.magnifyNumber;
+                depth20.bp20 = crypto::fast_atod(bidPrice[19]) * info.reduceNumber;
+                depth20.bv20 = crypto::fast_atod(bidVol[19]) * info.magnifyNumber;
+
+            }
+
+            auto asksArray = data["a"];
+            std::string_view askPrice[20];
+            std::string_view askVol[20];
+
+            size_t asksCount = 0;
+            for (auto askLevel : asksArray) {
+                if (asksCount >= 20) {
+                    break;
+                }
+                
+                auto it = askLevel.begin();
+                if ((*it).get(askPrice[asksCount])) {
+                    break;
+                } 
+                ++it;
+                
+                if ((*it).get(askVol[asksCount])) {
+                    break;
+                } 
+
+                asksCount++;
+            }
+
+            if (asksCount == 20) {
+                depth20.ap1 = crypto::fast_atod(askPrice[0]) * info.reduceNumber;
+                depth20.av1 = crypto::fast_atod(askVol[0]) * info.magnifyNumber;
+                depth20.ap2 = crypto::fast_atod(askPrice[1]) * info.reduceNumber;
+                depth20.av2 = crypto::fast_atod(askVol[1]) * info.magnifyNumber;
+                depth20.ap3 = crypto::fast_atod(askPrice[2]) * info.reduceNumber;
+                depth20.av3 = crypto::fast_atod(askVol[2]) * info.magnifyNumber;
+                depth20.ap4 = crypto::fast_atod(askPrice[3]) * info.reduceNumber;
+                depth20.av4 = crypto::fast_atod(askVol[3]) * info.magnifyNumber;
+                depth20.ap5 = crypto::fast_atod(askPrice[4]) * info.reduceNumber;
+                depth20.av5 = crypto::fast_atod(askVol[4]) * info.magnifyNumber;
+                depth20.ap6 = crypto::fast_atod(askPrice[5]) * info.reduceNumber;
+                depth20.av6 = crypto::fast_atod(askVol[5]) * info.magnifyNumber;
+                depth20.ap7 = crypto::fast_atod(askPrice[6]) * info.reduceNumber;
+                depth20.av7 = crypto::fast_atod(askVol[6]) * info.magnifyNumber;
+                depth20.ap8 = crypto::fast_atod(askPrice[7]) * info.reduceNumber;
+                depth20.av8 = crypto::fast_atod(askVol[7]) * info.magnifyNumber;
+                depth20.ap9 = crypto::fast_atod(askPrice[8]) * info.reduceNumber;
+                depth20.av9 = crypto::fast_atod(askVol[8]) * info.magnifyNumber;
+                depth20.ap10 = crypto::fast_atod(askPrice[9]) * info.reduceNumber;
+                depth20.av10 = crypto::fast_atod(askVol[9]) * info.magnifyNumber;
+                depth20.ap11 = crypto::fast_atod(askPrice[10]) * info.reduceNumber;
+                depth20.av11 = crypto::fast_atod(askVol[10]) * info.magnifyNumber;
+                depth20.ap12 = crypto::fast_atod(askPrice[11]) * info.reduceNumber;
+                depth20.av12 = crypto::fast_atod(askVol[11]) * info.magnifyNumber;
+                depth20.ap13 = crypto::fast_atod(askPrice[12]) * info.reduceNumber;
+                depth20.av13 = crypto::fast_atod(askVol[12]) * info.magnifyNumber;
+                depth20.ap14 = crypto::fast_atod(askPrice[13]) * info.reduceNumber;
+                depth20.av14 = crypto::fast_atod(askVol[13]) * info.magnifyNumber;
+                depth20.ap15 = crypto::fast_atod(askPrice[14]) * info.reduceNumber;
+                depth20.av15 = crypto::fast_atod(askVol[14]) * info.magnifyNumber;
+                depth20.ap16 = crypto::fast_atod(askPrice[15]) * info.reduceNumber;
+                depth20.av16 = crypto::fast_atod(askVol[15]) * info.magnifyNumber;
+                depth20.ap17 = crypto::fast_atod(askPrice[16]) * info.reduceNumber;
+                depth20.av17 = crypto::fast_atod(askVol[16]) * info.magnifyNumber;
+                depth20.ap18 = crypto::fast_atod(askPrice[17]) * info.reduceNumber;
+                depth20.av18 = crypto::fast_atod(askVol[17]) * info.magnifyNumber;
+                depth20.ap19 = crypto::fast_atod(askPrice[18]) * info.reduceNumber;
+                depth20.av19 = crypto::fast_atod(askVol[18]) * info.magnifyNumber;
+                depth20.ap20 = crypto::fast_atod(askPrice[19]) * info.reduceNumber;
+                depth20.av20 = crypto::fast_atod(askVol[19]) * info.magnifyNumber;
+            }
+
             depth20.tsParse = crypto::getCurrentTime();
 
-            int asksSize = data["a"].Size();
-            int bidsSize = data["b"].Size();
-
-            if (asksSize >= 20 && bidsSize >= 20) {
-                depth20.bp1 = std::stod(data["b"][0][0].GetString());
-                depth20.bv1 = std::stod(data["b"][0][1].GetString());
-                depth20.bp2 = std::stod(data["b"][1][0].GetString());
-                depth20.bv2 = std::stod(data["b"][1][1].GetString());
-                depth20.bp3 = std::stod(data["b"][2][0].GetString());
-                depth20.bv3 = std::stod(data["b"][2][1].GetString());
-                depth20.bp4 = std::stod(data["b"][3][0].GetString());
-                depth20.bv4 = std::stod(data["b"][3][1].GetString());
-                depth20.bp5 = std::stod(data["b"][4][0].GetString());
-                depth20.bv5 = std::stod(data["b"][4][1].GetString());
-                depth20.bp6 = std::stod(data["b"][5][0].GetString());
-                depth20.bv6 = std::stod(data["b"][5][1].GetString());
-                depth20.bp7 = std::stod(data["b"][6][0].GetString());
-                depth20.bv7 = std::stod(data["b"][6][1].GetString());
-                depth20.bp8 = std::stod(data["b"][7][0].GetString());
-                depth20.bv8 = std::stod(data["b"][7][1].GetString());
-                depth20.bp9 = std::stod(data["b"][8][0].GetString());
-                depth20.bv9 = std::stod(data["b"][8][1].GetString());
-                depth20.bp10 = std::stod(data["b"][9][0].GetString());
-                depth20.bv10 = std::stod(data["b"][9][1].GetString());
-                depth20.bp11 = std::stod(data["b"][10][0].GetString());
-                depth20.bv11 = std::stod(data["b"][10][1].GetString());
-                depth20.bp12 = std::stod(data["b"][11][0].GetString());
-                depth20.bv12 = std::stod(data["b"][11][1].GetString());
-                depth20.bp13 = std::stod(data["b"][12][0].GetString());
-                depth20.bv13 = std::stod(data["b"][12][1].GetString());
-                depth20.bp14 = std::stod(data["b"][13][0].GetString());
-                depth20.bv14 = std::stod(data["b"][13][1].GetString());
-                depth20.bp15 = std::stod(data["b"][14][0].GetString());
-                depth20.bv15 = std::stod(data["b"][14][1].GetString());
-                depth20.bp16 = std::stod(data["b"][15][0].GetString());
-                depth20.bv16 = std::stod(data["b"][15][1].GetString());
-                depth20.bp17 = std::stod(data["b"][16][0].GetString());
-                depth20.bv17 = std::stod(data["b"][16][1].GetString());
-                depth20.bp18 = std::stod(data["b"][17][0].GetString());
-                depth20.bv18 = std::stod(data["b"][17][1].GetString());
-                depth20.bp19 = std::stod(data["b"][18][0].GetString());
-                depth20.bv19 = std::stod(data["b"][18][1].GetString());
-                depth20.bp20 = std::stod(data["b"][19][0].GetString());
-                depth20.bv20 = std::stod(data["b"][19][1].GetString());
-
-                depth20.ap1 = std::stod(data["a"][0][0].GetString());
-                depth20.av1 = std::stod(data["a"][0][1].GetString());
-                depth20.ap2 = std::stod(data["a"][1][0].GetString());
-                depth20.av2 = std::stod(data["a"][1][1].GetString());
-                depth20.ap3 = std::stod(data["a"][2][0].GetString());
-                depth20.av3 = std::stod(data["a"][2][1].GetString());
-                depth20.ap4 = std::stod(data["a"][3][0].GetString());
-                depth20.av4 = std::stod(data["a"][3][1].GetString());
-                depth20.ap5 = std::stod(data["a"][4][0].GetString());
-                depth20.av5 = std::stod(data["a"][4][1].GetString());
-                depth20.ap6 = std::stod(data["a"][5][0].GetString());
-                depth20.av6 = std::stod(data["a"][5][1].GetString());
-                depth20.ap7 = std::stod(data["a"][6][0].GetString());
-                depth20.av7 = std::stod(data["a"][6][1].GetString());
-                depth20.ap8 = std::stod(data["a"][7][0].GetString());
-                depth20.av8 = std::stod(data["a"][7][1].GetString());
-                depth20.ap9 = std::stod(data["a"][8][0].GetString());
-                depth20.av9 = std::stod(data["a"][8][1].GetString());
-                depth20.ap10 = std::stod(data["a"][9][0].GetString());
-                depth20.av10 = std::stod(data["a"][9][1].GetString());
-                depth20.ap11 = std::stod(data["a"][10][0].GetString());
-                depth20.av11 = std::stod(data["a"][10][1].GetString());
-                depth20.ap12 = std::stod(data["a"][11][0].GetString());
-                depth20.av12 = std::stod(data["a"][11][1].GetString());
-                depth20.ap13 = std::stod(data["a"][12][0].GetString());
-                depth20.av13 = std::stod(data["a"][12][1].GetString());
-                depth20.ap14 = std::stod(data["a"][13][0].GetString());
-                depth20.av14 = std::stod(data["a"][13][1].GetString());
-                depth20.ap15 = std::stod(data["a"][14][0].GetString());
-                depth20.av15 = std::stod(data["a"][14][1].GetString());
-                depth20.ap16 = std::stod(data["a"][15][0].GetString());
-                depth20.av16 = std::stod(data["a"][15][1].GetString());
-                depth20.ap17 = std::stod(data["a"][16][0].GetString());
-                depth20.av17 = std::stod(data["a"][16][1].GetString());
-                depth20.ap18 = std::stod(data["a"][17][0].GetString());
-                depth20.av18 = std::stod(data["a"][17][1].GetString());
-                depth20.ap19 = std::stod(data["a"][18][0].GetString());
-                depth20.av19 = std::stod(data["a"][18][1].GetString());
-                depth20.ap20 = std::stod(data["a"][19][0].GetString());
-                depth20.av20 = std::stod(data["a"][19][1].GetString());
-            }
+            std::cout << depth20.getString() << std::endl;
 
 #ifdef NEED_SHM
             mDepth20Publisher[key]->push(depth20);                
 #endif
         }
-        else if(marketTypeEnum == md::TRADES){
-            const rapidjson::Value &data = rawData["data"];
-
+        else if (marketTypeEnum == md::TRADES) {
             md::Trades trades;
             memset(&trades, 0, sizeof(md::Trades));
             trades.exchangeTypeEnum = exchangeTypeEnum;
             trades.instTypeEnum = instTypeEnum;
             trades.marketTypeEnum = marketTypeEnum;
             strncpy(trades.instId, info.instId, INSTID_SIZE);
-            trades.tsTrans = std::stol(data["T"].GetString()) * 1000;
-            trades.tsEvent = std::stol(data["E"].GetString()) * 1000;
+
+            long tsTrans = 0;
+            data["T"].get(tsTrans);
+
+            long tsEvent = 0;
+            data["E"].get(tsEvent);
+
+            trades.tsTrans = tsTrans * 1000;
+            trades.tsEvent = tsEvent * 1000;
             trades.tsRecv = tsNet;
-            trades.tsParse = crypto::getCurrentTime();
 
             if (instTypeEnum == C_SWAP || instTypeEnum == C_FUTURES) {
-               strncpy(trades.tradeId, data["a"].GetString(), INSTID_SIZE); 
+                std::string_view tradeIdStr;
+                data["a"].get(tradeIdStr);
+                strncpy(trades.tradeId, tradeIdStr.data(), INSTID_SIZE); 
             }
             else {
-                strncpy(trades.tradeId, data["t"].GetString(), INSTID_SIZE);
+                std::string_view tradeIdStr;
+                data["t"].get(tradeIdStr);
+                strncpy(trades.tradeId, tradeIdStr.data(), INSTID_SIZE);
             }
-            
-            trades.px = std::stod(data["p"].GetString());
-            trades.sz = std::stod(data["q"].GetString());
-            bool m = data["m"].GetBool();
-            trades.direction = m ? DT_SHORT : DT_LONG;
+
+            std::string_view tradePriceStr;
+            std::string_view tradeVolStr;
+            data["p"].get(tradePriceStr);
+            data["q"].get(tradeVolStr);
+
+            trades.px = crypto::fast_atod(tradePriceStr) * info.reduceNumber;;
+            trades.sz = crypto::fast_atod(tradeVolStr) * info.magnifyNumber;
+
+            bool direction = false;
+            data["m"].get(direction);
+            trades.direction = direction ? DT_SHORT : DT_LONG;
+            trades.tsParse = crypto::getCurrentTime();
+
+            std::cout << trades.getString() << std::endl;
 
 #ifdef NEED_SHM
             mTradesPublisher[key]->push(trades); 
 #endif
         }
         else if (marketTypeEnum == md::KLINE_1m) {
-            const rapidjson::Value& data = rawData["data"];
-
             md::Kline kline;
             memset(&kline, 0, sizeof(md::Kline));
             kline.exchangeTypeEnum = exchangeTypeEnum;
             kline.instTypeEnum = instTypeEnum;
             kline.marketTypeEnum = marketTypeEnum;
             strncpy(kline.instId, info.instId, INSTID_SIZE);
-            kline.tsTrans = std::stol(data["E"].GetString()) * 1000;
-            kline.tsEvent = std::stol(data["E"].GetString()) * 1000;
-            kline.tsRecv = tsNet;
-            kline.tsParse = crypto::getCurrentTime();
 
-            kline.barTime = std::stol(data["k"]["t"].GetString()) * 1000;
-            kline.highPrice = std::stod(data["k"]["h"].GetString());
-            kline.lowPrice = std::stod(data["k"]["l"].GetString());
-            kline.openPrice = std::stod(data["k"]["o"].GetString());
-            kline.closePrice = std::stod(data["k"]["c"].GetString());
+            long tsEvent = 0;
+            data["E"].get(tsEvent);
+
+            kline.tsTrans = tsEvent * 1000;
+            kline.tsEvent = tsEvent * 1000;
+            kline.tsRecv = tsNet;
+
+            auto k = data["k"];
+            
+            long barTime = 0;
+            std::string_view highPriceStr;
+            std::string_view lowPriceStr;
+            std::string_view openPriceStr;
+            std::string_view closePriceStr;
+            std::string_view amountStr;
+            std::string_view volStr;
+
+            k["t"].get(barTime);
+            k["h"].get(highPriceStr);
+            k["l"].get(lowPriceStr);
+            k["o"].get(openPriceStr);
+            k["c"].get(closePriceStr);
+            k["q"].get(amountStr);
+            k["v"].get(volStr);
+
+            kline.barTime = barTime * 1000;
+            kline.highPrice = crypto::fast_atod(highPriceStr) * info.reduceNumber;
+            kline.lowPrice = crypto::fast_atod(lowPriceStr) * info.reduceNumber;
+            kline.openPrice = crypto::fast_atod(openPriceStr) * info.reduceNumber;
+            kline.closePrice = crypto::fast_atod(closePriceStr) * info.reduceNumber;
 
             double avgPrice = 0;
-            double amount = std::stod(data["k"]["q"].GetString());
-            double volume = std::stod(data["k"]["v"].GetString());
+            double amount = crypto::fast_atod(amountStr);
+            double volume = crypto::fast_atod(volStr);
             if(amount > ZERO_NUM) {
                 avgPrice = amount / volume;
             }
-            kline.avgPrice = avgPrice;
-            kline.totalVolume = volume;
+            kline.avgPrice = avgPrice * info.reduceNumber;
+            kline.totalVolume = volume * info.magnifyNumber;
             kline.totalAmount = amount;
 
-            kline.isFinished = data["k"]["x"].GetBool();
+            bool isFinished = false;
+            k["x"].get(isFinished);
+            kline.isFinished = isFinished;
 
             if (!kline.isFinished) {
                 return;
             }
+
+            kline.tsParse = crypto::getCurrentTime();
+
+            std::cout << kline.getString() << std::endl;
 
 #ifdef NEED_SHM
             mKlinePublisher[key]->push(kline); 
 #endif
         }
         else if (marketTypeEnum == md::FUNDING_RATE) {
-            const rapidjson::Value &data = rawData["data"];
-
             md::FundingRate fundingRate;
             memset(&fundingRate, 0, sizeof(md::FundingRate));
             fundingRate.exchangeTypeEnum = exchangeTypeEnum;
             fundingRate.instTypeEnum = instTypeEnum;
             fundingRate.marketTypeEnum = marketTypeEnum;
             strncpy(fundingRate.instId, info.instId, INSTID_SIZE);
-            fundingRate.tsTrans = std::stol(data["E"].GetString()) * 1000;
-            fundingRate.tsEvent = std::stol(data["E"].GetString()) * 1000;
+
+            long tsEvent = 0;
+            data["E"].get(tsEvent);
+
+            fundingRate.tsTrans = tsEvent * 1000;
+            fundingRate.tsEvent = tsEvent * 1000;
             fundingRate.tsRecv = tsNet;
+
+            long fundingTime = 0;
+            data["T"].get(fundingTime);
+
+            std::string_view fundingRateStr;
+            data["r"].get(fundingRateStr);
+
+            fundingRate.fundingRate = crypto::fast_atod(fundingRateStr);
+            fundingRate.fundingTime = fundingTime * 1000;
             fundingRate.tsParse = crypto::getCurrentTime();
 
-            fundingRate.fundingRate = std::stod(data["r"].GetString());
-            fundingRate.fundingTime = std::stol(data["T"].GetString()) * 1000;
+            std::cout << fundingRate.getString() << std::endl;
 
 #ifdef NEED_SHM
             mFundingRatePublisher[key]->push(fundingRate); 
@@ -845,8 +1298,9 @@ void md::BinanceUnit::parseMarketData(const std::string& msg) {
 }
 
 
-md::BinanceMarket::BinanceMarket(sm::SecurityManager* s, std::vector<std::string>& instTypeVec, std::vector<std::string>& marketTypeVec, std::vector<std::string>& instIdVec, int lot, const char* host, const int port, const char* passwd) : md::BaseMarket(s, instTypeVec, marketTypeVec, instIdVec, lot, host, port, passwd) {
-    strcpy(exchId, "BINANCE");
+md::BinanceMarket::BinanceMarket(sm::SecurityManager* s, const char* exId, std::vector<std::string>& instTypeVec, std::vector<std::string>& marketTypeVec, std::vector<std::string>& instIdVec, int lot, const char* host, const int port, const char* passwd) : md::BaseMarket(s, exId, instTypeVec, marketTypeVec, instIdVec, lot, host, port, passwd) {
+    std::cout << "============ " << exchId << std::endl;
+    std::cout << "--=-=-=-=" << unitInfoVec.size() << std::endl;
 
     for (size_t i = 0; i < unitInfoVec.size(); ++i) {
         std::cout << "start create binance unit" << std::endl;

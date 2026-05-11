@@ -1,0 +1,21 @@
+
+{
+  "tag": "DB_binance_spot_p1",
+  "log": {
+      "level": "info",
+      "log_path": "/logs"
+  },
+  "redis": {
+    "host": "localhost",
+    "port": 9379,
+    "password":"refZa2KcTj$QjyXk"
+  },
+  "BINANCE":{
+    "tokenLot":80,
+    "instType": ["SPOT"],
+    "marketType": ["DEPTH20"],
+    "instId": [
+      "BTC-USDT"
+    ]
+  }
+}

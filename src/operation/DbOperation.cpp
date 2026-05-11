@@ -1,6 +1,8 @@
 #include "operation/DbOperation.h"
 #include "binance/BinanceMarket.h"
 #include "gateio/GateioMarket.h"
+#include "okx/OkxMarket.h"
+#include "bybit/BybitMarket.h"
 
 
 DbOperation::DbOperation() {
@@ -30,23 +32,22 @@ bool DbOperation::preStart(Config* config) {
         std::string exchId = iter->first;
         auto& node = iter->second;
 
+        std::cout << "exchId: " << exchId << std::endl;
+
         if (crypto::str_cmp(exchId.c_str(), "BINANCE")) {
-            mMarket[exchId] = new md::BinanceMarket(smc, node.instType, node.marketType, node.instId, node.tokenLot, host.c_str(), std::stoi(port), password.c_str());
+            std::cout << "----------create binance------------" << std::endl;
+            mMarket[exchId] = new md::BinanceMarket(smc, exchId.c_str(), node.instType, node.marketType, node.instId, node.tokenLot, host.c_str(), std::stoi(port), password.c_str());
         }
         else if (crypto::str_cmp(exchId.c_str(), "GATEIO")) {
-            mMarket[exchId] = new md::GateioMarket(smc, node.instType, node.marketType, node.instId, node.tokenLot, host.c_str(), std::stoi(port), password.c_str());
+            mMarket[exchId] = new md::GateioMarket(smc, exchId.c_str(), node.instType, node.marketType, node.instId, node.tokenLot, host.c_str(), std::stoi(port), password.c_str());
         }
-
-
-        // else if (crypto::str_cmp(exchId.c_str(), "OKX")) {
-        //     mExchInfo[exchId] = new OkxMarket(redisClient, config);
-        // }
-        // else if (crypto::str_cmp(exchId.c_str(), "BYBIT")) {
-        //     mExchInfo[exchId] = new BybitMarket(redisClient, config);
-        // }
-        // else if (crypto::str_cmp(exchId.c_str(), "GATEIO")) {
-        //     mExchInfo[exchId] = new GateioMarket(redisClient, config);
-        // }   
+        else if (crypto::str_cmp(exchId.c_str(), "OKX")) {
+            mMarket[exchId] = new md::OkxMarket(smc, exchId.c_str(), node.instType, node.marketType, node.instId, node.tokenLot, host.c_str(), std::stoi(port), password.c_str());
+        }
+        else if (crypto::str_cmp(exchId.c_str(), "BYBIT")) {
+            mMarket[exchId] = new md::BybitMarket(smc, exchId.c_str(), node.instType, node.marketType, node.instId, node.tokenLot, host.c_str(), std::stoi(port), password.c_str());
+        }
+ 
     }
 
 
