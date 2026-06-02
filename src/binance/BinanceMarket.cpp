@@ -120,8 +120,8 @@ void md::BinanceUnit::subWebsocekt() {
 START_SUB_WEBSOCKET()
 
     web::websockets::client::websocket_outgoing_message outMsg;
-    outMsg.set_utf8_message(subValue.serialize().c_str());
     subValue["id"] = web::json::value::number(subId++);
+    outMsg.set_utf8_message(subValue.serialize().c_str());
     LOG_INFO("{} send {} to {}", ExchangeTypeEnum2StrMap[exchangeTypeEnum], subValue.serialize(), wsUrl);
     pWsClient->send(outMsg).wait();
 
