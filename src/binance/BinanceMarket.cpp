@@ -4,6 +4,17 @@
 md::BinanceUnit::BinanceUnit(sm::SecurityManager* s, ExchangeType exchTy, InstType instTy, MarketType marketTy, std::vector<md::InstrumentInfo>& instInfoVec, const char* host, int port, const char* passwd) : BaseUnit(s, exchTy, instTy, marketTy, instInfoVec, host, port, passwd) {
     subCount = 0;
     subId = crypto::get_int_rand(100,10000);
+
+    // ws config
+    cfg.ping_mode = WsConfig::PingMode::ServerOnly;
+
+    std::vector<std::string> subscribe_messages;   // 重连后自动重发
+
+    // 多久没收到**任何 frame**(含 PING/PONG) → 重连 (0 = 不检查)。
+    // 抓"TCP/网络层死了": ping/pong 也算 frame, 所以这里超时一定意味着连接真挂了。
+    cfg.idle_timeout_sec = 60;
+
+    cfg.data_idle_timeout_sec = 0;
 }
 
 void md::BinanceUnit::generateSubBody() {
@@ -14,19 +25,19 @@ void md::BinanceUnit::generateSubBody() {
     std::string lowerMarketTypeStr = crypto::to_lower(marketTypeStr);
 
     if (instTypeEnum == SPOT) {
-        wsUrl = BINANCE_WS_PUBLIC_SPOT;
+        cfg.url = BINANCE_WS_PUBLIC_SPOT;
     }
     else if (instTypeEnum == USDT_SWAP || instTypeEnum == USDT_FUTURES || instTypeEnum == USDC_SWAP) {
         if (marketTypeEnum == DEPTH1 || marketTypeEnum == DEPTH5 || marketTypeEnum == DEPTH10 || marketTypeEnum == DEPTH20 || marketTypeEnum == TRADES) {
-            wsUrl = BINANCE_WS_PUBLIC_USDT_SWAP_FUTURES_PUBLIC;
+            cfg.url = BINANCE_WS_PUBLIC_USDT_SWAP_FUTURES_PUBLIC;
         }
         else {
-            wsUrl = BINANCE_WS_PUBLIC_USDT_SWAP_FUTURES_MARKET;
+            cfg.url = BINANCE_WS_PUBLIC_USDT_SWAP_FUTURES_MARKET;
         }
         
     }
     else if (instTypeEnum == C_SWAP || instTypeEnum == C_FUTURES) {
-        wsUrl = BINANCE_WS_PUBLIC_USD_SWAP_FUTURES;
+        cfg.url = BINANCE_WS_PUBLIC_USD_SWAP_FUTURES;
     }
 
     subValue["method"] = json::value::string("SUBSCRIBE");
@@ -1299,14 +1310,11 @@ void md::BinanceUnit::parseMarketData(const std::string& msg) {
 
 
 md::BinanceMarket::BinanceMarket(sm::SecurityManager* s, const char* exId, std::vector<std::string>& instTypeVec, std::vector<std::string>& marketTypeVec, std::vector<std::string>& instIdVec, int lot, const char* host, const int port, const char* passwd) : md::BaseMarket(s, exId, instTypeVec, marketTypeVec, instIdVec, lot, host, port, passwd) {
-    std::cout << "============ " << exchId << std::endl;
-    std::cout << "--=-=-=-=" << unitInfoVec.size() << std::endl;
+    LOG_INFO("Market construct exchId: {} unit size: {}", exchId, unitInfoVec.size());
 
     for (size_t i = 0; i < unitInfoVec.size(); ++i) {
-        std::cout << "start create binance unit" << std::endl;
         auto& info = unitInfoVec[i];
         md::BinanceUnit* unit = new md::BinanceUnit(smc, info.exchangeTypeEnum, info.instTypeEnum, info.marketTypeEnum, info.vInstInfo, _host, _port, _passwd);
-        std::cout << "start generate sub body" << std::endl;
         unit->generateSubBody();
         binanceUnitVec.push_back(unit);
     }

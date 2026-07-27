@@ -17,6 +17,9 @@
 #include <cpprest/http_client.h>
 #include <cpprest/ws_client.h>
 #include <cpprest/filestream.h>
+
+
+#include "BeastWsClient.h"
 #include <simdjson.h>
 
 #include "shm_global.h"
@@ -158,6 +161,10 @@
         LOG_ERROR("connected with {} error: {}", wsUrl, e.what()); \
     }
 
+
+
+
+
                                                          
 namespace md {
     using namespace web;
@@ -189,14 +196,15 @@ namespace md {
         virtual ~BaseUnit();
         void start();
         void consume();
-        void monitorWs();
+        void subWebsocekt();
+
         virtual void generateSubBody() = 0;
-        virtual void subWebsocekt() = 0;
-        virtual void onWebsocketMsg(const web::websockets::client::websocket_incoming_message& msg) = 0;
         virtual void parseMarketData(const std::string& msg) = 0;
-        virtual void ping() = 0;
-        virtual void pong() = 0;
-        virtual void onCloseMsg(web::websockets::client::websocket_close_status status, const utility::string_t& reason, const std::error_code& code, std::shared_ptr<websocket_callback_client> selfWs);
+        virtual void onWebsocketMsg(const uint8_t* data, size_t len, bool isBinary, int64_t ns) = 0;
+        virtual void onOpen();
+        virtual void onClose(int code, const std::string& reason);
+        virtual void onError(const std::string& msg);
+    
 
     protected:
         ExchangeType exchangeTypeEnum;
@@ -204,12 +212,14 @@ namespace md {
         md::MarketType marketTypeEnum;
         std::vector<md::InstrumentInfo> vInstInfo;
         std::string wsUrl{""};
-        bool isConnected{false};
+    
 
         tbb::concurrent_unordered_map<std::string, long> mLatestUpdateTime;
         long latestDataUpdateTime{0};
 
-        std::shared_ptr<websocket_callback_client> pWsClient{nullptr};
+        bts::net::WsConfig cfg;
+        std::shared_ptr<net::WsClient> pWsClient{nullptr};
+
         sm::SecurityManager* smc{nullptr};
         pubsub::ConcurrentQueueZMQ<std::string, BUFF_SIZE> mQueue; // 此queue需要替换
 

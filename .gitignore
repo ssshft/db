@@ -41,6 +41,7 @@
 *.dwo
 
 *.out
+etc/*.out
 
 build
 bin

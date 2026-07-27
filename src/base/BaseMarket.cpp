@@ -8,12 +8,9 @@ md::BaseUnit::BaseUnit(sm::SecurityManager* s, ExchangeType exchTy, InstType ins
     instTypeEnum = instTy;
     marketTypeEnum = marketTy;
     vInstInfo = instInfoVec;
-    std::cout << "==========================" << std::endl;
     redisClient = new RedisClient(host, port, password, false, true);
     latestDataUpdateTime = 0;
     pWsClient = nullptr;
-
-    std::cout << "start create shm" << "  vInstInfo size: " << vInstInfo.size() << std::endl;
 
 #ifdef NEED_SHM
     for (size_t i = 0; i < vInstInfo.size(); ++i) {
@@ -49,6 +46,8 @@ md::BaseUnit::BaseUnit(sm::SecurityManager* s, ExchangeType exchTy, InstType ins
         }
     }
 #endif
+
+    LOG_INFO("Unit construct complete, exchId: {} instType: {} marketType: {} instInfo size: {}", ExchangeTypeEnum2StrMap[exchangeTypeEnum], InstTypeEnum2StrMap[instTypeEnum], MarketTypeEnum2StrMap[marketTypeEnum], vInstInfo.size());
 }
 
 md::BaseUnit::~BaseUnit() {
@@ -60,12 +59,33 @@ void md::BaseUnit::start() {
         std::thread parseThread(&BaseUnit::consume, this);
         parseThread.detach();
 
-        std::thread monitorThread(&BaseUnit::monitorWs, this);
-        monitorThread.detach();
+        subWebsocekt()
     }
     catch (const std::exception& e) {
         LOG_ERROR("unit start error: {}", e.what());
     }
+}
+
+void md::BaseUnit::subWebsocekt() {
+    pWsClient = net::WsClient::create(cfg);
+
+    pWsClient->on_message([this](const uint8_t* d, size_t n, bool b, int64_t t) {
+        this->onWebsocketMsg(d, n, b, t);
+    });
+
+    pWsClient->on_open([this]() { 
+        this->onOpen(); 
+    });
+
+    pWsClient->on_close([this](int c, const std::string& r) { 
+        this->onClose(c, r); 
+    });
+
+    pWsClient->on_error([this](const std::string& m) { 
+        this->onError(m); 
+    });
+
+    pWsClient->start();
 }
 
 void md::BaseUnit::consume() {
@@ -194,7 +214,6 @@ void md::BaseUnit::monitorWs() {
                             break;    
                         }
                     }
-
                 }
             }
         }
@@ -207,23 +226,16 @@ void md::BaseUnit::monitorWs() {
     }
 }
 
-void md::BaseUnit::onCloseMsg(web::websockets::client::websocket_close_status status, const utility::string_t& reason, const std::error_code& code, std::shared_ptr<websocket_callback_client> selfWs) {
-    try {
-        if (selfWs != pWsClient) {
-            LOG_INFO("DB old websocket callback client closed successfully!");
-            return;
-        }
+void md::BaseUnit::onOpen() {
+    LOG_INFO("Unit ws open, exchId: {} instType: {} marketType: {}", ExchangeTypeEnum2StrMap[exchangeTypeEnum], InstTypeEnum2StrMap[instTypeEnum], MarketTypeEnum2StrMap[marketTypeEnum]);
+}
 
-        isConnected = false;
-        LOG_ERROR("DB receive close msg, reason: {}, error: {}", reason, code.message());
+void md::BaseUnit::onClose(int code, const std::string& reason) {
+    LOG_WARN("Unit ws closed: code={} reason={} (auto-reconnect), exchId: {} instType: {} marketType: {} instInfo size: {}", code, reason, ExchangeTypeEnum2StrMap[exchangeTypeEnum], InstTypeEnum2StrMap[instTypeEnum], MarketTypeEnum2StrMap[marketTypeEnum], vInstInfo.size());
+}
 
-        if (crypto::str_cmp(reason.c_str(), "End of File") || crypto::str_cmp(reason.c_str(), "Underlying Transport Error") || crypto::str_cmp(reason.c_str(), "Normal")) {
-            return;
-        }
-    }
-    catch (const std::exception& e) {
-        LOG_ERROR("{}", e.what());
-    }
+void md::BaseUnit::onError(const std::string& msg) {
+    LOG_ERROR("Unit ws error: {}, exchId: {} instType: {} marketType: {} instInfo size: {}", msg, ExchangeTypeEnum2StrMap[exchangeTypeEnum], InstTypeEnum2StrMap[instTypeEnum], MarketTypeEnum2StrMap[marketTypeEnum], vInstInfo.size());
 }
 
 md::BaseMarket::BaseMarket(sm::SecurityManager* s, const char* exId, std::vector<std::string>& instTypeVec, std::vector<std::string>& marketTypeVec, std::vector<std::string>& instIdVec, int lot, const char* host, int port, const char* passwd) {
