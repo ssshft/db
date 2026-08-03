@@ -2,23 +2,17 @@
 
 
 md::BinanceUnit::BinanceUnit(sm::SecurityManager* s, ExchangeType exchTy, InstType instTy, MarketType marketTy, std::vector<md::InstrumentInfo>& instInfoVec, const char* host, int port, const char* passwd) : BaseUnit(s, exchTy, instTy, marketTy, instInfoVec, host, port, passwd) {
-    subCount = 0;
     subId = crypto::get_int_rand(100,10000);
 
     // ws config
-    cfg.ping_mode = WsConfig::PingMode::ServerOnly;
-
-    std::vector<std::string> subscribe_messages;   // 重连后自动重发
-
     // 多久没收到**任何 frame**(含 PING/PONG) → 重连 (0 = 不检查)。
     // 抓"TCP/网络层死了": ping/pong 也算 frame, 所以这里超时一定意味着连接真挂了。
+    cfg.ping_mode = net::WsConfig::PingMode::ServerOnly;
     cfg.idle_timeout_sec = 60;
-
-    cfg.data_idle_timeout_sec = 0;
+    cfg.data_idle_timeout_sec = 0; // 看实际情况是否开启
 }
 
 void md::BinanceUnit::generateSubBody() {
-    // LOG_INFO("%s", getString().c_str());
     std::string exchIdStr = ExchangeTypeEnum2StrMap[exchangeTypeEnum];
     std::string instTypeStr = InstTypeEnum2StrMap[instTypeEnum];
     std::string marketTypeStr = MarketTypeEnum2StrMap[marketTypeEnum];
@@ -40,7 +34,7 @@ void md::BinanceUnit::generateSubBody() {
         cfg.url = BINANCE_WS_PUBLIC_USD_SWAP_FUTURES;
     }
 
-    subValue["method"] = json::value::string("SUBSCRIBE");
+    subParams.clear();
 
     for (auto info : vInstInfo) {
         std::string lowerOriginInstId = crypto::to_lower(info.originInstId);
@@ -48,20 +42,20 @@ void md::BinanceUnit::generateSubBody() {
             if (crypto::has_str(marketTypeStr, "DEPTH")) {
                 if(crypto::str_cmp(marketTypeStr.c_str(), "DEPTH1")) {
                     std::string param = fmt::format("{}@bookTicker", lowerOriginInstId);
-                    subValue["params"][subCount++] = web::json::value::string(param);
+                    subParams.push_back(param);
                 }
                 else {
                     std::string param = fmt::format("{}@{}@100ms", lowerOriginInstId, lowerMarketTypeStr);
-                    subValue["params"][subCount++] = web::json::value::string(param);
+                    subParams.push_back(param);
                 }
             }
             else if (crypto::has_str(marketTypeStr, "TRADE")) {
                 std::string param = fmt::format("{}@trade", lowerOriginInstId);
-                subValue["params"][subCount++] = web::json::value::string(param);
+                subParams.push_back(param);
             }
             else if (crypto::has_str(marketTypeStr, "KLINE")) {
                 std::string param = fmt::format("{}@{}", lowerOriginInstId, lowerMarketTypeStr);
-                subValue["params"][subCount++] = web::json::value::string(param);
+                subParams.push_back(param);
             }
             else {
                 LOG_ERROR("not support {}", marketTypeStr);
@@ -71,25 +65,25 @@ void md::BinanceUnit::generateSubBody() {
             if (crypto::has_str(marketTypeStr, "DEPTH")) {
                 if (crypto::str_cmp(marketTypeStr.c_str(), "DEPTH1")) {
                     std::string param = fmt::format("{}@bookTicker", lowerOriginInstId);
-                    subValue["params"][subCount++] = web::json::value::string(param);
+                    subParams.push_back(param);
                 }
                 else {
                     std::string param = fmt::format("{}@{}@100ms", lowerOriginInstId, lowerMarketTypeStr);
-                    subValue["params"][subCount++] = web::json::value::string(param);
+                    subParams.push_back(param);
                 }
             }
             else if (crypto::has_str(marketTypeStr, "TRADE")) {
                 std::string param = fmt::format("{}@trade", lowerOriginInstId);
-                subValue["params"][subCount++] = web::json::value::string(param);
+                subParams.push_back(param);
             }
             else if (crypto::has_str(marketTypeStr, "KLINE")) {
                 std::string param = fmt::format("{}@{}", lowerOriginInstId, lowerMarketTypeStr);
-                subValue["params"][subCount++] = web::json::value::string(param);
+                subParams.push_back(param);
             }
             else if (crypto::has_str(marketTypeStr, "FUNDING")) {
                 if (instTypeEnum == USDT_SWAP || instTypeEnum == USDC_SWAP) {
                     std::string param = fmt::format("{}@markPrice@1s", lowerOriginInstId);
-                    subValue["params"][subCount++] = web::json::value::string(param);
+                    subParams.push_back(param);
                 }
             }
         }//币本位
@@ -97,25 +91,25 @@ void md::BinanceUnit::generateSubBody() {
             if (crypto::has_str(marketTypeStr, "DEPTH")) {
                 if (crypto::str_cmp(marketTypeStr.c_str(), "DEPTH1")) {
                     std::string param = fmt::format("{}@bookTicker", lowerOriginInstId);
-                    subValue["params"][subCount++] = web::json::value::string(param);
+                    subParams.push_back(param);
                 }
                 else {
                     std::string param = fmt::format("{}@{}@100ms", lowerOriginInstId, lowerMarketTypeStr);
-                    subValue["params"][subCount++] = web::json::value::string(param);
+                    subParams.push_back(param);
                 }
             }
             else if (crypto::has_str(marketTypeStr, "TRADE")) {
                 std::string param = fmt::format("{}@aggTrade", lowerOriginInstId);
-                subValue["params"][subCount++] = web::json::value::string(param);
+                subParams.push_back(param);
             }
             else if (crypto::has_str(marketTypeStr, "KLINE")) {
                 std::string param = fmt::format("{}@{}", lowerOriginInstId, lowerMarketTypeStr);
-                subValue["params"][subCount++] = json::value::string(param);
+                subParams.push_back(param);
             }
             else if (crypto::has_str(marketTypeStr, "FUNDING")) {
                 if (instTypeEnum == C_SWAP) {
                     std::string param = fmt::format("{}@markPrice@1s", lowerOriginInstId);
-                    subValue["params"][subCount++] = json::value::string(param);
+                    subParams.push_back(param);
                 }
             }
         }
@@ -123,75 +117,31 @@ void md::BinanceUnit::generateSubBody() {
             LOG_ERROR("not support subMarketType: {}", instTypeStr);
         }
     }
-    LOG_INFO("sub body: {}", subValue.serialize());
-    std::cout << "sub body: " << subValue.serialize() << std::endl;
-}
 
-void md::BinanceUnit::subWebsocekt() {
-START_SUB_WEBSOCKET()
-
-    web::websockets::client::websocket_outgoing_message outMsg;
-    subValue["id"] = web::json::value::number(subId++);
-    outMsg.set_utf8_message(subValue.serialize().c_str());
-    LOG_INFO("{} send {} to {}", ExchangeTypeEnum2StrMap[exchangeTypeEnum], subValue.serialize(), wsUrl);
-    pWsClient->send(outMsg).wait();
-
-END_SUB_WEBSOCKET()
-}
-
-void md::BinanceUnit::ping(){
-
-}
-
-void md::BinanceUnit::pong() {
-    try {
-        if (pWsClient != nullptr && isConnected) {
-            web::websockets::client::websocket_outgoing_message outMsg;
-            outMsg.set_pong_message();
-            pWsClient->send(outMsg).wait();
+    std::string paramsCsv;
+    paramsCsv.reserve(subParams.size() * 32);
+    for (size_t i = 0; i < subParams.size(); ++i) {
+        if (i) {
+            paramsCsv += ",";
         }
+        paramsCsv += "\"";
+        paramsCsv += subParams[i];
+        paramsCsv += "\"";
     }
-    catch (const std::exception& e) {
-        isConnected = false;
-        LOG_ERROR("pong error: {}", e.what());
-    }
+
+    std::string subJson = fmt::format(R"({{"method":"SUBSCRIBE","params":[{}],"id":{}}})", paramsCsv, subId++);
+    cfg.subscribe_messages.clear();
+    cfg.subscribe_messages.push_back(subJson);
+
+    LOG_INFO("{} ws url: {}, sub body: {}", exchIdStr, cfg.url, subJson);
+
 }
 
-void md::BinanceUnit::onWebsocketMsg(const web::websockets::client::websocket_incoming_message& msg) {
+void md::BinanceUnit::onWebsocketMsg(const uint8_t* data, size_t len, bool isBinary, int64_t ns) {
     latestDataUpdateTime = crypto::getCurrentTime();
-
-    switch (msg.message_type()) {
-        case  web::websockets::client::websocket_message_type::text_message: {
-            const string& s = msg.extract_string().get();
-            std::cout << "onWebsocketMsg: " << s << std::endl;
-            mQueue.push(s);
-            return;
-        }
-        case web::websockets::client::websocket_message_type::ping: {
-            LOG_INFO("{}.{}.{} got ping, will reply pong.", ExchangeTypeEnum2StrMap[exchangeTypeEnum], InstTypeEnum2StrMap[instTypeEnum], md::MarketTypeEnum2StrMap[marketTypeEnum]);
-            msg.extract_string().then([&](std::string payload) {
-                LOG_INFO("Received ping with payload: {}", payload);
-                web::websockets::client::websocket_outgoing_message pongMsg;
-                pongMsg.set_pong_message(utility::conversions::to_string_t(payload));
-                return pWsClient->send(pongMsg).then([]() {
-                    LOG_INFO("Sent pong with same payload.");
-                }).wait();
-            }).wait();
-            return;
-        }
-        case web::websockets::client::websocket_message_type::pong: {
-            LOG_INFO("{}.{}.{} got pong message type.", ExchangeTypeEnum2StrMap[exchangeTypeEnum], InstTypeEnum2StrMap[instTypeEnum], md::MarketTypeEnum2StrMap[marketTypeEnum]);
-            return;
-        }
-        case web::websockets::client::websocket_message_type::close: {
-            LOG_WARN("{}.{}.{} got close message type.", ExchangeTypeEnum2StrMap[exchangeTypeEnum], InstTypeEnum2StrMap[instTypeEnum], md::MarketTypeEnum2StrMap[marketTypeEnum]);
-            isConnected = false;
-            return;
-        }
-        default: {
-            LOG_ERROR("{}.{}.{} got unknown message type.", ExchangeTypeEnum2StrMap[exchangeTypeEnum], InstTypeEnum2StrMap[instTypeEnum], md::MarketTypeEnum2StrMap[marketTypeEnum]);
-        }
-    }
+    std::string msg(reinterpret_cast<const char*>(data), len);
+    std::cout << "onWebsocketMsg: " << msg << std::endl;
+    mQueue.push(msg);
 }
 
 //处理消息 解析json并发送给redis或共享内存

@@ -59,7 +59,7 @@ void md::BaseUnit::start() {
         std::thread parseThread(&BaseUnit::consume, this);
         parseThread.detach();
 
-        subWebsocekt()
+        subWebsocekt();
     }
     catch (const std::exception& e) {
         LOG_ERROR("unit start error: {}", e.what());
@@ -103,127 +103,6 @@ void md::BaseUnit::consume() {
 
     }
     
-}
-
-void md::BaseUnit::monitorWs() {
-    while (1) {
-        try {
-            int sleepMill = crypto::get_int_rand(100, 500);
-            std::this_thread::sleep_for(std::chrono::milliseconds(sleepMill));
-            subWebsocekt();
-
-            int count = 10;
-            while (isConnected) {
-                std::this_thread::sleep_for(std::chrono::seconds(10));
-                count++;
-
-                if (!isConnected) {
-                    LOG_WARN("{} ws address disconnected, connecting now", wsUrl);
-                    break;
-                }
-                else {
-                    long now = crypto::getCurrentTime(); // ms
-                    if (exchangeTypeEnum == BINANCE) {
-                        int reconnectCount = 0;
-                        std::vector<std::string> keysDelayVec;
-                        int thresholdIndex = 1;
-                        long thresholdBase = 1e6;
-                        
-                        if (instTypeEnum == USDT_SWAP) {
-                            switch (marketTypeEnum) {
-                                case md::FUNDING_RATE: {
-                                    thresholdBase = 600 * 1e6;
-                                    break;
-                                }
-                                case md::KLINE_1m:
-                                case md::KLINE_1h:
-                                case md::KLINE_2h:
-                                case md::KLINE_4h:
-                                case md::KLINE_8h: {
-                                    thresholdBase = 120 * 1e6;
-                                    break;
-                                }
-                                case md::TRADES: {
-                                    thresholdBase = 600 * 1e6;
-                                    break;             
-                                }
-                                case md::DEPTH1:
-                                case md::DEPTH5:
-                                case md::DEPTH10:
-                                case md::DEPTH20: {
-                                    thresholdBase = 30 * 1e6;
-                                    break;        
-                                }
-                                default: {
-                                    thresholdBase = 30 * 1e6;
-                                    break;             
-                                }
-                            }
-
-                            long threshold = thresholdBase * thresholdIndex;
-                            for (auto iter = mLatestUpdateTime.begin(); iter != mLatestUpdateTime.end(); ++iter) {
-                                std::string key = iter->first;
-                                long lastUpdateTime = iter->second;
-
-                                if (lastUpdateTime == 0) {
-                                    continue;
-                                }
-
-                                long diff = now - lastUpdateTime;
-                                if (diff > threshold) {
-                                    LOG_ERROR("{}, latestUpdateTime: {}, no data for {} seconds!", key, lastUpdateTime, diff);
-                                    keysDelayVec.push_back(key);
-                                    reconnectCount++;
-                                }
-                            }
-
-                            if (reconnectCount >= 3 * thresholdIndex || reconnectCount >= vInstInfo.size()) {
-                                std::string instIdStr = keysDelayVec.size() > 0 ? keysDelayVec[0] : "";
-                                LOG_ERROR("{} ws address: {} no data for {} seconds, reconnectCount: {}, need reconnect!", instIdStr, wsUrl, threshold, reconnectCount);
-                                for (size_t i = 0; i < keysDelayVec.size(); ++i) {
-                                    std::string key = keysDelayVec[i];
-                                    mLatestUpdateTime[key] = 0;
-                                }
-
-                                isConnected = false;
-                                break;
-                            }
-                        }
-                    }
-
-                    long dataUpdatedDiff = now - latestDataUpdateTime;
-                    if (dataUpdatedDiff > 60 * 1e6) {
-                        LOG_ERROR("ws address: {} no data for {} seconds, need reconnect!", wsUrl, dataUpdatedDiff);
-                        isConnected = false;
-                        break;
-                    }
-
-                    switch (exchangeTypeEnum) {
-                        case BINANCE: {
-                            if (count % 2 == 0) {
-                                LOG_INFO("{}.{}.{} ws is connected, will send pong!", ExchangeTypeEnum2StrMap[exchangeTypeEnum], InstTypeEnum2StrMap[instTypeEnum], md::MarketTypeEnum2StrMap[marketTypeEnum]);
-                                pong();
-                            }
-                            break;
-                        }
-                        default: {
-                            if (count % 2 == 0) {
-                                LOG_INFO("{}.{}.{} ws is connected, will send pong!", ExchangeTypeEnum2StrMap[exchangeTypeEnum], InstTypeEnum2StrMap[instTypeEnum], md::MarketTypeEnum2StrMap[marketTypeEnum]);
-                                ping();
-                            }
-                            break;    
-                        }
-                    }
-                }
-            }
-        }
-        catch (const std::exception& e) {
-            isConnected = false;
-            LOG_ERROR("ws connect exception: {}", e.what());
-        }
-
-        std::this_thread::sleep_for(std::chrono::microseconds(100));
-    }
 }
 
 void md::BaseUnit::onOpen() {

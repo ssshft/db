@@ -2,8 +2,15 @@
 
 
 md::BybitUnit::BybitUnit(sm::SecurityManager* s, ExchangeType exchTy, InstType instTy, MarketType marketTy, std::vector<md::InstrumentInfo>& instInfoVec, const char* host, int port, const char* passwd) : BaseUnit(s, exchTy, instTy, marketTy, instInfoVec, host, port, passwd) {
-    subCount = 0;
     subId = crypto::get_int_rand(100,10000);
+
+    cfg.ping_mode = net::WsConfig::PingMode::ClientPeriodicText;
+    cfg.client_ping_interval_sec = 20;
+    cfg.client_ping_text = R"({"op":"ping"})";
+    
+    cfg.idle_timeout_sec = 60;
+    cfg.data_idle_timeout_sec = 0; // 看实际情况是否开启
+
 }
 
 void md::BybitUnit::generateSubBody() {
@@ -14,107 +21,72 @@ void md::BybitUnit::generateSubBody() {
     std::string lowerMarketTypeStr = crypto::to_lower(marketTypeStr);
 
     if (instTypeEnum == SPOT) {
-        wsUrl = BYBIT_WS_PUBLIC_SPOT;
+        cfg.url = BYBIT_WS_PUBLIC_SPOT;
     }
     else if (instTypeEnum == USDT_SWAP) {
-        wsUrl = BYBIT_WS_PUBLIC_USDT_SWAP;
+        cfg.url = BYBIT_WS_PUBLIC_USDT_SWAP;
     }
 
     else if (instTypeEnum == C_SWAP) {
-        wsUrl = BYBIT_WS_PUBLIC_C_SWAP;
+        cfg.url = BYBIT_WS_PUBLIC_C_SWAP;
     }
 
-    subValue["op"] = json::value::string("subscribe");
+    subArgs.clear();
 
     for (auto info : vInstInfo) {
         const std::string& originInstId = info.originInstId;
         if (crypto::has_str(marketTypeStr, "DEPTH1")) {
             std::string param = fmt::format("orderbook.1.{}", originInstId);
-            subValue["args"][subCount++] = web::json::value::string(param);
+            subArgs.push_back(param);
         }
         else if (crypto::has_str(marketTypeStr, "DEPTH5") || crypto::has_str(marketTypeStr, "DEPTH10") || crypto::has_str(marketTypeStr, "DEPTH20")) {
             std::string param = fmt::format("orderbook.50.{}", originInstId);
-            subValue["args"][subCount++] = web::json::value::string(param);
+            subArgs.push_back(param);
         }
         else if (crypto::has_str(marketTypeStr, "TRADE")) {
             std::string param = fmt::format("publicTrade.{}", originInstId);
-            subValue["args"][subCount++] = web::json::value::string(param);
+            subArgs.push_back(param);
         }
         else if (crypto::has_str(marketTypeStr, "KLINE_1m")) {
             std::string param = fmt::format("kline.1.{}", originInstId);
-            subValue["args"][subCount++] = web::json::value::string(param);
+            subArgs.push_back(param);
         }
         else if (crypto::has_str(marketTypeStr, "FUNDING")) {
             if (instTypeEnum == USDT_SWAP) {
                 std::string param = fmt::format("tickers.{}", originInstId);
-                subValue["args"][subCount++] = web::json::value::string(param);
+                subArgs.push_back(param);
             }
         }
     }
-    LOG_INFO("sub body: {}", subValue.serialize());
-    std::cout << "sub body: " << subValue.serialize() << std::endl;
-}
 
-void md::BybitUnit::subWebsocekt() {
-START_SUB_WEBSOCKET()
-
-    subValue["req_id"] = web::json::value::number(subId++);
-    web::websockets::client::websocket_outgoing_message outMsg;
-    outMsg.set_utf8_message(subValue.serialize().c_str());
-    LOG_INFO("{} send {} to {}", ExchangeTypeEnum2StrMap[exchangeTypeEnum], subValue.serialize(), wsUrl);
-    pWsClient->send(outMsg).wait();
-
-END_SUB_WEBSOCKET()
-}
-
-void md::BybitUnit::ping() {
-    try {
-        if (pWsClient != nullptr && isConnected) {
-            web::websockets::client::websocket_outgoing_message outMsg;
-            web::json::value pingSubValue;
-            pingSubValue["op"] = web::json::value::string("ping");
-            outMsg.set_utf8_message(pingSubValue.serialize().c_str());
-            pWsClient->send(outMsg).wait();
+    std::string paramsCsv;
+    paramsCsv.reserve(subArgs.size() * 32);
+    for (size_t i = 0; i < subArgs.size(); ++i) {
+        if (i) {
+            paramsCsv += ",";
         }
+        paramsCsv += "\"";
+        paramsCsv += subArgs[i];
+        paramsCsv += "\"";
     }
-    catch (const std::exception& e) {
-        isConnected = false;
-        LOG_ERROR("pong error: {}", e.what());
-    }
+
+    std::string subJson = fmt::format(R"({{"op":"subscribe","args":[{}],"req_id":"{}"}})", paramsCsv, subId++);
+    cfg.subscribe_messages.clear();
+    cfg.subscribe_messages.push_back(subJson);
+
+    LOG_INFO("{} ws url: {}, sub body: {}", exchIdStr, cfg.url, subJson);
 }
 
-void md::BybitUnit::pong(){
-
-}
-
-
-void md::BybitUnit::onWebsocketMsg(const web::websockets::client::websocket_incoming_message& msg) {
+void md::BybitUnit::onWebsocketMsg(const uint8_t* data, size_t len, bool isBinary, int64_t ns) {
     latestDataUpdateTime = crypto::getCurrentTime();
 
-    switch (msg.message_type()) {
-        case  web::websockets::client::websocket_message_type::text_message: {
-            const string& s = msg.extract_string().get();
-            std::cout << "onWebsocketMsg: " << s << std::endl;
-            mQueue.push(s);
-            return;
-        }
-        case web::websockets::client::websocket_message_type::ping: {
-            LOG_INFO("{}.{}.{} got ping, will reply pong.", ExchangeTypeEnum2StrMap[exchangeTypeEnum], InstTypeEnum2StrMap[instTypeEnum], md::MarketTypeEnum2StrMap[marketTypeEnum]);
-            return;
-        }
-        case web::websockets::client::websocket_message_type::pong: {
-            LOG_INFO("{}.{}.{} got pong message type.", ExchangeTypeEnum2StrMap[exchangeTypeEnum], InstTypeEnum2StrMap[instTypeEnum], md::MarketTypeEnum2StrMap[marketTypeEnum]);
-            return;
-        }
-        case web::websockets::client::websocket_message_type::close: {
-            LOG_WARN("{}.{}.{} got close message type.", ExchangeTypeEnum2StrMap[exchangeTypeEnum], InstTypeEnum2StrMap[instTypeEnum], md::MarketTypeEnum2StrMap[marketTypeEnum]);
-            isConnected = false;
-            return;
-        }
-        default: {
-            LOG_ERROR("{}.{}.{} got unknown message type.", ExchangeTypeEnum2StrMap[exchangeTypeEnum], InstTypeEnum2StrMap[instTypeEnum], md::MarketTypeEnum2StrMap[marketTypeEnum]);
-        }
+    std::string_view sv(reinterpret_cast<const char*>(data), len);
+    if (sv.find("\"pong\"") != std::string_view::npos || sv.find("\"topic\"") != std::string_view::npos) {
+        return;
     }
+
+    std::string msg(sv);
+    mQueue.push(std::move(msg));
 }
 
 //处理消息 解析json并发送给redis或共享内存

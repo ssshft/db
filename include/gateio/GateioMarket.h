@@ -37,17 +37,11 @@ namespace md {
         GateioUnit(sm::SecurityManager* s, ExchangeType exchTy, InstType instTy, md::MarketType marketTy, std::vector<md::InstrumentInfo>& instInfoVec, const char* host = "127.0.0.1", int port = 9379, const char* passwd = "");
     
         virtual void generateSubBody();
-        virtual void subWebsocekt();
-        virtual void onWebsocketMsg(const websocket_incoming_message &in_msg);
         virtual void parseMarketData(const std::string& msg);
-        virtual void ping();
-        virtual void pong();
+        virtual void onWebsocketMsg(const uint8_t* data, size_t len, bool isBinary, int64_t ns);
 
         void parseSpotData(const std::string& msg);
         void parseSwapData(const std::string& msg);
-
-    private:
-        std::vector<web::json::value> subValueVec; 
     };
 
 

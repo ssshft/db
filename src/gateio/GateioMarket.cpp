@@ -2,194 +2,129 @@
 
 
 md::GateioUnit::GateioUnit(sm::SecurityManager* s, ExchangeType exchTy, InstType instTy, MarketType marketTy, std::vector<md::InstrumentInfo>& instInfoVec, const char* host, int port, const char* passwd) : BaseUnit(s, exchTy, instTy, marketTy, instInfoVec, host, port, passwd) {
- 
+    cfg.ping_mode = net::WsConfig::PingMode::ClientPeriodicText;
+    cfg.client_ping_interval_sec = 20;
+    if (instTypeEnum == SPOT) {
+        cfg.client_ping_text = R"({"channel":"spot.ping"})";
+    }
+    else {
+        cfg.client_ping_text = R"({"channel":"futures.ping"})";
+    }
+    cfg.idle_timeout_sec = 60;
+    cfg.data_idle_timeout_sec = 0; // 看实际情况是否开启
 }
 
 void md::GateioUnit::generateSubBody() {
-    // LOG_INFO("%s", getString().c_str());
     std::string exchIdStr = ExchangeTypeEnum2StrMap[exchangeTypeEnum];
     std::string instTypeStr = InstTypeEnum2StrMap[instTypeEnum];
     std::string marketTypeStr = MarketTypeEnum2StrMap[marketTypeEnum];
     std::string lowerMarketTypeStr = crypto::to_lower(marketTypeStr);
 
     if (instTypeEnum == SPOT) {
-        wsUrl = GATEIO_WS_PUBLIC_SPOT;
+        cfg.url = GATEIO_WS_PUBLIC_SPOT;
     }
     else if (instTypeEnum == USDT_SWAP) {
-        wsUrl = GATEIO_WS_PUBLIC_USDT_SWAP;
+        cfg.url = GATEIO_WS_PUBLIC_USDT_SWAP;
     }
     else if (instTypeEnum == USDT_FUTURES) {
-        wsUrl = GATEIO_WS_PUBLIC_USDT_FUTURES;
+        cfg.url = GATEIO_WS_PUBLIC_USDT_FUTURES;
     }
     else if (instTypeEnum == BTC_SWAP) {
-        wsUrl = GATEIO_WS_PUBLIC_BTC_SWAP;
+        cfg.url = GATEIO_WS_PUBLIC_BTC_SWAP;
     }
     else if (instTypeEnum == BTC_FUTURES) {
-        wsUrl = GATEIO_WS_PUBLIC_BTC_FUTURES;
+        cfg.url = GATEIO_WS_PUBLIC_BTC_FUTURES;
     }
 
-
-    web::json::value value; 
-    value["event"] = web::json::value::string("subscribe");
+    cfg.subscribe_messages.clear();
+    long timeSec = crypto::getCurrentTimeSeconds();
 
     for (auto info : vInstInfo) {
+        const std::string& originInstId = info.originInstId;
+        std::string channel = "";
+        std::string payloadJson = "";
         if (instTypeEnum == SPOT) {
-            if (marketTypeEnum == md::DEPTH1 || marketTypeEnum == md::DEPTH5 || marketTypeEnum == md::DEPTH10 || marketTypeEnum == md::DEPTH20) {
-                if (marketTypeEnum == md::DEPTH1) {
-                    value["channel"] = web::json::value::string("spot.book_ticker");
-                    value["payload"][0] = web::json::value::string(info.originInstId);
-                }
-                else {
-                    value["channel"] = web::json::value::string("spot.order_book");
-                    value["payload"][0] = web::json::value::string(info.originInstId);
-                    
-                    if (marketTypeEnum == md::DEPTH5) {
-                        value["payload"][1] = web::json::value::string("5");
-                    }
-                    else if (marketTypeEnum == md::DEPTH10) {
-                        value["payload"][1] = web::json::value::string("10");
-                    }
-                    else if (marketTypeEnum == md::DEPTH20) {
-                        value["payload"][1] = web::json::value::string("20");
-                    }
-                    else {
-                        LOG_ERROR("not support {}", marketTypeStr);
-                    }
-                    value["payload"][2] = web::json::value::string("100ms");
-                }
+            if (marketTypeEnum == md::DEPTH1) {
+                channel = "spot.book_ticker";
+                payloadJson = fmt::format(R"(["{}"])", originInstId);
+            }
+            else if (marketTypeEnum == md::DEPTH5 || marketTypeEnum == md::DEPTH10 || marketTypeEnum == md::DEPTH20) {
+                int levels = (marketTypeEnum == md::DEPTH5) ? 5 : (marketTypeEnum == md::DEPTH10) ? 10 : 20;
+                channel = "spot.order_book";
+                payloadJson = fmt::format(R"(["{}","{}","100ms"])", originInstId, levels);
             }
             else if (marketTypeEnum == md::TRADES) {
-                value["channel"] = web::json::value::string("spot.trades");
-                value["payload"][0] = web::json::value::string(info.originInstId);   
+                channel = "spot.trades";
+                payloadJson = fmt::format(R"(["{}"])", originInstId); 
             }
-            else if (marketTypeEnum == md::KLINE_1m) {
-                value["channel"] = web::json::value::string("spot.candlesticks");
-                value["payload"][0] = web::json::value::string("1m"); 
-                value["payload"][1] = web::json::value::string(info.originInstId);   
+            else if (marketTypeEnum == md::KLINE_1m) {                
+                channel = "spot.candlesticks";
+                payloadJson = fmt::format(R"(["1m","{}"])", originInstId);
             }
             else {
                 LOG_ERROR("not support {}", marketTypeStr);
+                continue;
             }
         }
         else if (instTypeEnum == USDT_SWAP || instTypeEnum == BTC_SWAP || instTypeEnum == USDT_FUTURES || instTypeEnum == BTC_FUTURES) {
-            if (marketTypeEnum == md::DEPTH1 || marketTypeEnum == md::DEPTH5 || marketTypeEnum == md::DEPTH10 || marketTypeEnum == md::DEPTH20) {
-                if (marketTypeEnum == md::DEPTH1) {
-                    value["channel"] = web::json::value::string("futures.book_ticker");
-                    value["payload"][0] = web::json::value::string(info.originInstId);
-                }
-                else {
-                    value["channel"] = web::json::value::string("futures.order_book");
-                    value["payload"][0] = web::json::value::string(info.originInstId);
-                    
-                    if (marketTypeEnum == md::DEPTH5) {
-                        value["payload"][1] = web::json::value::string("5");
-                    }
-                    else if (marketTypeEnum == md::DEPTH10) {
-                        value["payload"][1] = web::json::value::string("10");
-                    }
-                    else if (marketTypeEnum == md::DEPTH20) {
-                        value["payload"][1] = web::json::value::string("20");
-                    }
-                    else {
-                        LOG_ERROR("not support {}", marketTypeStr);
-                    }
-                    value["payload"][2] = web::json::value::string("0");
-                }
+            if (marketTypeEnum == md::DEPTH1) {
+                channel = "futures.book_ticker";
+                payloadJson = fmt::format(R"(["{}"])", originInstId);
+            }
+            else if (marketTypeEnum == md::DEPTH5 || marketTypeEnum == md::DEPTH10 || marketTypeEnum == md::DEPTH20) {
+                int levels = (marketTypeEnum == md::DEPTH5) ? 5 : (marketTypeEnum == md::DEPTH10) ? 10 : 20;
+                channel = "futures.order_book";
+                payloadJson = fmt::format(R"(["{}","{}","0"])", originInstId, levels);
             }
             else if (marketTypeEnum == md::TRADES) {
-                value["channel"] = web::json::value::string("futures.trades");
-                value["payload"][0] = web::json::value::string(info.originInstId);   
+                channel = "futures.trades";
+                payloadJson = fmt::format(R"(["{}"])", originInstId);  
             }
             else if (marketTypeEnum == md::KLINE_1m) {
-                value["channel"] = web::json::value::string("futures.candlesticks");
-                value["payload"][0] = web::json::value::string("1m"); 
-                value["payload"][1] = web::json::value::string(info.originInstId);   
+                channel = "futures.candlesticks";
+                payloadJson = fmt::format(R"(["1m","{}"])", originInstId);  
             }
             else if (marketTypeEnum == md::FUNDING_RATE) {
-                value["channel"] = web::json::value::string("futures.tickers");
-                value["payload"][0] = web::json::value::string(info.originInstId);   
+                channel = "futures.tickers";
+                payloadJson = fmt::format(R"(["{}"])", originInstId);  
             }
             else {
                 LOG_ERROR("not support {}", marketTypeStr);
+                continue;
             }     
         }
         else {
             LOG_ERROR("not support subMarketType: {}", instTypeStr);
+            continue;
         }
+
+        std::string subJson = fmt::format(R"({{"time":{},"channel":"{}","event":"subscribe","payload":{}}})", timeSec, channel, payloadJson);
+        cfg.subscribe_messages.push_back(subJson);
     }
 
-    subValueVec.push_back(value);
-}
-
-void md::GateioUnit::subWebsocekt() {
-START_SUB_WEBSOCKET()
-
-    std::this_thread::sleep_for(std::chrono::milliseconds(150));
-    for (auto& subValue : subValueVec) {
-        subValue["time"] = crypto::getCurrentTimeSeconds();
-        web::websockets::client::websocket_outgoing_message outMsg;
-        outMsg.set_utf8_message(subValue.serialize().c_str());
-        LOG_INFO("{} send {} to {}", ExchangeTypeEnum2StrMap[exchangeTypeEnum], subValue.serialize(), wsUrl);
-        pWsClient->send(outMsg).wait();
-        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    LOG_INFO("{} ws url: {}, {} subscribe msgs prepared", exchIdStr, cfg.url, cfg.subscribe_messages.size());
+    for (auto& s : cfg.subscribe_messages) {
+        LOG_INFO(" sub: {}", s);
     }
-
-END_SUB_WEBSOCKET()
-}
-
-void md::GateioUnit::ping(){
-    try {
-        if (pWsClient != nullptr && isConnected) {
-            web::websockets::client::websocket_outgoing_message outMsg;
-            web::json::value pingSubValue;
-            pingSubValue["time"] = crypto::getCurrentTimeSeconds();
-            if (instTypeEnum == SPOT) {
-                pingSubValue["channel"] = web::json::value::string("futures.ping");
-            }
-            else {
-                pingSubValue["channel"] = web::json::value::string("spot.ping");
-            }
-            outMsg.set_utf8_message(pingSubValue.serialize().c_str());
-            pWsClient->send(outMsg).wait();
-        }
-    }
-    catch (const std::exception& e) {
-        isConnected = false;
-        LOG_ERROR("pong error: {}", e.what());
-    }
-}
-
-void md::GateioUnit::pong() {
 
 }
 
-void md::GateioUnit::onWebsocketMsg(const web::websockets::client::websocket_incoming_message& msg) {
+// subWebsocekt / ping / pong 由 BaseUnit + BeastWsClient 处理
+
+void md::GateioUnit::onWebsocketMsg(const uint8_t* data, size_t len, bool /*isBinary*/, int64_t /*ns*/) {
     latestDataUpdateTime = crypto::getCurrentTime();
 
-    switch (msg.message_type()) {
-        case  web::websockets::client::websocket_message_type::text_message: {
-            const string& s = msg.extract_string().get();
-            std::cout << "onWebsocketMsg: " << s << std::endl;
-            mQueue.push(s);
-            return;
-        }
-        case web::websockets::client::websocket_message_type::ping: {
-            LOG_INFO("{}.{}.{} got ping message type.", ExchangeTypeEnum2StrMap[exchangeTypeEnum], InstTypeEnum2StrMap[instTypeEnum], md::MarketTypeEnum2StrMap[marketTypeEnum]);
-            return;
-        }
-        case web::websockets::client::websocket_message_type::pong: {
-            LOG_INFO("{}.{}.{} got pong message type.", ExchangeTypeEnum2StrMap[exchangeTypeEnum], InstTypeEnum2StrMap[instTypeEnum], md::MarketTypeEnum2StrMap[marketTypeEnum]);
-            return;
-        }
-        case web::websockets::client::websocket_message_type::close: {
-            LOG_WARN("{}.{}.{} got close message type.", ExchangeTypeEnum2StrMap[exchangeTypeEnum], InstTypeEnum2StrMap[instTypeEnum], md::MarketTypeEnum2StrMap[marketTypeEnum]);
-            isConnected = false;
-            return;
-        }
-        default: {
-            LOG_ERROR("{}.{}.{} got unknown message type.", ExchangeTypeEnum2StrMap[exchangeTypeEnum], InstTypeEnum2StrMap[instTypeEnum], md::MarketTypeEnum2StrMap[marketTypeEnum]);
-        }
+    // Gateio pong 回执: {"time":XXXX,"channel":"spot.pong",...} 或 futures.pong
+    // 简单方式: 看 channel 是否含 "pong" 就 skip
+    std::string_view sv(reinterpret_cast<const char*>(data), len);
+    if (sv.find("\".ping\"") != std::string_view::npos || sv.find("\".pong\"") != std::string_view::npos
+        || sv.find("\"spot.pong\"") != std::string_view::npos
+        || sv.find("\"futures.pong\"") != std::string_view::npos) {
+        return;
     }
+
+    std::string msg(sv);
+    mQueue.push(std::move(msg));
 }
 
 //处理消息 解析json并发送给redis或共享内存
@@ -443,7 +378,7 @@ void md::GateioUnit::parseSpotData(const std::string& msg) {
                 if (bidsCount >= 10) {
                     break;
                 }
-                
+
                 auto it = bidLevel.begin();
                 if ((*it).get(bidPrice[bidsCount])) {
                     break;
@@ -452,7 +387,7 @@ void md::GateioUnit::parseSpotData(const std::string& msg) {
                 
                 if ((*it).get(bidVol[bidsCount])) {
                     break;
-                }
+                } 
 
                 bidsCount++;
             }
@@ -489,7 +424,7 @@ void md::GateioUnit::parseSpotData(const std::string& msg) {
                 if (asksCount >= 10) {
                     break;
                 }
-                
+
                 auto it = askLevel.begin();
                 if ((*it).get(askPrice[asksCount])) {
                     break;
@@ -528,10 +463,12 @@ void md::GateioUnit::parseSpotData(const std::string& msg) {
 
             depth10.tsParse = crypto::getCurrentTime();
 
+            std::cout << depth10.getString() << std::endl;
+
 #ifdef NEED_SHM
             mDepth10Publisher[key]->push(depth10);                
 #endif
-            return;
+            return;    
         }
         case md::DEPTH20: {
             md::Depth20 depth20;
@@ -558,7 +495,7 @@ void md::GateioUnit::parseSpotData(const std::string& msg) {
                 if (bidsCount >= 20) {
                     break;
                 }
-                
+
                 auto it = bidLevel.begin();
                 if ((*it).get(bidPrice[bidsCount])) {
                     break;
@@ -567,7 +504,7 @@ void md::GateioUnit::parseSpotData(const std::string& msg) {
                 
                 if ((*it).get(bidVol[bidsCount])) {
                     break;
-                }
+                } 
 
                 bidsCount++;
             }
@@ -613,7 +550,6 @@ void md::GateioUnit::parseSpotData(const std::string& msg) {
                 depth20.bv19 = crypto::fast_atod(bidVol[18]) * info.magnifyNumber;
                 depth20.bp20 = crypto::fast_atod(bidPrice[19]) * info.reduceNumber;
                 depth20.bv20 = crypto::fast_atod(bidVol[19]) * info.magnifyNumber;
-
             }
 
             auto asksArray = data["asks"];
@@ -625,7 +561,7 @@ void md::GateioUnit::parseSpotData(const std::string& msg) {
                 if (asksCount >= 20) {
                     break;
                 }
-                
+
                 auto it = askLevel.begin();
                 if ((*it).get(askPrice[asksCount])) {
                     break;
@@ -684,10 +620,12 @@ void md::GateioUnit::parseSpotData(const std::string& msg) {
 
             depth20.tsParse = crypto::getCurrentTime();
 
+            std::cout << depth20.getString() << std::endl;
+
 #ifdef NEED_SHM
             mDepth20Publisher[key]->push(depth20);                
 #endif
-            return;
+            return;    
         }
         case md::TRADES: {
             md::Trades trades;
@@ -800,7 +738,6 @@ void md::GateioUnit::parseSpotData(const std::string& msg) {
             return;
         }
     }
-
 }
 
 void md::GateioUnit::parseSwapData(const std::string& msg) {
@@ -1404,9 +1341,7 @@ void md::GateioUnit::parseSwapData(const std::string& msg) {
             return;
         }
     }
-
 }
-
 
 md::GateioMarket::GateioMarket(sm::SecurityManager* s, const char* exId, std::vector<std::string>& instTypeVec, std::vector<std::string>& marketTypeVec, std::vector<std::string>& instIdVec, int lot, const char* host, const int port, const char* passwd) : md::BaseMarket(s, exId, instTypeVec, marketTypeVec, instIdVec, lot, host, port, passwd) {
     for (size_t i = 0; i < unitInfoVec.size(); ++i) {

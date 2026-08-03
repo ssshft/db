@@ -24,15 +24,11 @@ namespace md {
         OkxUnit(sm::SecurityManager* s, ExchangeType exchTy, InstType instTy, md::MarketType marketTy, std::vector<md::InstrumentInfo>& instInfoVec, const char* host = "127.0.0.1", int port = 9379, const char* passwd = "");
     
         virtual void generateSubBody();
-        virtual void subWebsocekt();
-        virtual void onWebsocketMsg(const websocket_incoming_message &in_msg);
         virtual void parseMarketData(const std::string& msg);
-        virtual void ping();
-        virtual void pong();
+        virtual void onWebsocketMsg(const uint8_t* data, size_t len, bool isBinary, int64_t ns);
 
     private:
-        int subCount;
-        web::json::value subValue; 
+        std::vector<std::string> subArgs;
     };
 
 
