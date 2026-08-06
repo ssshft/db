@@ -712,7 +712,7 @@ void md::OkxUnit::parseMarketData(const std::string& msg) {
         data["fundingTime"].get(fundingTimeStr);
 
         fundingRate.fundingRate = crypto::fast_atod(fundingRateStr);
-        fundingRate.fundingTime = crypto::fast_atol(fundingRateStr) * 1000;
+        fundingRate.fundingTime = crypto::fast_atol(fundingTimeStr) * 1000;
 
 
         std::string_view tsStr;
