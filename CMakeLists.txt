@@ -16,6 +16,14 @@ add_definitions("-DNEED_SHM")
 add_definitions("-DNEED_SET_REDIS")
 add_definitions("-D_TURN_OFF_PLATFORM_STRING")
 
+option(USE_INFO_SHM "publish instrument into via share memory instead of redis" OFF)
+if(USE_INFO_SHM)
+    add_definitions(-DUSE_INFO_SHM)
+    message(STATUS "USE_IFNO_SHM = ON (SHM writer enabled)")
+else()
+    message(STATUS "USE_IFNO_SHM = OFF (redis writer)")
+endif()
+
 
 # 读取整个文件
 file(READ /inc/version.inc FILE_CONTENT)
