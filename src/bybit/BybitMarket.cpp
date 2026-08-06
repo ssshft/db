@@ -748,7 +748,7 @@ void md::BybitUnit::parseMarketData(const std::string& msg) {
         strncpy(fundingRate.instId, info.instId, INSTID_SIZE);
 
         std::string_view fundingTimeStr;
-        if (data["nextFundingTime"].get(fundingRateStr) == simdjson::SUCCESS) {
+        if (data["nextFundingTime"].get(fundingTimeStr) == simdjson::SUCCESS) {
             fundingRate.fundingTime = crypto::fast_atol(fundingTimeStr) * 1000;
         }
 
@@ -758,7 +758,7 @@ void md::BybitUnit::parseMarketData(const std::string& msg) {
         }
 
         long ts = 0;
-        if (doc["ts"].get(ts)) == simdjson::SUCCESS) {
+        if (doc["ts"].get(ts) == simdjson::SUCCESS) {
             ts *= 1000;
         }
 
