@@ -141,7 +141,7 @@ void md::BinanceUnit::onWebsocketMsg(const uint8_t* data, size_t len, bool isBin
     latestDataUpdateTime = crypto::getCurrentTime();
     std::string msg(reinterpret_cast<const char*>(data), len);
     std::cout << "onWebsocketMsg: " << msg << std::endl;
-    mQueue.push(msg);
+    mQueue.push(std::move(msg));
 }
 
 //处理消息 解析json并发送给redis或共享内存
@@ -162,22 +162,14 @@ void md::BinanceUnit::parseMarketData(const std::string& msg) {
     }
     
     std::string originInstId = "";
-    auto s_field = data["s"];
-    if (s_field.error() == simdjson::SUCCESS) {
-        std::string_view sVal;
-        if (s_field.get(sVal) == simdjson::SUCCESS) {
-            originInstId = std::string(sVal);
-        }
-    } else {
-        std::string_view streamVal;
-        if (doc["stream"].get(streamVal) == simdjson::SUCCESS) {
-            std::vector<std::string> v = crypto::split(std::string(streamVal), "@");
-            if (!v.empty()) {
-                originInstId = crypto::to_upper(v[0]);
-            }
+    std::string_view streamVal;
+    if (doc["stream"].get(streamVal) == simdjson::SUCCESS) {
+        std::vector<std::string> v = crypto::split(std::string(streamVal), "@");
+        if (!v.empty()) {
+            originInstId = crypto::to_upper(v[0]);
         }
     }
-
+    
     md::InstrumentInfo info;
     if (smc->get_instrument_info(exchangeTypeEnum, instTypeEnum, originInstId.c_str(), info) == false){
         LOG_ERROR("smc cannot find originInstId: {}", originInstId);
@@ -570,8 +562,6 @@ void md::BinanceUnit::parseMarketData(const std::string& msg) {
 
             depth20.tsParse = crypto::getCurrentTime();
 
-            std::cout << "--- depth20-- " << depth20.getString() << std::endl;
-
 #ifdef NEED_SHM
             mDepth20Publisher[key]->push(depth20);                
 #endif
@@ -584,24 +574,20 @@ void md::BinanceUnit::parseMarketData(const std::string& msg) {
             trades.marketTypeEnum = marketTypeEnum;
             strncpy(trades.instId, info.instId, INSTID_SIZE);
 
-            long tsTrans = 0;
-            data["T"].get(tsTrans);
-
             long tsEvent = 0;
             data["E"].get(tsEvent);
 
-            trades.tsTrans = tsTrans * 1000;
-            trades.tsEvent = tsEvent * 1000;
-            trades.tsRecv = tsNet;
-
-            std::string_view tradeIdStr;
+            long tradeId;
             std::string_view tradePriceStr;
             std::string_view tradeVolStr;
-            data["t"].get(tradeIdStr);
+            data["t"].get(tradeId);
             data["p"].get(tradePriceStr);
             data["q"].get(tradeVolStr);
 
-            strncpy(trades.tradeId, tradeIdStr.data(), INSTID_SIZE);
+            long tsTrans = 0;
+            data["T"].get(tsTrans);
+
+            fmt::format_to(trades.tradeId, "{}", tradeId);
             trades.px = crypto::fast_atod(tradePriceStr);
             trades.sz = crypto::fast_atod(tradeVolStr);
 
@@ -609,6 +595,9 @@ void md::BinanceUnit::parseMarketData(const std::string& msg) {
             data["m"].get(direction);
             trades.direction = direction ? DT_SHORT : DT_LONG;
 
+            trades.tsTrans = tsTrans * 1000;
+            trades.tsEvent = tsEvent * 1000;
+            trades.tsRecv = tsNet;
             trades.tsParse = crypto::getCurrentTime();
 
             std::cout << trades.getString() << std::endl;
@@ -643,13 +632,21 @@ void md::BinanceUnit::parseMarketData(const std::string& msg) {
             std::string_view volStr;
 
             k["t"].get(barTime);
-            k["h"].get(highPriceStr);
-            k["l"].get(lowPriceStr);
             k["o"].get(openPriceStr);
             k["c"].get(closePriceStr);
-            k["q"].get(amountStr);
+            k["h"].get(highPriceStr);
+            k["l"].get(lowPriceStr);
             k["v"].get(volStr);
+            
+            bool isFinished = false;
+            k["x"].get(isFinished);
+            kline.isFinished = isFinished;
+            if (!kline.isFinished) {
+                return;
+            }
 
+            k["q"].get(amountStr);
+            
             kline.barTime = barTime * 1000;
             kline.highPrice = crypto::fast_atod(highPriceStr) * info.reduceNumber;
             kline.lowPrice = crypto::fast_atod(lowPriceStr) * info.reduceNumber;
@@ -666,13 +663,6 @@ void md::BinanceUnit::parseMarketData(const std::string& msg) {
             kline.avgPrice = avgPrice * info.reduceNumber;
             kline.totalVolume = volume * info.magnifyNumber;
             kline.totalAmount = amount;
-
-            bool isFinished = false;
-            k["x"].get(isFinished);
-            kline.isFinished = isFinished;
-            if (!kline.isFinished) {
-                return;
-            }
 
             kline.tsParse = crypto::getCurrentTime();
 
@@ -738,11 +728,11 @@ void md::BinanceUnit::parseMarketData(const std::string& msg) {
             depth5.marketTypeEnum = marketTypeEnum;
             strncpy(depth5.instId, info.instId, INSTID_SIZE);
 
-            long tsTrans = 0;
-            data["T"].get(tsTrans);
-
             long tsEvent = 0;
             data["E"].get(tsEvent);
+
+            long tsTrans = 0;
+            data["T"].get(tsTrans);
 
             depth5.tsTrans = tsTrans * 1000;
             depth5.tsEvent = tsEvent * 1000;
@@ -836,11 +826,11 @@ void md::BinanceUnit::parseMarketData(const std::string& msg) {
             depth10.marketTypeEnum = marketTypeEnum;
             strncpy(depth10.instId, info.instId, INSTID_SIZE);
 
-            long tsTrans = 0;
-            data["T"].get(tsTrans);
-
             long tsEvent = 0;
             data["E"].get(tsEvent);
+
+            long tsTrans = 0;
+            data["T"].get(tsTrans);
 
             depth10.tsTrans = tsTrans * 1000;
             depth10.tsEvent = tsEvent * 1000;
@@ -954,11 +944,11 @@ void md::BinanceUnit::parseMarketData(const std::string& msg) {
             depth20.marketTypeEnum = marketTypeEnum;
             strncpy(depth20.instId, info.instId, INSTID_SIZE);
 
-            long tsTrans = 0;
-            data["T"].get(tsTrans);
-
             long tsEvent = 0;
             data["E"].get(tsEvent);
+
+            long tsTrans = 0;
+            data["T"].get(tsTrans);
 
             depth20.tsTrans = tsTrans * 1000;
             depth20.tsEvent = tsEvent * 1000;
@@ -1113,25 +1103,22 @@ void md::BinanceUnit::parseMarketData(const std::string& msg) {
             trades.marketTypeEnum = marketTypeEnum;
             strncpy(trades.instId, info.instId, INSTID_SIZE);
 
-            long tsTrans = 0;
-            data["T"].get(tsTrans);
-
             long tsEvent = 0;
+            long tsTrans = 0;
             data["E"].get(tsEvent);
 
-            trades.tsTrans = tsTrans * 1000;
-            trades.tsEvent = tsEvent * 1000;
-            trades.tsRecv = tsNet;
+            if (instTypeEnum == USDT_SWAP || instTypeEnum == USDT_FUTURES || instTypeEnum == USDC_SWAP) {
+                data["T"].get(tsTrans);
 
-            if (instTypeEnum == C_SWAP || instTypeEnum == C_FUTURES) {
-                std::string_view tradeIdStr;
-                data["a"].get(tradeIdStr);
-                strncpy(trades.tradeId, tradeIdStr.data(), INSTID_SIZE); 
+                long tradeId;
+                data["t"].get(tradeId);
+                fmt::format_to(trades.tradeId, "{}", tradeId);
             }
             else {
-                std::string_view tradeIdStr;
-                data["t"].get(tradeIdStr);
-                strncpy(trades.tradeId, tradeIdStr.data(), INSTID_SIZE);
+                long tradeId;
+                data["a"].get(tradeId);
+                fmt::format_to(trades.tradeId, "{}", tradeId);
+
             }
 
             std::string_view tradePriceStr;
@@ -1142,9 +1129,17 @@ void md::BinanceUnit::parseMarketData(const std::string& msg) {
             trades.px = crypto::fast_atod(tradePriceStr) * info.reduceNumber;;
             trades.sz = crypto::fast_atod(tradeVolStr) * info.magnifyNumber;
 
+            if (instTypeEnum == C_SWAP || instTypeEnum == C_FUTURES) {
+                data["T"].get(tsTrans);
+            }
+
             bool direction = false;
             data["m"].get(direction);
             trades.direction = direction ? DT_SHORT : DT_LONG;
+
+            trades.tsTrans = tsTrans * 1000;
+            trades.tsEvent = tsEvent * 1000;
+            trades.tsRecv = tsNet;
             trades.tsParse = crypto::getCurrentTime();
 
             std::cout << trades.getString() << std::endl;
@@ -1179,13 +1174,22 @@ void md::BinanceUnit::parseMarketData(const std::string& msg) {
             std::string_view volStr;
 
             k["t"].get(barTime);
-            k["h"].get(highPriceStr);
-            k["l"].get(lowPriceStr);
             k["o"].get(openPriceStr);
             k["c"].get(closePriceStr);
-            k["q"].get(amountStr);
+            k["h"].get(highPriceStr);
+            k["l"].get(lowPriceStr);
             k["v"].get(volStr);
 
+            bool isFinished = false;
+            k["x"].get(isFinished);
+            kline.isFinished = isFinished;
+
+            if (!kline.isFinished) {
+                return;
+            }
+
+            k["q"].get(amountStr);
+            
             kline.barTime = barTime * 1000;
             kline.highPrice = crypto::fast_atod(highPriceStr) * info.reduceNumber;
             kline.lowPrice = crypto::fast_atod(lowPriceStr) * info.reduceNumber;
@@ -1201,14 +1205,6 @@ void md::BinanceUnit::parseMarketData(const std::string& msg) {
             kline.avgPrice = avgPrice * info.reduceNumber;
             kline.totalVolume = volume * info.magnifyNumber;
             kline.totalAmount = amount;
-
-            bool isFinished = false;
-            k["x"].get(isFinished);
-            kline.isFinished = isFinished;
-
-            if (!kline.isFinished) {
-                return;
-            }
 
             kline.tsParse = crypto::getCurrentTime();
 
@@ -1233,11 +1229,11 @@ void md::BinanceUnit::parseMarketData(const std::string& msg) {
             fundingRate.tsEvent = tsEvent * 1000;
             fundingRate.tsRecv = tsNet;
 
-            long fundingTime = 0;
-            data["T"].get(fundingTime);
-
             std::string_view fundingRateStr;
             data["r"].get(fundingRateStr);
+
+            long fundingTime = 0;
+            data["T"].get(fundingTime);
 
             fundingRate.fundingRate = crypto::fast_atod(fundingRateStr);
             fundingRate.fundingTime = fundingTime * 1000;

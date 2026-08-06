@@ -81,11 +81,12 @@ void md::BybitUnit::onWebsocketMsg(const uint8_t* data, size_t len, bool isBinar
     latestDataUpdateTime = crypto::getCurrentTime();
 
     std::string_view sv(reinterpret_cast<const char*>(data), len);
-    if (sv.find("\"pong\"") != std::string_view::npos || sv.find("\"topic\"") != std::string_view::npos) {
+    if (sv.find("\"pong\"") != std::string_view::npos) {
         return;
     }
 
     std::string msg(sv);
+    std::cout << "onWebsocketMsg: " << msg << std::endl;
     mQueue.push(std::move(msg));
 }
 
@@ -100,16 +101,21 @@ void md::BybitUnit::parseMarketData(const std::string& msg) {
         return;
     }
 
-    auto data = doc["data"];
-    if (data.error()) {
-        LOG_ERROR("msg has no data field! msg: {}", msg);
-        return;
-    }
-
     std::string_view topicVal;
     if (doc["topic"].get(topicVal)) {
         LOG_ERROR("msg has no topic field! msg: {}", msg);
         return;    
+    }
+
+    long ts = 0;
+    if (doc["ts"].get(ts) == simdjson::SUCCESS) {
+        ts *= 1000;
+    }
+
+    auto data = doc["data"];
+    if (data.error()) {
+        LOG_ERROR("msg has no data field! msg: {}", msg);
+        return;
     }
 
     std::string originInstId = "";
@@ -119,13 +125,6 @@ void md::BybitUnit::parseMarketData(const std::string& msg) {
             originInstId = std::string(sVal);
         }
     }
-    else if (topicVal[0] == 'p') {
-        std::string_view sVal;
-        auto it = data.begin();
-        if ((*it)["s"].get(sVal) == simdjson::SUCCESS) {
-            originInstId = std::string(sVal);
-        } 
-    }
     else if (topicVal[0] == 'k') {
         std::vector<std::string> v = crypto::split(std::string(topicVal), ".");
         if (!v.empty()) {
@@ -133,6 +132,13 @@ void md::BybitUnit::parseMarketData(const std::string& msg) {
         }
     }
     else if (topicVal[0] == 't') {
+        std::string_view tyVal;
+        if (data["type"].get(tyVal) == simdjson::SUCCESS) {
+            if (tyVal[0] == 'd') {
+                return;
+            }
+        }
+
         std::string_view sVal;
         if (data["symbol"].get(sVal) == simdjson::SUCCESS) {
             originInstId = std::string(sVal);
@@ -149,7 +155,7 @@ void md::BybitUnit::parseMarketData(const std::string& msg) {
         return;
     }
 
-    std::string key = crypto::get_md_channel_key(exchangeTypeEnum, instTypeEnum, marketTypeEnum, info.instId);
+    const std::string& key = crypto::get_md_channel_key(exchangeTypeEnum, instTypeEnum, marketTypeEnum, info.instId);
     if (marketTypeEnum == md::DEPTH1) {
         md::Depth1 depth1;
         memset(&depth1, 0, sizeof(md::Depth1));
@@ -157,13 +163,6 @@ void md::BybitUnit::parseMarketData(const std::string& msg) {
         depth1.instTypeEnum = instTypeEnum;
         depth1.marketTypeEnum = marketTypeEnum;
         strncpy(depth1.instId, info.instId, INSTID_SIZE);
-
-        long ts = 0;
-        doc["ts"].get(ts);
-
-        depth1.tsTrans = ts * 1000;
-        depth1.tsEvent = ts * 1000;
-        depth1.tsRecv = tsNet;
 
         auto bidsArray = data["b"];
         std::string_view bidPrice;
@@ -221,6 +220,14 @@ void md::BybitUnit::parseMarketData(const std::string& msg) {
             depth1.av1 = crypto::fast_atod(askVol) * info.magnifyNumber;
         }
 
+        long tsT = 0;
+        if (data["cts"].get(tsT) == simdjson::SUCCESS) {
+            tsT *= 1000;
+        }
+
+        depth1.tsTrans = tsT;
+        depth1.tsEvent = ts;
+        depth1.tsRecv = tsNet;
         depth1.tsParse = crypto::getCurrentTime();
 
         std::cout << depth1.getString() << std::endl;
@@ -235,13 +242,6 @@ void md::BybitUnit::parseMarketData(const std::string& msg) {
         depth5.instTypeEnum = instTypeEnum;
         depth5.marketTypeEnum = marketTypeEnum;
         strncpy(depth5.instId, info.instId, INSTID_SIZE);
-
-        long ts = 0;
-        doc["ts"].get(ts);
-
-        depth5.tsTrans = ts * 1000;
-        depth5.tsEvent = ts * 1000;
-        depth5.tsRecv = tsNet;
 
         auto bidsArray = data["b"];
         std::string_view bidPrice[5];
@@ -315,6 +315,14 @@ void md::BybitUnit::parseMarketData(const std::string& msg) {
             depth5.av5 = crypto::fast_atod(askVol[4]) * info.magnifyNumber;
         }
 
+        long tsT = 0;
+        if (data["cts"].get(tsT) == simdjson::SUCCESS) {
+            tsT *= 1000;
+        }
+
+        depth5.tsTrans = tsT;
+        depth5.tsEvent = ts;
+        depth5.tsRecv = tsNet;
         depth5.tsParse = crypto::getCurrentTime();
 
         std::cout << depth5.getString() << std::endl;
@@ -330,13 +338,6 @@ void md::BybitUnit::parseMarketData(const std::string& msg) {
         depth10.instTypeEnum = instTypeEnum;
         depth10.marketTypeEnum = marketTypeEnum;
         strncpy(depth10.instId, info.instId, INSTID_SIZE);
-
-        long ts = 0;
-        doc["ts"].get(ts);
-
-        depth10.tsTrans = ts * 1000;
-        depth10.tsEvent = ts * 1000;
-        depth10.tsRecv = tsNet;
 
         auto bidsArray = data["b"];
         std::string_view bidPrice[10];
@@ -430,6 +431,14 @@ void md::BybitUnit::parseMarketData(const std::string& msg) {
             depth10.av10 = crypto::fast_atod(askVol[9]) * info.magnifyNumber;
         }
 
+        long tsT = 0;
+        if (data["cts"].get(tsT) == simdjson::SUCCESS) {
+            tsT *= 1000;
+        }
+
+        depth10.tsTrans = tsT;
+        depth10.tsEvent = ts;
+        depth10.tsRecv = tsNet;
         depth10.tsParse = crypto::getCurrentTime();
 
         std::cout << depth10.getString() << std::endl;
@@ -445,13 +454,6 @@ void md::BybitUnit::parseMarketData(const std::string& msg) {
         depth20.instTypeEnum = instTypeEnum;
         depth20.marketTypeEnum = marketTypeEnum;
         strncpy(depth20.instId, info.instId, INSTID_SIZE);
-
-        long ts = 0;
-        doc["ts"].get(ts);
-
-        depth20.tsTrans = ts * 1000;
-        depth20.tsEvent = ts * 1000;
-        depth20.tsRecv = tsNet;
 
         auto bidsArray = data["b"];
         std::string_view bidPrice[20];
@@ -586,6 +588,14 @@ void md::BybitUnit::parseMarketData(const std::string& msg) {
             depth20.av20 = crypto::fast_atod(askVol[19]) * info.magnifyNumber;
         }
 
+        long tsT = 0;
+        if (data["cts"].get(tsT) == simdjson::SUCCESS) {
+            tsT *= 1000;
+        }
+
+        depth20.tsTrans = tsT;
+        depth20.tsEvent = ts;
+        depth20.tsRecv = tsNet;
         depth20.tsParse = crypto::getCurrentTime();
 
         std::cout << depth20.getString() << std::endl;
@@ -602,42 +612,65 @@ void md::BybitUnit::parseMarketData(const std::string& msg) {
         trades.marketTypeEnum = marketTypeEnum;
         strncpy(trades.instId, info.instId, INSTID_SIZE);
 
-        auto it = data.begin();
-        auto d = *it;
+        for (auto d : data) {
+            std::string_view tradeIdStr;
+            d["i"].get(tradeIdStr);
+            strncpy(trades.tradeId, tradeIdStr.data(), INSTID_SIZE);
 
-        long ts = 0;
-        doc["ts"].get(ts);
+            long tsT = 0;
+            d["T"].get(tsT);
+            tsT *= 1000;
 
-        trades.tsTrans = ts * 1000;
-        trades.tsEvent = ts * 1000;
-        trades.tsRecv = tsNet;
+            std::string originInstId = "";
+            std::string_view sVal;
 
-        std::string_view tradeIdStr;
-        d["i"].get(tradeIdStr);
-        strncpy(trades.tradeId, tradeIdStr.data(), INSTID_SIZE);
+            if (instTypeEnum == USDT_SWAP || instTypeEnum == C_SWAP) {
+                if (d["s"].get(sVal) == simdjson::SUCCESS) {
+                    originInstId = std::string(sVal);
+                } 
+            }
 
-        std::string_view tradePriceStr;
-        std::string_view tradeVolStr;
-        d["p"].get(tradePriceStr);
-        d["v"].get(tradeVolStr);
-        trades.px = crypto::fast_atod(tradePriceStr) * info.reduceNumber;
-        trades.sz = crypto::fast_atod(tradeVolStr) * info.magnifyNumber;
+            std::string_view tradePriceStr;
+            std::string_view tradeVolStr;
+            d["p"].get(tradePriceStr);
+            d["v"].get(tradeVolStr);
+            trades.px = crypto::fast_atod(tradePriceStr) * info.reduceNumber;
+            trades.sz = crypto::fast_atod(tradeVolStr) * info.magnifyNumber;
 
-        std::string_view sideStr;
-        d["S"].get(sideStr);
-        if (sideStr == "Sell") {
-            trades.direction = DT_SHORT;
+            std::string_view sideStr;
+            d["S"].get(sideStr);
+            if (sideStr == "Sell") {
+                trades.direction = DT_SHORT;
+            }
+            else if (sideStr == "Buy") {
+                trades.direction = DT_LONG;
+            }
+
+            if (instTypeEnum == SPOT) {
+                if (d["s"].get(sVal) == simdjson::SUCCESS) {
+                    originInstId = std::string(sVal);
+                } 
+            }
+
+            md::InstrumentInfo info;
+            if (smc->get_instrument_info(exchangeTypeEnum, instTypeEnum, originInstId.c_str(), info) == false) {
+                LOG_ERROR("smc cannot find originInstId: {}", originInstId);
+                return;
+            }
+            const std::string& key = crypto::get_md_channel_key(exchangeTypeEnum, instTypeEnum, marketTypeEnum, info.instId);
+
+            trades.tsTrans = tsT;
+            trades.tsEvent = ts;
+            trades.tsRecv = tsNet;
+            trades.tsParse = crypto::getCurrentTime();
+
+            std::cout << trades.getString() << std::endl;
+
+    #ifdef NEED_SHM
+            mTradesPublisher[key]->push(trades); 
+    #endif
+
         }
-        else if (sideStr == "Buy") {
-            trades.direction = DT_LONG;
-        }
-        trades.tsParse = crypto::getCurrentTime();
-
-        std::cout << trades.getString() << std::endl;
-
-#ifdef NEED_SHM
-        mTradesPublisher[key]->push(trades); 
-#endif
     }
     else if (marketTypeEnum == md::KLINE_1m) {
         md::Kline kline;
@@ -650,8 +683,9 @@ void md::BybitUnit::parseMarketData(const std::string& msg) {
         auto it = data.begin();
         auto d = *it;
 
-        long ts = 0;
-        doc["ts"].get(ts);
+        long barTime = 0;
+        d["start"].get(barTime);
+        barTime *= 1000;
 
         std::string_view openPriceStr;
         std::string_view highPriceStr;
@@ -661,17 +695,13 @@ void md::BybitUnit::parseMarketData(const std::string& msg) {
         std::string_view amountStr;
         
         d["open"].get(openPriceStr);
+        d["close"].get(openPriceStr);
         d["high"].get(openPriceStr);
         d["low"].get(openPriceStr);
-        d["close"].get(openPriceStr);
-        d["turnover"].get(amountStr);
         d["volume"].get(volStr);
+        d["turnover"].get(amountStr);
     
-        kline.tsTrans = ts * 1000;
-        kline.tsEvent = ts * 1000;
-        kline.tsRecv = tsNet;
-
-        kline.barTime = ts * 1000;
+        kline.barTime = barTime;
         kline.highPrice = crypto::fast_atod(highPriceStr) * info.reduceNumber;
         kline.lowPrice = crypto::fast_atod(lowPriceStr) * info.reduceNumber;
         kline.openPrice = crypto::fast_atod(openPriceStr) * info.reduceNumber;
@@ -694,6 +724,13 @@ void md::BybitUnit::parseMarketData(const std::string& msg) {
             return;
         }
 
+        long ts = 0;
+        doc["ts"].get(ts);
+        ts *= 1000;
+
+        kline.tsTrans = ts;
+        kline.tsEvent = ts;
+        kline.tsRecv = tsNet;
         kline.tsParse = crypto::getCurrentTime();
 
         std::cout << kline.getString() << std::endl;
@@ -710,33 +747,31 @@ void md::BybitUnit::parseMarketData(const std::string& msg) {
         fundingRate.marketTypeEnum = marketTypeEnum;
         strncpy(fundingRate.instId, info.instId, INSTID_SIZE);
 
-        long ts = 0;
-        doc["ts"].get(ts);
-
-        fundingRate.tsTrans = ts * 1000;
-        fundingRate.tsEvent = ts * 1000;
-        fundingRate.tsRecv = tsNet;
+        std::string_view fundingTimeStr;
+        if (data["nextFundingTime"].get(fundingRateStr) == simdjson::SUCCESS) {
+            fundingRate.fundingTime = crypto::fast_atol(fundingTimeStr) * 1000;
+        }
 
         std::string_view fundingRateStr;
         if (data["fundingRate"].get(fundingRateStr) == simdjson::SUCCESS) {
-            std::string_view fundingTimeStr;
-            if (data["nextFundingTime"].get(fundingRateStr) == simdjson::SUCCESS) {
-                mFundingTime[key] = crypto::fast_atol(fundingTimeStr) * 1000;
-            }
-
             fundingRate.fundingRate = crypto::fast_atod(fundingRateStr);
-            fundingRate.fundingTime = mFundingTime[key];
-            fundingRate.tsParse = crypto::getCurrentTime();
-        
-            std::cout << fundingRate.getString() << std::endl;
+        }
+
+        long ts = 0;
+        if (doc["ts"].get(ts)) == simdjson::SUCCESS) {
+            ts *= 1000;
+        }
+
+        fundingRate.tsTrans = ts;
+        fundingRate.tsEvent = ts;
+        fundingRate.tsRecv = tsNet;
+        fundingRate.tsParse = crypto::getCurrentTime();
+        std::cout << fundingRate.getString() << std::endl;
 
     #ifdef NEED_SHM
-            mFundingRatePublisher[key]->push(fundingRate); 
+        mFundingRatePublisher[key]->push(fundingRate); 
     #endif
-
-        }
     }
-
 }
 
 
@@ -745,7 +780,7 @@ md::BybitMarket::BybitMarket(sm::SecurityManager* s, const char* exId, std::vect
     std::cout << "--=-=-=-=" << unitInfoVec.size() << std::endl;
 
     for (size_t i = 0; i < unitInfoVec.size(); ++i) {
-        std::cout << "start create okx unit" << std::endl;
+        std::cout << "start create bybit unit" << std::endl;
         auto& info = unitInfoVec[i];
         md::BybitUnit* unit = new md::BybitUnit(smc, info.exchangeTypeEnum, info.instTypeEnum, info.marketTypeEnum, info.vInstInfo, _host, _port, _passwd);
         std::cout << "start generate sub body" << std::endl;

@@ -124,6 +124,7 @@ void md::GateioUnit::onWebsocketMsg(const uint8_t* data, size_t len, bool /*isBi
     }
 
     std::string msg(sv);
+    std::cout << "onWebsocketMsg: " << msg << std::endl;
     mQueue.push(std::move(msg));
 }
 
@@ -150,7 +151,12 @@ void md::GateioUnit::parseSpotData(const std::string& msg) {
         LOG_ERROR("simdjson parse msg: {} error: {}", msg, simdjson::error_message(doc.error()));
         return;
     }
-    
+
+    long tsM = 0;
+    if (doc["time_ms"].get(tsM) == simdjson::SUCCESS) {
+        tsM *= 1000;
+    }
+
     std::string_view eventStr;
     if (doc["event"].get(eventStr)) {
         LOG_ERROR("msg has no event field or not update msg: {}", msg);
@@ -168,49 +174,7 @@ void md::GateioUnit::parseSpotData(const std::string& msg) {
         return;
     }
 
-    std::string originInstId = "";
-    switch (marketTypeEnum) {
-        case md::DEPTH1:
-        case md::DEPTH5:
-        case md::DEPTH10:
-        case md::DEPTH20: {
-            std::string_view sVal;
-            if (data["s"].get(sVal) == simdjson::SUCCESS) {
-                originInstId = std::string(sVal);
-            }
-            break;
-        }
-        case md::TRADES: {
-            std::string_view sVal;
-            if (data["currency_pair"].get(sVal) == simdjson::SUCCESS) {
-                originInstId = std::string(sVal);
-            }
-            break;        
-        }
-        case md::KLINE_1m: {
-            std::string_view nVal;
-            if (data["n"].get(nVal) == simdjson::SUCCESS) {
-                std::vector<std::string> v = crypto::split(std::string(nVal), "_");
-                if (v.size() >= 3) {
-                    originInstId = v[1] + "_" + v[2];
-                }
-            }
-
-            break;
-        }
-        default: {
-            LOG_ERROR("not support marketType: {}", md::MarketTypeEnum2StrMap[marketTypeEnum]);
-        }
-    }
-
     md::InstrumentInfo info;
-    if (smc->get_instrument_info(exchangeTypeEnum, instTypeEnum, originInstId.c_str(), info) == false){
-        LOG_ERROR("smc cannot find originInstId: {}", originInstId);
-        return;
-    }
-
-    std::string key = crypto::get_md_channel_key(exchangeTypeEnum, instTypeEnum, marketTypeEnum, info.instId);
-
     switch (marketTypeEnum) {
         case md::DEPTH1: {
             md::Depth1 depth1;
@@ -221,12 +185,23 @@ void md::GateioUnit::parseSpotData(const std::string& msg) {
             strncpy(depth1.instId, info.instId, INSTID_SIZE);
 
             long tsT = 0;
-            doc["time_ms"].get(tsT);
+            data["t"].get(tsT);
             long ts = tsT * 1000;
 
-            depth1.tsTrans = ts;
-            depth1.tsEvent = ts;
+            depth1.tsTrans = tsT;
+            depth1.tsEvent = tsT;
             depth1.tsRecv = tsNet;
+
+            std::string originInstId = "";
+            std::string_view sVal;
+            if (data["s"].get(sVal) == simdjson::SUCCESS) {
+                originInstId = std::string(sVal);
+            }
+            if (smc->get_instrument_info(exchangeTypeEnum, instTypeEnum, originInstId.c_str(), info) == false){
+                LOG_ERROR("smc cannot find originInstId: {}", originInstId);
+                return;
+            }
+            const std::string& key = crypto::get_md_channel_key(exchangeTypeEnum, instTypeEnum, marketTypeEnum, info.instId);
 
             auto bp1 = data["b"];
             auto bv1 = data["B"];
@@ -271,6 +246,17 @@ void md::GateioUnit::parseSpotData(const std::string& msg) {
             depth5.tsTrans = ts;
             depth5.tsEvent = ts;
             depth5.tsRecv = tsNet;
+
+            std::string originInstId = "";
+            std::string_view sVal;
+            if (data["s"].get(sVal) == simdjson::SUCCESS) {
+                originInstId = std::string(sVal);
+            }
+            if (smc->get_instrument_info(exchangeTypeEnum, instTypeEnum, originInstId.c_str(), info) == false){
+                LOG_ERROR("smc cannot find originInstId: {}", originInstId);
+                return;
+            }
+            const std::string& key = crypto::get_md_channel_key(exchangeTypeEnum, instTypeEnum, marketTypeEnum, info.instId);
 
             auto bidsArray = data["bids"];
             std::string_view bidPrice[5];
@@ -368,6 +354,17 @@ void md::GateioUnit::parseSpotData(const std::string& msg) {
             depth10.tsTrans = ts;
             depth10.tsEvent = ts;
             depth10.tsRecv = tsNet;
+
+            std::string originInstId = "";
+            std::string_view sVal;
+            if (data["s"].get(sVal) == simdjson::SUCCESS) {
+                originInstId = std::string(sVal);
+            }
+            if (smc->get_instrument_info(exchangeTypeEnum, instTypeEnum, originInstId.c_str(), info) == false){
+                LOG_ERROR("smc cannot find originInstId: {}", originInstId);
+                return;
+            }
+            const std::string& key = crypto::get_md_channel_key(exchangeTypeEnum, instTypeEnum, marketTypeEnum, info.instId);
 
             auto bidsArray = data["bids"];
             std::string_view bidPrice[10];
@@ -485,6 +482,17 @@ void md::GateioUnit::parseSpotData(const std::string& msg) {
             depth20.tsTrans = ts;
             depth20.tsEvent = ts;
             depth20.tsRecv = tsNet;
+
+            std::string originInstId = "";
+            std::string_view sVal;
+            if (data["s"].get(sVal) == simdjson::SUCCESS) {
+                originInstId = std::string(sVal);
+            }
+            if (smc->get_instrument_info(exchangeTypeEnum, instTypeEnum, originInstId.c_str(), info) == false){
+                LOG_ERROR("smc cannot find originInstId: {}", originInstId);
+                return;
+            }
+            const std::string& key = crypto::get_md_channel_key(exchangeTypeEnum, instTypeEnum, marketTypeEnum, info.instId);
 
             auto bidsArray = data["bids"];
             std::string_view bidPrice[20];
@@ -635,6 +643,10 @@ void md::GateioUnit::parseSpotData(const std::string& msg) {
             trades.marketTypeEnum = marketTypeEnum;
             strncpy(trades.instId, info.instId, INSTID_SIZE);
 
+            long tradeId;
+            data["id"].get(tradeId);
+            fmt::format_to(trades.tradeId, "{}", tradeId);
+
             long tsT = 0;
             data["create_time_ms"].get(tsT);
             long ts = tsT * 1000;
@@ -642,17 +654,6 @@ void md::GateioUnit::parseSpotData(const std::string& msg) {
             trades.tsTrans = ts;
             trades.tsEvent = ts;
             trades.tsRecv = tsNet;
-
-            std::string_view tradeIdStr;
-            data["id"].get(tradeIdStr);
-            strncpy(trades.tradeId, tradeIdStr.data(), INSTID_SIZE);
-
-            std::string_view tradePriceStr;
-            std::string_view tradeVolStr;
-            data["price"].get(tradePriceStr);
-            data["amount"].get(tradeVolStr);
-            trades.px = crypto::fast_atod(tradePriceStr) * info.reduceNumber;
-            trades.sz = crypto::fast_atod(tradeVolStr) * info.magnifyNumber;
 
             std::string_view sideStr;
             data["side"].get(sideStr);
@@ -662,6 +663,26 @@ void md::GateioUnit::parseSpotData(const std::string& msg) {
             else if (sideStr == "buy") {
                 trades.direction = DT_LONG;
             }
+
+            std::string originInstId = "";
+            std::string_view sVal;
+            if (data["currency_pair"].get(sVal) == simdjson::SUCCESS) {
+                originInstId = std::string(sVal);
+            }
+
+            if (smc->get_instrument_info(exchangeTypeEnum, instTypeEnum, originInstId.c_str(), info) == false){
+                LOG_ERROR("smc cannot find originInstId: {}", originInstId);
+                return;
+            }
+            const std::string& key = crypto::get_md_channel_key(exchangeTypeEnum, instTypeEnum, marketTypeEnum, info.instId);
+
+            std::string_view tradeVolStr;
+            std::string_view tradePriceStr;
+            data["amount"].get(tradeVolStr);
+            data["price"].get(tradePriceStr);
+            
+            trades.px = crypto::fast_atod(tradePriceStr) * info.reduceNumber;
+            trades.sz = crypto::fast_atod(tradeVolStr) * info.magnifyNumber;
 
             trades.tsParse = crypto::getCurrentTime();
 
@@ -678,12 +699,8 @@ void md::GateioUnit::parseSpotData(const std::string& msg) {
             kline.marketTypeEnum = marketTypeEnum;
             strncpy(kline.instId, info.instId, INSTID_SIZE);
 
-            long tsT = 0;
-            doc["time_ms"].get(tsT);
-            long ts = tsT * 1000;
-
-            kline.tsTrans = ts;
-            kline.tsEvent = ts;
+            kline.tsTrans = tsM;
+            kline.tsEvent = tsM;
             kline.tsRecv = tsNet;
 
             std::string_view barTimeStr;
@@ -695,13 +712,30 @@ void md::GateioUnit::parseSpotData(const std::string& msg) {
             std::string_view volStr;
 
             data["t"].get(barTimeStr);
+            data["v"].get(volStr);
+            data["c"].get(closePriceStr);
             data["h"].get(highPriceStr);
             data["l"].get(lowPriceStr);
             data["o"].get(openPriceStr);
-            data["c"].get(closePriceStr);
-            data["a"].get(amountStr);
-            data["v"].get(volStr);
 
+            std::string originInstId = "";
+            std::string_view nVal;
+            if (data["n"].get(nVal) == simdjson::SUCCESS) {
+                std::vector<std::string> v = crypto::split(std::string(nVal), "_");
+                if (v.size() >= 3) {
+                    originInstId = v[1] + "_" + v[2];
+                }
+            }
+
+            if (smc->get_instrument_info(exchangeTypeEnum, instTypeEnum, originInstId.c_str(), info) == false){
+                LOG_ERROR("smc cannot find originInstId: {}", originInstId);
+                return;
+            }
+            const std::string& key = crypto::get_md_channel_key(exchangeTypeEnum, instTypeEnum, marketTypeEnum, info.instId);
+
+
+            data["a"].get(amountStr);
+            
             kline.barTime = crypto::fast_atol(barTimeStr) * 1000000;
             kline.highPrice = crypto::fast_atod(highPriceStr) * info.reduceNumber;
             kline.lowPrice = crypto::fast_atod(lowPriceStr) * info.reduceNumber;
@@ -836,10 +870,21 @@ void md::GateioUnit::parseSwapData(const std::string& msg) {
             long tsT = 0;
             data["t"].get(tsT);
             long ts = tsT * 1000;
-
             depth1.tsTrans = ts;
             depth1.tsEvent = ts;
             depth1.tsRecv = tsNet;
+
+            std::string originInstId = "";
+            std::string_view sVal;
+            if (data["s"].get(sVal) == simdjson::SUCCESS) {
+                originInstId = std::string(sVal);
+            }
+
+            if (smc->get_instrument_info(exchangeTypeEnum, instTypeEnum, originInstId.c_str(), info) == false) {
+                LOG_ERROR("smc cannot find originInstId: {}", originInstId);
+                return;
+            }
+            const std::string& key = crypto::get_md_channel_key(exchangeTypeEnum, instTypeEnum, marketTypeEnum, info.instId);
 
             auto bp1 = data["b"];
             auto bv1 = data["B"];
@@ -876,12 +921,24 @@ void md::GateioUnit::parseSwapData(const std::string& msg) {
             strncpy(depth5.instId, info.instId, INSTID_SIZE);
 
             long tsT = 0;
-            doc["time_ms"].get(tsT);
+            data["t"].get(tsT);
             long ts = tsT * 1000;
 
             depth5.tsTrans = ts;
             depth5.tsEvent = ts;
             depth5.tsRecv = tsNet;
+
+            std::string originInstId = "";
+            std::string_view sVal;
+            if (data["contract"].get(sVal) == simdjson::SUCCESS) {
+                originInstId = std::string(sVal);
+            }
+
+            if (smc->get_instrument_info(exchangeTypeEnum, instTypeEnum, originInstId.c_str(), info) == false) {
+                LOG_ERROR("smc cannot find originInstId: {}", originInstId);
+                return;
+            }
+            const std::string& key = crypto::get_md_channel_key(exchangeTypeEnum, instTypeEnum, marketTypeEnum, info.instId);
 
             auto bidsArray = data["bids"];
             std::string_view bidPrice[5];
@@ -957,12 +1014,24 @@ void md::GateioUnit::parseSwapData(const std::string& msg) {
             strncpy(depth10.instId, info.instId, INSTID_SIZE);
 
             long tsT = 0;
-            doc["time_ms"].get(tsT);
+            data["t"].get(tsT);
             long ts = tsT * 1000;
 
             depth10.tsTrans = ts;
             depth10.tsEvent = ts;
             depth10.tsRecv = tsNet;
+
+            std::string originInstId = "";
+            std::string_view sVal;
+            if (data["contract"].get(sVal) == simdjson::SUCCESS) {
+                originInstId = std::string(sVal);
+            }
+
+            if (smc->get_instrument_info(exchangeTypeEnum, instTypeEnum, originInstId.c_str(), info) == false) {
+                LOG_ERROR("smc cannot find originInstId: {}", originInstId);
+                return;
+            }
+            const std::string& key = crypto::get_md_channel_key(exchangeTypeEnum, instTypeEnum, marketTypeEnum, info.instId);
 
             auto bidsArray = data["bids"];
             std::string_view bidPrice[10];
@@ -1058,12 +1127,24 @@ void md::GateioUnit::parseSwapData(const std::string& msg) {
             strncpy(depth20.instId, info.instId, INSTID_SIZE);
 
             long tsT = 0;
-            doc["time_ms"].get(tsT);
+            data["t"].get(tsT);
             long ts = tsT * 1000;
 
             depth20.tsTrans = ts;
             depth20.tsEvent = ts;
             depth20.tsRecv = tsNet;
+
+            std::string originInstId = "";
+            std::string_view sVal;
+            if (data["contract"].get(sVal) == simdjson::SUCCESS) {
+                originInstId = std::string(sVal);
+            }
+
+            if (smc->get_instrument_info(exchangeTypeEnum, instTypeEnum, originInstId.c_str(), info) == false) {
+                LOG_ERROR("smc cannot find originInstId: {}", originInstId);
+                return;
+            }
+            const std::string& key = crypto::get_md_channel_key(exchangeTypeEnum, instTypeEnum, marketTypeEnum, info.instId);
 
             auto bidsArray = data["bids"];
             std::string_view bidPrice[20];
@@ -1202,6 +1283,14 @@ void md::GateioUnit::parseSwapData(const std::string& msg) {
             auto it = data.begin();
             auto d = *it;
 
+            long tradeId;
+            d["id"].get(tradeId);
+            fmt::format_to(trades.tradeId, "{}", tradeId);
+
+            std::string_view tradeVolStr;
+            d["size"].get(tradeVolStr);
+
+
             long tsT = 0;
             d["create_time_ms"].get(tsT);
             long ts = tsT * 1000;
@@ -1210,14 +1299,9 @@ void md::GateioUnit::parseSwapData(const std::string& msg) {
             trades.tsEvent = ts;
             trades.tsRecv = tsNet;
 
-            std::string_view tradeIdStr;
-            d["id"].get(tradeIdStr);
-            strncpy(trades.tradeId, tradeIdStr.data(), INSTID_SIZE);
-
             std::string_view tradePriceStr;
-            std::string_view tradeVolStr;
             d["price"].get(tradePriceStr);
-            d["size"].get(tradeVolStr);
+            
             trades.px = crypto::fast_atod(tradePriceStr) * info.reduceNumber;
 
             double size = crypto::fast_atod(tradeVolStr);
@@ -1232,16 +1316,25 @@ void md::GateioUnit::parseSwapData(const std::string& msg) {
 
             trades.tsParse = crypto::getCurrentTime();
 
+
+            std::string originInstId = "";
+            std::string_view sVal;
+            if (d["contract"].get(sVal) == simdjson::SUCCESS) {
+                originInstId = std::string(sVal);
+            }
+
+            if (smc->get_instrument_info(exchangeTypeEnum, instTypeEnum, originInstId.c_str(), info) == false) {
+                LOG_ERROR("smc cannot find originInstId: {}", originInstId);
+                return;
+            }
+            const std::string& key = crypto::get_md_channel_key(exchangeTypeEnum, instTypeEnum, marketTypeEnum, info.instId);
+
 #ifdef NEED_SHM
             mTradesPublisher[key]->push(trades); 
 #endif
             return;
         }
         case md::KLINE_1m: {
-            long tsT = 0;
-            doc["time_ms"].get(tsT);
-            long ts = tsT * 1000;
-
             for (auto element : data) {
                 md::Kline kline;
                 memset(&kline, 0, sizeof(md::Kline));
@@ -1250,8 +1343,8 @@ void md::GateioUnit::parseSwapData(const std::string& msg) {
                 kline.marketTypeEnum = marketTypeEnum;
                 strncpy(kline.instId, info.instId, INSTID_SIZE);
 
-                kline.tsTrans = ts;
-                kline.tsEvent = ts;
+                kline.tsTrans = tsM;
+                kline.tsEvent = tsM;
                 kline.tsRecv = tsNet;
 
                 std::string_view barTimeStr;
@@ -1263,11 +1356,38 @@ void md::GateioUnit::parseSwapData(const std::string& msg) {
                 std::string_view volStr;
 
                 element["t"].get(barTimeStr);
+                element["c"].get(closePriceStr);
                 element["h"].get(highPriceStr);
                 element["l"].get(lowPriceStr);
                 element["o"].get(openPriceStr);
-                element["c"].get(closePriceStr);
                 element["a"].get(amountStr);
+
+                std::string originInstId = "";
+                std::string_view nStr;
+                if (element["n"].get(nStr) != simdjson::SUCCESS) {
+                    continue;
+                }
+
+                std::vector<std::string> v = crypto::split(std::string(nStr), "_");
+                if (v.size() >= 3) {
+                    originInstId = v[1] + "_" + v[2];
+                    break;
+                }
+
+                if (smc->get_instrument_info(exchangeTypeEnum, instTypeEnum, originInstId.c_str(), info) == false) {
+                    LOG_ERROR("smc cannot find originInstId: {}", originInstId);
+                    return;
+                }
+                const std::string& key = crypto::get_md_channel_key(exchangeTypeEnum, instTypeEnum, marketTypeEnum, info.instId);
+
+                bool isFinished = false;
+                element["w"].get(isFinished);
+                kline.isFinished = isFinished;
+
+                if (!kline.isFinished) {
+                    continue;
+                }
+
                 element["v"].get(volStr);
 
                 kline.barTime = crypto::fast_atol(barTimeStr) * 1000000;
@@ -1286,13 +1406,6 @@ void md::GateioUnit::parseSwapData(const std::string& msg) {
                 kline.totalVolume = volume * info.magnifyNumber;
                 kline.totalAmount = amount;
 
-                bool isFinished = false;
-                element["w"].get(isFinished);
-                kline.isFinished = isFinished;
-
-                if (!kline.isFinished) {
-                    continue;
-                }
 
                 kline.tsParse = crypto::getCurrentTime();
     #ifdef NEED_SHM
@@ -1310,16 +1423,25 @@ void md::GateioUnit::parseSwapData(const std::string& msg) {
             fundingRate.marketTypeEnum = marketTypeEnum;
             strncpy(fundingRate.instId, info.instId, INSTID_SIZE);
 
-            long tsT = 0;
-            doc["time_ms"].get(tsT);
-            long ts = tsT * 1000 * 1000;
-
-            fundingRate.tsTrans = ts;
-            fundingRate.tsEvent = ts;
+            fundingRate.tsTrans = tsM
+            fundingRate.tsEvent = tsM;
             fundingRate.tsRecv = tsNet;
 
             auto it = data.begin();
             auto d = *it;
+
+            std::string originInstId = "";
+            std::string_view sVal;
+            if (d["contract"].get(sVal) == simdjson::SUCCESS) {
+                originInstId = std::string(sVal);
+            }
+
+            if (smc->get_instrument_info(exchangeTypeEnum, instTypeEnum, originInstId.c_str(), info) == false) {
+                LOG_ERROR("smc cannot find originInstId: {}", originInstId);
+                return;
+            }
+            const std::string& key = crypto::get_md_channel_key(exchangeTypeEnum, instTypeEnum, marketTypeEnum, info.instId);
+
 
             std::string_view fundingRateStr;
             std::string_view nextFundingRateStr;
@@ -1328,6 +1450,10 @@ void md::GateioUnit::parseSwapData(const std::string& msg) {
             
             fundingRate.fundingRate = crypto::fast_atod(fundingRateStr);
             fundingRate.nextFundingRate = crypto::fast_atod(nextFundingRateStr);
+
+            long fundingTime;
+            d["funding_next_apply"].get(fundingTime);
+            fundingRate.fundingTime = fundingTime;
 
             fundingRate.tsParse = crypto::getCurrentTime();
 
