@@ -783,6 +783,11 @@ void md::GateioUnit::parseSwapData(const std::string& msg) {
         LOG_ERROR("simdjson parse msg: {} error: {}", msg, simdjson::error_message(doc.error()));
         return;
     }
+
+    long tsM = 0;
+    if (doc["time_ms"].get(tsM) == simdjson::SUCCESS) {
+        tsM *= 1000;
+    }
     
     std::string_view eventStr;
     if (doc["event"].get(eventStr)) {
