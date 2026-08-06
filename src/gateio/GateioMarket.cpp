@@ -186,7 +186,7 @@ void md::GateioUnit::parseSpotData(const std::string& msg) {
 
             long tsT = 0;
             data["t"].get(tsT);
-            long ts = tsT * 1000;
+            tsT *= 1000;
 
             depth1.tsTrans = tsT;
             depth1.tsEvent = tsT;
