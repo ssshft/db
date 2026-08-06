@@ -1428,7 +1428,7 @@ void md::GateioUnit::parseSwapData(const std::string& msg) {
             fundingRate.marketTypeEnum = marketTypeEnum;
             strncpy(fundingRate.instId, info.instId, INSTID_SIZE);
 
-            fundingRate.tsTrans = tsM
+            fundingRate.tsTrans = tsM;
             fundingRate.tsEvent = tsM;
             fundingRate.tsRecv = tsNet;
 
