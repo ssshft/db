@@ -473,7 +473,7 @@ public:
             return;
         }
 
-        const auto* hdr = header_of(data);
+        const auto* hdr = gateiosbe::header_of(data);
         root_ = reinterpret_cast<const CandlestickRoot*>(data + sizeof(gateiosbe::MessageHeader));
         const uint8_t* end = data + len;
         const uint8_t* p = data + sizeof(gateiosbe::MessageHeader) + hdr->blockLength;
@@ -509,12 +509,12 @@ public:
         const uint8_t* p = entries_ + static_cast<size_t>(i) * dim_->blockLength + sizeof(CandlestickEntry);
         const uint8_t* next=nullptr;
 
-        return read_var_string(p, end_, &next);
+        return gateiosbe::read_var_string(p, end_, &next);
     }
 
     std::string_view channel() const noexcept {
         const uint8_t* next=nullptr;
-        return read_var_string(tail_, end_, &next);
+        return gateiosbe::read_var_string(tail_, end_, &next);
     }
 
 private:
@@ -678,22 +678,22 @@ inline std::string_view public_trade_symbol(const uint8_t* data, size_t len) noe
 
 
 inline std::string_view candlestick_name(const uint8_t* data, size_t len) noexcept {
-    if (len < sizeof(MessageHeader) + sizeof(CandlestickView))
+    if (len < sizeof(gateiosbe::MessageHeader) + sizeof(CandlestickView))
         return {};
 
-    const auto* hdr = header_of(data);
+    const auto* hdr = gateiosbe::header_of(data);
     const uint8_t* end = data + len;
-    const uint8_t* p = data + sizeof(MessageHeader) + hdr->blockLength;
+    const uint8_t* p = data + sizeof(gateiosbe::MessageHeader) + hdr->blockLength;
     const uint8_t* next = nullptr;
 
     // skip channel
-    (void)read_var_string(p, end, &next);
+    (void)gateiosbe::read_var_string(p, end, &next);
     // return name
-    return read_var_string(next, end, nullptr);
+    return gateiosbe::read_var_string(next, end, nullptr);
 }
 
 inline const CandlestickView* candlestick_view(const uint8_t* data, size_t len) noexcept {
-    return view_of<CandlestickView>(data, len);
+    return gateiosbe::view_of<CandlestickView>(data, len);
 }
   
 // ---- Depth iter (现货全都是 bids 先) ---------------------------------------  
@@ -772,15 +772,15 @@ struct CandlestickMeta {
 inline CandlestickMeta candlestick_meta(const uint8_t* data, size_t len) noexcept {
     CandlestickMeta ret{};
 
-    if (len < sizeof(MessageHeader) + sizeof(CandlestickView))
+    if (len < sizeof(gateiosbe::MessageHeader) + sizeof(CandlestickView))
         return ret;
 
-    const auto* hdr = header_of(data);
+    const auto* hdr = gateiosbe::header_of(data);
     const uint8_t* end = data + len;
-    const uint8_t* p = data + sizeof(MessageHeader) + hdr->blockLength;
+    const uint8_t* p = data + sizeof(gateiosbe::MessageHeader) + hdr->blockLength;
     const uint8_t* next = nullptr;
-    ret.channel = read_var_string(p, end, &next);
-    ret.name = read_var_string(next, end, nullptr);
+    ret.channel = gateiosbe::read_var_string(p, end, &next);
+    ret.name = gateiosbe::read_var_string(next, end, nullptr);
     return ret;
 }
 
