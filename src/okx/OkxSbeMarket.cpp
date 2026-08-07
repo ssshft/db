@@ -63,7 +63,7 @@ void md::OkxSbeUnit::generateSubBody() {
 
     cfg.headers.emplace_back("OK-ACCESS-KEY", sbeAccount.apiKey);
     cfg.headers.emplace_back("OK-ACCESS-SIGN", sign);
-    cfg.headers.emplace_back("OK-ACCESS-TIMESTAMP", std::to_string(ts));
+    cfg.headers.emplace_back("OK-ACCESS-TIMESTAMP", ts);
     cfg.headers.emplace_back("OK-ACCESS-PASSPHRASE", sbeAccount.password);
 
     // 1) 从 SecurityManager 拿 code 反查表
