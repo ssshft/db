@@ -41,19 +41,19 @@ bool DbOperation::preStart(Config* config) {
             mMarket[exchId] = new md::BinanceMarket(smc, exchId.c_str(), node.instType, node.marketType, node.instId, node.tokenLot, host.c_str(), std::stoi(port), password.c_str());
         }
         else if (crypto::str_cmp(exchId.c_str(), "BINANCE_SBE")) {
-            mMarket[exchId] = new md::BinanceSbeMarket(smc, exchId.c_str(), node.instType, node.marketType, node.instId, node.sbeAccount, node.tokenLot, host.c_str(), std::stoi(port), password.c_str());
+            mMarket[exchId] = new md::BinanceSbeMarket(smc, "BINANCE", node.instType, node.marketType, node.instId, node.sbeAccount, node.tokenLot, host.c_str(), std::stoi(port), password.c_str());
         }
         else if (crypto::str_cmp(exchId.c_str(), "GATEIO")) {
             mMarket[exchId] = new md::GateioMarket(smc, exchId.c_str(), node.instType, node.marketType, node.instId, node.tokenLot, host.c_str(), std::stoi(port), password.c_str());
         }
         else if (crypto::str_cmp(exchId.c_str(), "GATEIO_SBE")) {
-            mMarket[exchId] = new md::GateioSbeMarket(smc, exchId.c_str(), node.instType, node.marketType, node.instId, node.sbeAccount, node.tokenLot, host.c_str(), std::stoi(port), password.c_str());
+            mMarket[exchId] = new md::GateioSbeMarket(smc, "GATEIO", node.instType, node.marketType, node.instId, node.sbeAccount, node.tokenLot, host.c_str(), std::stoi(port), password.c_str());
         }
         else if (crypto::str_cmp(exchId.c_str(), "OKX")) {
             mMarket[exchId] = new md::OkxMarket(smc, exchId.c_str(), node.instType, node.marketType, node.instId, node.tokenLot, host.c_str(), std::stoi(port), password.c_str());
         }
         else if (crypto::str_cmp(exchId.c_str(), "OKX_SBE")) {
-            mMarket[exchId] = new md::OkxSbeMarket(smc, exchId.c_str(), node.instType, node.marketType, node.instId, node.sbeAccount, node.tokenLot, host.c_str(), std::stoi(port), password.c_str());
+            mMarket[exchId] = new md::OkxSbeMarket(smc, "OKX", node.instType, node.marketType, node.instId, node.sbeAccount, node.tokenLot, host.c_str(), std::stoi(port), password.c_str());
         }
         else if (crypto::str_cmp(exchId.c_str(), "BYBIT")) {
             mMarket[exchId] = new md::BybitMarket(smc, exchId.c_str(), node.instType, node.marketType, node.instId, node.tokenLot, host.c_str(), std::stoi(port), password.c_str());
