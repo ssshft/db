@@ -4,23 +4,23 @@
 
 #ifdef NEED_TESTNET
 
-constexpr auto BINANCE_WS_PUBLIC_SPOT = "wss://stream.binance.com:9443/stream?";
+constexpr auto BINANCE_SBE_WS_PUBLIC_SPOT = "wss://stream.binance.com:9443/stream?";
 
-constexpr auto BINANCE_WS_PUBLIC_USDT_SWAP_FUTURES_PUBLIC = "wss://fstream.binancefuture.com/public/stream?";
+constexpr auto BINANCE_SBE_WS_PUBLIC_USDT_SWAP_FUTURES_PUBLIC = "wss://fstream.binancefuture.com/public/stream?";
 
-constexpr auto BINANCE_WS_PUBLIC_USDT_SWAP_FUTURES_MARKET = "wss://fstream.binancefuture.com/market/stream?";
+constexpr auto BINANCE_SBE_WS_PUBLIC_USDT_SWAP_FUTURES_MARKET = "wss://fstream.binancefuture.com/market/stream?";
 
-constexpr auto BINANCE_WS_PUBLIC_USD_SWAP_FUTURES = "wss://dstream.binancefuture.com/stream?";
+constexpr auto BINANCE_SBE_WS_PUBLIC_USD_SWAP_FUTURES = "wss://dstream.binancefuture.com/stream?";
 
 #else
 
-constexpr auto BINANCE_WS_PUBLIC_SPOT = "wss://stream-sbe.binance.com:9443/stream";
+constexpr auto BINANCE_SBE_WS_PUBLIC_SPOT = "wss://stream-sbe.binance.com:9443/stream";
 
-constexpr auto BINANCE_WS_PUBLIC_USDT_SWAP_FUTURES_PUBLIC = "wss://fstream.binance.com/public/stream?";
+constexpr auto BINANCE_SBE_WS_PUBLIC_USDT_SWAP_FUTURES_PUBLIC = "wss://fstream.binance.com/public/stream?";
 
-constexpr auto BINANCE_WS_PUBLIC_USDT_SWAP_FUTURES_MARKET = "wss://fstream.binance.com/market/stream?";
+constexpr auto BINANCE_SBE_WS_PUBLIC_USDT_SWAP_FUTURES_MARKET = "wss://fstream.binance.com/market/stream?";
 
-constexpr auto BINANCE_WS_PUBLIC_USD_SWAP_FUTURES = "wss://dstream.binance.com/stream?";
+constexpr auto BINANCE_SBE_WS_PUBLIC_USD_SWAP_FUTURES = "wss://dstream.binance.com/stream?";
 
 #endif
 

@@ -20,7 +20,7 @@ void md::BinanceSbeUnit::generateSubBody() {
     std::string lowerMarketTypeStr = crypto::to_lower(marketTypeStr);
 
     if (instTypeEnum == SPOT) {
-        wsUrl = BINANCE_WS_PUBLIC_SPOT;
+        wsUrl = BINANCE_SBE_WS_PUBLIC_SPOT;
     }
     else {
         LOG_ERROR("SBE only supports SPOT, get instType: {}", instTypeStr);

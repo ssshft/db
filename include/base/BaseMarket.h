@@ -19,6 +19,7 @@
 
 #include "shm_global.h"
 #include "time_util.h"
+#include "config.h"
 
 #include "crypto_exception.h"
 #include "precision_util.h"

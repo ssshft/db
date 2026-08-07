@@ -1,0 +1,26 @@
+
+{
+  "tag": "DB_binance_spot_p1",
+  "log": {
+      "level": "info",
+      "log_path": "/logs"
+  },
+  "redis": {
+    "host": "localhost",
+    "port": 9379,
+    "password":"refZa2KcTj$QjyXk"
+  },
+  "BINANCE_SBE":{
+    "sbe": {
+        "apiKey": "XSaUOuSFzb4HPVBzuI2J5wl10fT5WLkOkPHOJkrE8f5v6sfOayGLraqkpXhUy97p",
+        "secretKey": "ForVdJLT7SvUyM467d443C3hGrpbBN75x1yNff0A31YGD951cOxs0kJnB52RzejH",
+        "password": ""
+    },
+    "tokenLot":80,
+    "instType": ["SPOT"],
+    "marketType": ["DEPTH20"],
+    "instId": [
+      "BTC-USDT"
+    ]
+  }
+}
