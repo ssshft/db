@@ -559,7 +559,7 @@ void md::GateioSbeUnit::parseSpotData(const uint8_t* data, size_t len, long tsNe
 
             std::cout << d.getString() << std::endl;
 #ifdef NEED_SHM
-            mDepth5Publisher[key]->push(d);
+            mDepth10Publisher[key]->push(d);
 #endif
         }
         else if (marketTypeEnum == md::DEPTH20) {
