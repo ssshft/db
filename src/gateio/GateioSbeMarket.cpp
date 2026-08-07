@@ -649,7 +649,7 @@ void md::GateioSbeUnit::parseSpotData(const uint8_t* data, size_t len, long tsNe
     }
 
     case sp::kTemplateCandlestick: {
-        if (marketTypeEnum != md::KLINE) {
+        if (marketTypeEnum != md::KLINE_1m) {
             return;
         }
 
@@ -662,9 +662,11 @@ void md::GateioSbeUnit::parseSpotData(const uint8_t* data, size_t len, long tsNe
         auto name = sp::candlestick_name(data, len);
         md::InstrumentInfo info;
 
-        if (!lookupInfoFromCandlestick(name, info)) {
+        if (!lookupInfo(name, info)) {
             return;
         }
+
+        const std::string& key = crypto::get_md_channel_key(exchangeTypeEnum, instTypeEnum, marketTypeEnum, info.instId);
 
         md::Kline k;
         memset(&k, 0, sizeof(k));
@@ -691,7 +693,7 @@ void md::GateioSbeUnit::parseSpotData(const uint8_t* data, size_t len, long tsNe
         if(k.totalVolume > ZERO_NUM) {
             avgPrice = k.totalAmount / k.totalVolume;
         }
-        kline.avgPrice = avgPrice * info.reduceNumber;
+        k.avgPrice = avgPrice * info.reduceNumber;
 
         std::cout << k.getString() << std::endl;
 
