@@ -81,8 +81,7 @@ void md::BinanceSbeUnit::onWebsocketMsg(const uint8_t* data, size_t len, bool is
 
     if (isBinary) {
         std::string msg(reinterpret_cast<const char*>(data), len);
-        std::cout << "onWebsocketMsg: " << msg << std::endl;
-        mQueue.push(msg);
+        mQueue.push(std::move(msg));
     }
     else {
         std::string txt(reinterpret_cast<const char*>(data), len);
@@ -157,6 +156,8 @@ void md::BinanceSbeUnit::parseMarketData(const std::string& msg) {
         depth1.av1 = askQty * info.magnifyNumber;
 
         depth1.tsParse = crypto::getCurrentTime();
+
+        std::cout << depth1.getString() << std::endl;
 #ifdef NEED_SHM
         mDepth1Publisher[key]->push(depth1);
 #endif
@@ -239,8 +240,9 @@ void md::BinanceSbeUnit::parseMarketData(const std::string& msg) {
                 *avArr[i] = binancesbe::to_double(e->qty,   root->qtyExponent)   * info.magnifyNumber;
             }
             d.tsParse = crypto::getCurrentTime();
-#ifdef NEED_SHM
 
+            std::cout << d.getString() << std::endl;
+#ifdef NEED_SHM
             mDepth10Publisher[key]->push(d);
 #endif
         }
@@ -267,6 +269,8 @@ void md::BinanceSbeUnit::parseMarketData(const std::string& msg) {
                 *avArr[i] = binancesbe::to_double(e->qty,   root->qtyExponent)   * info.magnifyNumber;
             }
             d.tsParse = crypto::getCurrentTime();
+
+            std::cout << d.getString() << std::endl;
 #ifdef NEED_SHM
             mDepth20Publisher[key]->push(d);
 #endif
@@ -326,6 +330,8 @@ void md::BinanceSbeUnit::parseMarketData(const std::string& msg) {
             trades.direction = (e->isBuyerMaker == binancesbe::Bool_True) ? DT_SHORT : DT_LONG;
 
             trades.tsParse = crypto::getCurrentTime();
+
+            std::cout << trades.getString() << std::endl;
 #ifdef NEED_SHM
             mTradesPublisher[key]->push(trades);
 #endif
