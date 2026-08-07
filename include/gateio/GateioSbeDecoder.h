@@ -153,15 +153,19 @@ inline double to_double(int64_t mantissa, int8_t exponent) noexcept {
   
 namespace gateiosbefutures {  
   
-enum : uint16_t {  
-    kTemplateBbo              = 1,  
-    kTemplatePublicTrade      = 2,  
-    kTemplateObu              = 3,  
-    kTemplateOrderBook        = 4,  
-    kTemplateOrderBookUpdate  = 5,  
-    // 6~10: candlestick / futuresTicker / userTrade / position / orders, 未覆盖  
-};  
-  
+enum : uint16_t {
+    kTemplateBbo              = 1,
+    kTemplatePublicTrade      = 2,
+    kTemplateObu              = 3,
+    kTemplateOrderBook        = 4,
+    kTemplateOrderBookUpdate  = 5,
+    kTemplateUserTrade        = 6,
+    kTemplatePosition         = 7,
+    kTemplateCandlestick      = 8,
+    kTemplateFuturesTicker    = 9,
+    kTemplateOrders           = 10,
+};
+ 
 #pragma pack(push, 1)  
   
 // ---------- bbo (id=1) root: 59 字节 (ask 先) ----------  
@@ -240,6 +244,87 @@ struct DepthEntry {
     int64_t szMantissa;  
 };  
 static_assert(sizeof(DepthEntry) == 16, "futures DepthEntry wire size mismatch");  
+
+
+struct CandlestickRoot {
+    int64_t time;
+    int8_t  e;
+    int8_t  pxExponent;
+    int8_t  szExponent;
+    int8_t  amountExponent;
+};
+
+static_assert(sizeof(CandlestickRoot)==12,"");
+
+struct CandlestickEntry {
+    int64_t t;
+
+    int64_t openMantissa;
+    int64_t highMantissa;
+    int64_t lowMantissa;
+    int64_t closeMantissa;
+
+    int64_t volumeMantissa;
+    int64_t amountMantissa;
+
+    uint8_t complete;
+};
+
+static_assert(sizeof(CandlestickEntry)==57,"");
+
+
+struct FuturesTickerRoot {
+
+    int64_t time;
+
+    int8_t e;
+
+};
+
+static_assert(sizeof(FuturesTickerRoot)==9,"");
+
+
+struct FuturesTickerEntry {
+
+    int64_t t;
+
+    int8_t pxExponent;
+
+    int64_t lastMantissa;
+    int64_t changePriceMantissa;
+    int64_t low24hMantissa;
+    int64_t high24hMantissa;
+
+    int8_t markPxExponent;
+    int64_t markPriceMantissa;
+
+    int8_t indexPxExponent;
+    int64_t indexPriceMantissa;
+
+    int8_t changePercentageExponent;
+    int64_t changePercentageMantissa;
+
+    int8_t fundingRateExponent;
+    int64_t fundingRateMantissa;
+
+    int8_t szExponent;
+    int64_t totalSize;
+
+    int8_t volume24hExponent;
+    int64_t volume24hMantissa;
+
+    int8_t volume24hBaseExponent;
+    int64_t volume24hBaseMantissa;
+
+    int8_t volume24hQuoteExponent;
+    int64_t volume24hQuoteMantissa;
+
+    int8_t volume24hSettleExponent;
+    int64_t volume24hSettleMantissa;
+};
+
+static_assert(sizeof(FuturesTickerEntry)==121,"");
+
   
 #pragma pack(pop)  
   
@@ -379,6 +464,67 @@ private:
     std::string_view channel_;  
     std::string_view symbol_;  
 };  
+
+class CandlestickIter {
+public:
+    CandlestickIter(const uint8_t* data, size_t len) noexcept {
+        if (len < sizeof(MessageHeader) + sizeof(CandlestickRoot) + sizeof(GroupSize16)) {
+            return;
+        }
+
+        const auto* hdr = header_of(data);
+        root_ = reinterpret_cast<const CandlestickRoot*>(data + sizeof(MessageHeader));
+        const uint8_t* end = data + len;
+        const uint8_t* p = data + sizeof(MessageHeader) + hdr->blockLength;
+        dim_ = reinterpret_cast<const GroupSize16*>(p);
+        p += sizeof(GroupSize16);
+        entries_ = p;
+        size_t bytes = static_cast<size_t>(dim_->blockLength) * dim_->numInGroup;
+        if (p + bytes > end)
+            return;
+
+        tail_ = p + bytes;
+        end_ = end;
+        ok_ = true;
+    }
+
+    bool ok() const noexcept {
+        return ok_;
+    }
+
+    const CandlestickRoot* root() const noexcept {
+        return root_;
+    }
+
+    uint16_t count() const noexcept {
+        return dim_ ? dim_->numInGroup : 0;
+    }
+
+    const CandlestickEntry* entry(uint16_t i) const noexcept {
+        return reinterpret_cast<const CandlestickEntry*>(entries_ + static_cast<size_t>(i) * dim_->blockLength);
+    }
+
+    std::string_view name(uint16_t i) const noexcept {
+        const uint8_t* p = entries_ + static_cast<size_t>(i) * dim_->blockLength + sizeof(CandlestickEntry);
+        const uint8_t* next=nullptr;
+
+        return read_var_string(p, end_, &next);
+    }
+
+    std::string_view channel() const noexcept {
+        const uint8_t* next=nullptr;
+        return read_var_string(tail_, end_, &next);
+    }
+
+private:
+
+    bool ok_{false};
+    const CandlestickRoot* root_{nullptr};
+    const GroupSize16* dim_{nullptr};
+    const uint8_t* entries_{nullptr};
+    const uint8_t* tail_{nullptr};
+    const uint8_t* end_{nullptr};
+};
   
 using ObuIter             = DepthIterT<ObuRoot,             false>;   // bids 先  
 using OrderBookIter       = DepthIterT<OrderBookRoot,       true>;    // asks 先  
@@ -482,6 +628,26 @@ struct DepthEntry {
 };  
 static_assert(sizeof(DepthEntry) == 16, "spot DepthEntry wire size mismatch");  
   
+
+// ---------- candlestick (id=6) root ----------
+struct CandlestickView {
+    int64_t time;              // server timestamp us
+    int8_t  e;                 // EventEnum
+    int64_t t;                 // candle timestamp us
+    int8_t  pxExponent;
+    int8_t  szExponent;
+    int8_t  amountExponent;
+    int64_t openMantissa;
+    int64_t highMantissa;
+    int64_t lowMantissa;
+    int64_t closeMantissa;
+    int64_t volumeMantissa;
+    int64_t amountMantissa;
+    uint8_t complete;          // BoolEnum
+};
+
+static_assert(sizeof(CandlestickView) == 79, "spot CandlestickView wire size mismatch");
+
 #pragma pack(pop)  
   
 // ---- bbo symbol 读取 (跳 channel 后读 currency_pair) -----------------------  
@@ -508,6 +674,26 @@ inline std::string_view public_trade_symbol(const uint8_t* data, size_t len) noe
     (void)gateiosbe::read_var_string(p, end, &next);  
     return gateiosbe::read_var_string(next, end, nullptr);  
 }  
+
+
+inline std::string_view candlestick_name(const uint8_t* data, size_t len) noexcept {
+    if (len < sizeof(MessageHeader) + sizeof(CandlestickView))
+        return {};
+
+    const auto* hdr = header_of(data);
+    const uint8_t* end = data + len;
+    const uint8_t* p = data + sizeof(MessageHeader) + hdr->blockLength;
+    const uint8_t* next = nullptr;
+
+    // skip channel
+    (void)read_var_string(p, end, &next);
+    // return name
+    return read_var_string(next, end, nullptr);
+}
+
+inline const CandlestickView* candlestick_view(const uint8_t* data, size_t len) noexcept {
+    return view_of<CandlestickView>(data, len);
+}
   
 // ---- Depth iter (现货全都是 bids 先) ---------------------------------------  
   
@@ -574,6 +760,29 @@ private:
     std::string_view channel_;  
     std::string_view symbol_;  
 };  
+
+
+struct CandlestickMeta {
+    std::string_view channel;
+    std::string_view name;
+
+};
+
+inline CandlestickMeta candlestick_meta(const uint8_t* data, size_t len) noexcept {
+    CandlestickMeta ret{};
+
+    if (len < sizeof(MessageHeader) + sizeof(CandlestickView))
+        return ret;
+
+    const auto* hdr = header_of(data);
+    const uint8_t* end = data + len;
+    const uint8_t* p = data + sizeof(MessageHeader) + hdr->blockLength;
+    const uint8_t* next = nullptr;
+    ret.channel = read_var_string(p, end, &next);
+    ret.name = read_var_string(next, end, nullptr);
+    return ret;
+}
+
   
 using ObuIter             = DepthIterT<ObuRoot>;  
 using OrderBookIter       = DepthIterT<OrderBookRoot>;  
