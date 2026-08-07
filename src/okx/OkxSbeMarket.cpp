@@ -305,6 +305,8 @@ void md::OkxSbeUnit::handleBboTbt(const uint8_t* data, size_t len, long tsNet) {
     depth1.av1 = askSz * info.magnifyNumber;
 
     depth1.tsParse = crypto::getCurrentTime();
+
+    std::cout << depth1.getString() << std::endl;
 #ifdef NEED_SHM
     auto it = mDepth1Publisher.find(key);
     if (it != mDepth1Publisher.end()) it->second->push(depth1);
