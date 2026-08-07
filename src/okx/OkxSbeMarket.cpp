@@ -29,10 +29,10 @@ std::string hmac_sha256_base64(std::string_view secret, std::string_view msg) {
 // ============================================================================
 // Ctor
 // ============================================================================
-md::OkxSbeUnit::OkxSbeUnit(sm::SecurityManager* s, ExchangeType exchTy, InstType instTy, MarketType marketTy, std::vector<md::InstrumentInfo>& instInfoVec, const char* host, int port, const char* passwd)
+md::OkxSbeUnit::OkxSbeUnit(sm::SecurityManager* s, ExchangeType exchTy, InstType instTy, MarketType marketTy, std::vector<md::InstrumentInfo>& instInfoVec, SbeAccount sbeAcc, const char* host, int port, const char* passwd)
     : BaseUnit(s, exchTy, instTy, marketTy, instInfoVec, host, port, passwd)
 {
-    // sbeAccount = sbeAcc;
+    sbeAccount = sbeAcc;
 
     // OKX 30s 无消息自动断连, client 每 20s 发一次 "ping"。
     cfg.ping_mode                = ::net::WsConfig::PingMode::ClientPeriodicText;
@@ -468,10 +468,10 @@ void md::OkxSbeUnit::handleExpUpdate(const uint8_t* data, size_t len) {
 // ============================================================================
 // OkxSbeMarket wrapper
 // ============================================================================
-md::OkxSbeMarket::OkxSbeMarket(sm::SecurityManager* s, const char* exId, std::vector<std::string>& instTypeVec, std::vector<std::string>& marketTypeVec, std::vector<std::string>& instIdVec, int lot, const char* host, const int port, const char* passwd) : md::BaseMarket(s, exId, instTypeVec, marketTypeVec, instIdVec, lot, host, port, passwd) {
+md::OkxSbeMarket::OkxSbeMarket(sm::SecurityManager* s, const char* exId, std::vector<std::string>& instTypeVec, std::vector<std::string>& marketTypeVec, std::vector<std::string>& instIdVec, SbeAccount sbeAccount, int lot, const char* host, const int port, const char* passwd) : md::BaseMarket(s, exId, instTypeVec, marketTypeVec, instIdVec, lot, host, port, passwd) {
     for (size_t i = 0; i < unitInfoVec.size(); ++i) {
         auto& info = unitInfoVec[i];
-        auto* unit = new md::OkxSbeUnit(smc, info.exchangeTypeEnum, info.instTypeEnum, info.marketTypeEnum, info.vInstInfo, _host, _port, _passwd);
+        auto* unit = new md::OkxSbeUnit(smc, info.exchangeTypeEnum, info.instTypeEnum, info.marketTypeEnum, info.vInstInfo, sbeAccount, _host, _port, _passwd);
         unit->generateSubBody();
         okxSbeUnitVec.push_back(unit);
     }

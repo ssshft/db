@@ -29,12 +29,6 @@ namespace md {
     constexpr int kDelayCountThenRestart = 1024 * 16;
     constexpr int kTokenUnitSize = 2048;
 
-    struct SbeAccount {
-        std::string apiKey{""};
-	    std::string secretKey{""};
-        std::string password{""};    
-    };
-
     struct UnitInfo {
         ExchangeType exchangeTypeEnum;
         InstType instTypeEnum;

@@ -49,7 +49,7 @@ namespace md {
 
     class OkxSbeUnit : public BaseUnit {
     public:
-        OkxSbeUnit(sm::SecurityManager* s, ExchangeType exchTy, InstType instTy, md::MarketType marketTy, std::vector<md::InstrumentInfo>& instInfoVec, const char* host = "127.0.0.1", int port = 9379, const char* passwd = "");
+        OkxSbeUnit(sm::SecurityManager* s, ExchangeType exchTy, InstType instTy, md::MarketType marketTy, std::vector<md::InstrumentInfo>& instInfoVec, SbeAccount sbeAcc, const char* host = "127.0.0.1", int port = 9379, const char* passwd = "");
 
         // 组装 cfg.url / cfg.subscribe_messages / cfg.ping_mode。
         // 同时通过 REST 拉一次 /api/v5/public/instruments 建立
@@ -107,7 +107,7 @@ namespace md {
 
     class OkxSbeMarket : public BaseMarket {
     public:
-        OkxSbeMarket(sm::SecurityManager* s, const char* exId, std::vector<std::string>& instTypeVec, std::vector<std::string>& marketTypeVec, std::vector<std::string>& instIdVec, int lot = 30, const char* host = "127.0.0.1", const int port = 9379, const char* passwd = "");
+        OkxSbeMarket(sm::SecurityManager* s, const char* exId, std::vector<std::string>& instTypeVec, std::vector<std::string>& marketTypeVec, std::vector<std::string>& instIdVec, SbeAccount sbeAccount, int lot = 30, const char* host = "127.0.0.1", const int port = 9379, const char* passwd = "");
         ~OkxSbeMarket();
         virtual void start();
 

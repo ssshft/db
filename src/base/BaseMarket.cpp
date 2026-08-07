@@ -8,7 +8,7 @@ md::BaseUnit::BaseUnit(sm::SecurityManager* s, ExchangeType exchTy, InstType ins
     instTypeEnum = instTy;
     marketTypeEnum = marketTy;
     vInstInfo = instInfoVec;
-    redisClient = new RedisClient(host, port, password, false, true);
+    // redisClient = new RedisClient(host, port, password, false, true);
     latestDataUpdateTime = 0;
     pWsClient = nullptr;
 

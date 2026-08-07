@@ -98,9 +98,9 @@ inline bool is_gate_pong(const uint8_t* data, size_t len) noexcept {
 // ============================================================================
 // Ctor: 根据 instType 决定 ping text
 // ============================================================================
-md::GateioSbeUnit::GateioSbeUnit(sm::SecurityManager* s, ExchangeType exchTy, InstType instTy, MarketType marketTy, std::vector<md::InstrumentInfo>& instInfoVec, const char* host, int port, const char* passwd)
-    : BaseUnit(s, exchTy, instTy, marketTy, instInfoVec, host, port, passwd)
-{
+md::GateioSbeUnit::GateioSbeUnit(sm::SecurityManager* s, ExchangeType exchTy, InstType instTy, MarketType marketTy, std::vector<md::InstrumentInfo>& instInfoVec, SbeAccount sbeAcc, const char* host, int port, const char* passwd)
+    : BaseUnit(s, exchTy, instTy, marketTy, instInfoVec, host, port, passwd) {
+    sbeAccount = sbeAcc;
     cfg.ping_mode = net::WsConfig::PingMode::ClientPeriodicText;
     cfg.client_ping_interval_sec = 20;
     if (instTypeEnum == SPOT) {
@@ -515,12 +515,12 @@ void md::GateioSbeUnit::parseSpotData(const uint8_t* data, size_t len, long tsNe
 // ============================================================================
 // Market wrapper
 // ============================================================================
-md::GateioSbeMarket::GateioSbeMarket(sm::SecurityManager* s, const char* exId, std::vector<std::string>& instTypeVec, std::vector<std::string>& marketTypeVec, std::vector<std::string>& instIdVec, int lot, const char* host, const int port, const char* passwd)
+md::GateioSbeMarket::GateioSbeMarket(sm::SecurityManager* s, const char* exId, std::vector<std::string>& instTypeVec, std::vector<std::string>& marketTypeVec, std::vector<std::string>& instIdVec, SbeAccount sbeAccount, int lot, const char* host, const int port, const char* passwd)
     : md::BaseMarket(s, exId, instTypeVec, marketTypeVec, instIdVec, lot, host, port, passwd)
 {
     for (size_t i = 0; i < unitInfoVec.size(); ++i) {
         auto& info = unitInfoVec[i];
-        auto* unit = new md::GateioSbeUnit(smc, info.exchangeTypeEnum, info.instTypeEnum, info.marketTypeEnum, info.vInstInfo, _host, _port, _passwd);
+        auto* unit = new md::GateioSbeUnit(smc, info.exchangeTypeEnum, info.instTypeEnum, info.marketTypeEnum, info.vInstInfo, sbeAccount, _host, _port, _passwd);
         unit->generateSubBody();
         gateioSbeUnitVec.push_back(unit);
     }

@@ -19,7 +19,7 @@ constexpr auto GATEIO_WS_SBE_BTC_FUTURES = "wss://fx-ws.gateio.ws/v4/ws/delivery
 namespace md {
     class GateioSbeUnit : public BaseUnit {
     public:
-        GateioSbeUnit(sm::SecurityManager* s, ExchangeType exchTy, InstType instTy, md::MarketType marketTy, std::vector<md::InstrumentInfo>& instInfoVec, const char* host = "127.0.0.1", int port = 9379, const char* passwd = "");
+        GateioSbeUnit(sm::SecurityManager* s, ExchangeType exchTy, InstType instTy, md::MarketType marketTy, std::vector<md::InstrumentInfo>& instInfoVec, SbeAccount sbeAcc, const char* host = "127.0.0.1", int port = 9379, const char* passwd = "");
     
         virtual void generateSubBody();
         virtual void parseMarketData(const std::string& msg);
@@ -30,12 +30,14 @@ namespace md {
 
     private:
         bool lookupInfo(std::string_view sym, md::InstrumentInfo& out) const;
+
+        SbeAccount sbeAccount;
     };
 
 
     class GateioSbeMarket : public BaseMarket {
     public:
-        GateioSbeMarket(sm::SecurityManager* s, const char* exId, std::vector<std::string>& instTypeVec, std::vector<std::string>& marketTypeVec, std::vector<std::string>& instIdVec, int lot = 30, const char* host = "127.0.0.1", const int port = 9379, const char* passwd = "");
+        GateioSbeMarket(sm::SecurityManager* s, const char* exId, std::vector<std::string>& instTypeVec, std::vector<std::string>& marketTypeVec, std::vector<std::string>& instIdVec, SbeAccount sbeAccount, int lot = 30, const char* host = "127.0.0.1", const int port = 9379, const char* passwd = "");
         ~GateioSbeMarket();
         virtual void start();
 

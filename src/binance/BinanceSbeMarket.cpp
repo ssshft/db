@@ -81,6 +81,7 @@ void md::BinanceSbeUnit::onWebsocketMsg(const uint8_t* data, size_t len, bool is
 
     if (isBinary) {
         std::string msg(reinterpret_cast<const char*>(data), len);
+        std::cout << "onWebsocketMsg: " << msg << std::endl;
         mQueue.push(msg);
     }
     else {
@@ -131,7 +132,7 @@ void md::BinanceSbeUnit::parseMarketData(const std::string& msg) {
             return;
         }
 
-        std::string key = crypto::get_md_channel_key(exchangeTypeEnum, instTypeEnum, marketTypeEnum, info.instId);
+        const std::string& key = crypto::get_md_channel_key(exchangeTypeEnum, instTypeEnum, marketTypeEnum, info.instId);
 
         md::Depth1 depth1;
         memset(&depth1, 0, sizeof(md::Depth1));
@@ -157,8 +158,7 @@ void md::BinanceSbeUnit::parseMarketData(const std::string& msg) {
 
         depth1.tsParse = crypto::getCurrentTime();
 #ifdef NEED_SHM
-        auto it = mDepth1Publisher.find(key);
-        if (it != mDepth1Publisher.end()) it->second->push(depth1);
+        mDepth1Publisher[key]->push(depth1);
 #endif
         break;
     }
@@ -217,8 +217,7 @@ void md::BinanceSbeUnit::parseMarketData(const std::string& msg) {
             }
             d.tsParse = crypto::getCurrentTime();
 #ifdef NEED_SHM
-            auto it = mDepth5Publisher.find(key);
-            if (it != mDepth5Publisher.end()) it->second->push(d);
+            mDepth5Publisher[key]->push(d);
 #endif
         }
         else if (marketTypeEnum == md::DEPTH10) {
@@ -241,8 +240,8 @@ void md::BinanceSbeUnit::parseMarketData(const std::string& msg) {
             }
             d.tsParse = crypto::getCurrentTime();
 #ifdef NEED_SHM
-            auto it = mDepth10Publisher.find(key);
-            if (it != mDepth10Publisher.end()) it->second->push(d);
+
+            mDepth10Publisher[key]->push(d);
 #endif
         }
         else if (marketTypeEnum == md::DEPTH20) {
@@ -269,8 +268,7 @@ void md::BinanceSbeUnit::parseMarketData(const std::string& msg) {
             }
             d.tsParse = crypto::getCurrentTime();
 #ifdef NEED_SHM
-            auto it = mDepth20Publisher.find(key);
-            if (it != mDepth20Publisher.end()) it->second->push(d);
+            mDepth20Publisher[key]->push(d);
 #endif
         }
         // else 该 unit 订的不是 DEPTH5/10/20, 忽略
@@ -329,8 +327,7 @@ void md::BinanceSbeUnit::parseMarketData(const std::string& msg) {
 
             trades.tsParse = crypto::getCurrentTime();
 #ifdef NEED_SHM
-            auto it = mTradesPublisher.find(key);
-            if (it != mTradesPublisher.end()) it->second->push(trades);
+            mTradesPublisher[key]->push(trades);
 #endif
         }
         break;
