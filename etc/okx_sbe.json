@@ -1,0 +1,26 @@
+
+{
+  "tag": "DB_okx_p1",
+  "log": {
+      "level": "info",
+      "log_path": "/logs"
+  },
+  "redis": {
+    "host": "localhost",
+    "port": 9379,
+    "password":"refZa2KcTj$QjyXk"
+  },
+  "OKX_SBE":{
+    "sbe": {
+        "apiKey": "eeb9e4f9-6a46-479e-b221-2972c29843a7",
+        "secretKey": "1DDE0D6CD9BAA3DA0AF49AAFB381D167",
+        "password": ""
+    },
+    "tokenLot":80,
+    "instType": ["SPOT"],
+    "marketType": ["DEPTH1"],
+    "instId": [
+      "BTC-USDT"
+    ]
+  }
+}
