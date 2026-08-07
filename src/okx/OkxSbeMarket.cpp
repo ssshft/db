@@ -123,7 +123,7 @@ void md::OkxSbeUnit::buildSubscribeJson() {
 
     subArgs.clear();
     for (auto& info : vInstInfo) {
-        subArgs.push_back(fmt::format(R"({{"channel":"{}","instId":"{}"}})", channel, info.originInstId));
+        subArgs.push_back(fmt::format(R"({{"channel":"{}","instIdCode":"{}"}})", channel, info.instIdCode));
     }
 
     std::string argsCsv;
