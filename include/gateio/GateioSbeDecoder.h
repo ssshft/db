@@ -272,7 +272,7 @@ struct CandlestickEntry {
 
 static_assert(sizeof(CandlestickEntry)==57,"");
 
-
+/*
 struct FuturesTickerRoot {
 
     int64_t time;
@@ -324,6 +324,7 @@ struct FuturesTickerEntry {
 };
 
 static_assert(sizeof(FuturesTickerEntry)==121,"");
+*/
 
   
 #pragma pack(pop)  
@@ -468,16 +469,16 @@ private:
 class CandlestickIter {
 public:
     CandlestickIter(const uint8_t* data, size_t len) noexcept {
-        if (len < sizeof(MessageHeader) + sizeof(CandlestickRoot) + sizeof(GroupSize16)) {
+        if (len < sizeof(gateiosbe::MessageHeader) + sizeof(CandlestickRoot) + sizeof(gateiosbe::GroupSize16)) {
             return;
         }
 
         const auto* hdr = header_of(data);
-        root_ = reinterpret_cast<const CandlestickRoot*>(data + sizeof(MessageHeader));
+        root_ = reinterpret_cast<const CandlestickRoot*>(data + sizeof(gateiosbe::MessageHeader));
         const uint8_t* end = data + len;
-        const uint8_t* p = data + sizeof(MessageHeader) + hdr->blockLength;
-        dim_ = reinterpret_cast<const GroupSize16*>(p);
-        p += sizeof(GroupSize16);
+        const uint8_t* p = data + sizeof(gateiosbe::MessageHeader) + hdr->blockLength;
+        dim_ = reinterpret_cast<const gateiosbe::GroupSize16*>(p);
+        p += sizeof(gateiosbe::GroupSize16);
         entries_ = p;
         size_t bytes = static_cast<size_t>(dim_->blockLength) * dim_->numInGroup;
         if (p + bytes > end)
@@ -520,7 +521,7 @@ private:
 
     bool ok_{false};
     const CandlestickRoot* root_{nullptr};
-    const GroupSize16* dim_{nullptr};
+    const gateiosbe::GroupSize16* dim_{nullptr};
     const uint8_t* entries_{nullptr};
     const uint8_t* tail_{nullptr};
     const uint8_t* end_{nullptr};
