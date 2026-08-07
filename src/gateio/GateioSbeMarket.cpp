@@ -166,6 +166,16 @@ void md::GateioSbeUnit::generateSubBody() {
             channel = fmt::format("{}.trades", prefix);
             payloadJson = fmt::format(R"(["{}"])", originInstId);
         }
+        else if (marketTypeEnum == md::KLINE_1m) {
+            channel = fmt::format("{}.candlesticks", prefix);
+            payloadJson = fmt::format(R"(["{}"])", originInstId);
+        }
+        else if (marketTypeEnum == md::FUNDING_RATE) {
+            if (instTypeEnum == USDT_SWAP) {
+                channel = fmt::format("{}.tickers", prefix);
+                payloadJson = fmt::format(R"(["{}"])", originInstId);
+            }
+        }
         else {
             LOG_ERROR("[GATEIO_SBE] unsupported marketType: {}", marketTypeStr);
             continue;
@@ -402,6 +412,60 @@ void md::GateioSbeUnit::parseFuturesData(const uint8_t* data, size_t len, long t
         break;
     }
 
+    case fx::kTemplateCandlestick: {
+        if (marketTypeEnum != md::KLINE) {
+            return;
+        }
+
+        fx::CandlestickIter iter(data,len);
+        if (!iter.ok() || !iter.root()) {
+            LOG_ERROR("[GATEIO_SBE][fx] Candlestick iter failed");
+            return;
+        }
+
+        md::InstrumentInfo info;
+        if (!lookupInfo(iter.name(0), info)) {
+            return;
+        }
+
+        const std::string& key = crypto::get_md_channel_key(exchangeTypeEnum, instTypeEnum, marketTypeEnum, info.instId);
+
+        const auto* root = iter.root();
+
+        for (uint16_t i=0; i<iter.count(); ++i) {
+            const auto* e = iter.entry(i);
+
+            md::Kline k;
+            memset(&k, 0, sizeof(k));
+            k.exchangeTypeEnum = exchangeTypeEnum;
+            k.instTypeEnum = instTypeEnum;
+            k.marketTypeEnum = marketTypeEnum;
+            strncpy(k.instId, info.instId, INSTID_SIZE);
+
+            // Gate candlestick: t 是秒
+            k.tsTrans = static_cast<long>(e->t)*1000000L;
+            k.tsEvent = static_cast<long>(root->time);
+            k.tsRecv = tsNet;
+            k.open = gateiosbe::to_double(e->openMantissa, root->pxExponent) * info.reduceNumber;
+            k.high = gateiosbe::to_double(e->highMantissa, root->pxExponent) * info.reduceNumber;
+            k.low = gateiosbe::to_double(e->lowMantissa, root->pxExponent) * info.reduceNumber;
+            k.close = gateiosbe::to_double(e->closeMantissa, root->pxExponent) * info.reduceNumber;
+            k.volume = gateiosbe::to_double(e->volumeMantissa, root->szExponent) * info.magnifyNumber; 
+            k.amount = gateiosbe::to_double(e->amountMantissa, root->amountExponent);
+            k.complete = e->complete;
+            k.tsParse = crypto::getCurrentTime();
+
+            std::cout << k.getString() << std::endl;
+
+            if (!k.complete) {
+                continue;
+            }
+    #ifdef NEED_SHM
+            mKlinePublisher[key]->push(k);
+    #endif
+        }
+        break;
+    }
     case fx::kTemplateObu:
     case fx::kTemplateOrderBookUpdate:
         // TODO: order-book 累积器
@@ -576,6 +640,58 @@ void md::GateioSbeUnit::parseSpotData(const uint8_t* data, size_t len, long tsNe
         }
         break;
     }
+
+    case sp::kTemplateCandlestick: {
+        if (marketTypeEnum != md::KLINE) {
+            return;
+        }
+
+        const auto* v = gateiosbe::view_of<sp::CandlestickView>(data, len);
+        if (!v) {
+            LOG_ERROR("[GATEIO_SBE][sp] Candlestick view failed");
+            return;
+        }
+
+        auto name = sp::candlestick_name(data, len);
+        md::InstrumentInfo info;
+
+        if (!lookupInfoFromCandlestick(name, info)) {
+            return;
+        }
+
+        md::Kline k;
+        memset(&k, 0, sizeof(k));
+        k.exchangeTypeEnum = exchangeTypeEnum;
+        k.instTypeEnum = instTypeEnum;
+        k.marketTypeEnum = marketTypeEnum;
+        strncpy(k.instId, info.instId, INSTID_SIZE);
+
+        // candle timestamp
+        k.tsOpen = static_cast<long>(v->t) * 1000;
+        k.tsRecv = tsNet;
+        k.open = gateiosbe::to_double(v->openMantissa, v->pxExponent) * info.reduceNumber;
+        k.high = gateiosbe::to_double(v->highMantissa, v->pxExponent) * info.reduceNumber;
+        k.low = gateiosbe::to_double(v->lowMantissa, v->pxExponent) * info.reduceNumber;
+        k.close = gateiosbe::to_double(v->closeMantissa, v->pxExponent) * info.reduceNumber;
+        k.volume = gateiosbe::to_double(v->volumeMantissa, v->szExponent) * info.magnifyNumber;
+        k.amount = gateiosbe::to_double(v->amountMantissa, v->amountExponent);
+        k.complete = v->complete;
+        k.tsParse = crypto::getCurrentTime();
+
+        std::cout << k.getString() << std::endl;
+        
+        if (!k.complete) {
+            return;
+        }
+
+    #ifdef NEED_SHM
+        mKlinePublisher[key]->push(k);
+    #endif
+
+        break;
+    }
+
+
 
     case sp::kTemplateObu:
     case sp::kTemplateOrderBookUpdate:

@@ -35,11 +35,11 @@ md::OkxSbeUnit::OkxSbeUnit(sm::SecurityManager* s, ExchangeType exchTy, InstType
     sbeAccount = sbeAcc;
 
     // OKX 30s 无消息自动断连, client 每 20s 发一次 "ping"。
-    cfg.ping_mode                = ::net::WsConfig::PingMode::ClientPeriodicText;
+    cfg.ping_mode = net::WsConfig::PingMode::ClientPeriodicText;
     cfg.client_ping_interval_sec = 20;
-    cfg.client_ping_text         = "ping";
-    cfg.idle_timeout_sec         = 60;
-    cfg.data_idle_timeout_sec    = 0;
+    cfg.client_ping_text = "ping";
+    cfg.idle_timeout_sec = 60;
+    cfg.data_idle_timeout_sec = 0;
 }
 
 
@@ -131,9 +131,18 @@ void md::OkxSbeUnit::buildSubscribeJson() {
 
 const char* md::OkxSbeUnit::channelForMarketType() const {
     std::string mt = MarketTypeEnum2StrMap[marketTypeEnum];
-    if (crypto::has_str(mt.c_str(), "DEPTH1")) return "bbo-tbt";
-    if (crypto::has_str(mt.c_str(), "DEPTH"))  return "books-l2-tbt";
-    if (crypto::has_str(mt.c_str(), "TRADE"))  return "trades";
+    if (crypto::has_str(mt.c_str(), "DEPTH1")) {
+        return "bbo-tbt";
+    }
+
+    if (crypto::has_str(mt.c_str(), "DEPTH")) {
+        return "books-l2-tbt";
+    }
+
+    if (crypto::has_str(mt.c_str(), "TRADE")) {
+        return "trades";
+    }
+
     return nullptr;
 }
 
@@ -162,17 +171,21 @@ void md::OkxSbeUnit::buildCodeIndexFromSm() {
     }
 
     for (auto& info : all) {
-        if (info.exchangeTypeEnum != OKX) continue;
-        if (info.instIdCode == 0) continue;   // OKX 未分配 code 的产品, SBE 不覆盖
-        if (wanted.count(info.originInstId) == 0) continue;
+        if (info.instIdCode == 0) {
+            continue;   // OKX 未分配 code 的产品, SBE 不覆盖
+        }
+
+        if (wanted.count(info.originInstId) == 0) {
+            continue;
+        }
+        
         mCodeToInfo[info.instIdCode] = info;
     }
 
-    LOG_INFO("[OKX_SBE] code index built from SecurityManager: {} entries (of {} wanted)",
-             mCodeToInfo.size(), wanted.size());
+    LOG_INFO("[OKX_SBE] code index built from SecurityManager: {} entries (of {} wanted)", mCodeToInfo.size(), wanted.size());
+    
     if (mCodeToInfo.empty()) {
-        LOG_WARN("[OKX_SBE] no entries in code index — contractinfo may not have run yet, "
-                 "or instIdCode is not populated. SBE frames will be dropped.");
+        LOG_WARN("[OKX_SBE] no entries in code index — contractinfo may not have run yet, or instIdCode is not populated. SBE frames will be dropped.");
     }
 }
 
