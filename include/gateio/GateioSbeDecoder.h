@@ -647,7 +647,7 @@ struct CandlestickView {
     uint8_t complete;          // BoolEnum
 };
 
-static_assert(sizeof(CandlestickView) == 79, "spot CandlestickView wire size mismatch");
+static_assert(sizeof(CandlestickView) == 61, "spot CandlestickView wire size mismatch");
 
 #pragma pack(pop)  
   

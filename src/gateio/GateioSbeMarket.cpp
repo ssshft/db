@@ -413,7 +413,7 @@ void md::GateioSbeUnit::parseFuturesData(const uint8_t* data, size_t len, long t
     }
 
     case fx::kTemplateCandlestick: {
-        if (marketTypeEnum != md::KLINE) {
+        if (marketTypeEnum != md::KLINE_1m) {
             return;
         }
 
@@ -446,18 +446,25 @@ void md::GateioSbeUnit::parseFuturesData(const uint8_t* data, size_t len, long t
             k.tsTrans = static_cast<long>(e->t)*1000000L;
             k.tsEvent = static_cast<long>(root->time);
             k.tsRecv = tsNet;
-            k.open = gateiosbe::to_double(e->openMantissa, root->pxExponent) * info.reduceNumber;
-            k.high = gateiosbe::to_double(e->highMantissa, root->pxExponent) * info.reduceNumber;
-            k.low = gateiosbe::to_double(e->lowMantissa, root->pxExponent) * info.reduceNumber;
-            k.close = gateiosbe::to_double(e->closeMantissa, root->pxExponent) * info.reduceNumber;
-            k.volume = gateiosbe::to_double(e->volumeMantissa, root->szExponent) * info.magnifyNumber; 
-            k.amount = gateiosbe::to_double(e->amountMantissa, root->amountExponent);
-            k.complete = e->complete;
+            k.openPrice = gateiosbe::to_double(e->openMantissa, root->pxExponent) * info.reduceNumber;
+            k.highPrice = gateiosbe::to_double(e->highMantissa, root->pxExponent) * info.reduceNumber;
+            k.lowPrice = gateiosbe::to_double(e->lowMantissa, root->pxExponent) * info.reduceNumber;
+            k.closePrice = gateiosbe::to_double(e->closeMantissa, root->pxExponent) * info.reduceNumber;
+            k.totalVolume = gateiosbe::to_double(e->volumeMantissa, root->szExponent) * info.magnifyNumber; 
+            k.totalAmount = gateiosbe::to_double(e->amountMantissa, root->amountExponent);
+
+            double avgPrice = 0.0;
+            if(k.totalVolume > ZERO_NUM) {
+                avgPrice = k.totalAmount / k.totalVolume;
+            }
+            k.avgPrice = avgPrice * info.reduceNumber;
+
+            k.isFinished = e->complete;
             k.tsParse = crypto::getCurrentTime();
 
             std::cout << k.getString() << std::endl;
 
-            if (!k.complete) {
+            if (!k.isFinished) {
                 continue;
             }
     #ifdef NEED_SHM
@@ -667,20 +674,28 @@ void md::GateioSbeUnit::parseSpotData(const uint8_t* data, size_t len, long tsNe
         strncpy(k.instId, info.instId, INSTID_SIZE);
 
         // candle timestamp
-        k.tsOpen = static_cast<long>(v->t) * 1000;
+        long ts = static_cast<long>(v->t);
+        k.tsEvent = ts;
+        k.tsTrans = ts;
         k.tsRecv = tsNet;
-        k.open = gateiosbe::to_double(v->openMantissa, v->pxExponent) * info.reduceNumber;
-        k.high = gateiosbe::to_double(v->highMantissa, v->pxExponent) * info.reduceNumber;
-        k.low = gateiosbe::to_double(v->lowMantissa, v->pxExponent) * info.reduceNumber;
-        k.close = gateiosbe::to_double(v->closeMantissa, v->pxExponent) * info.reduceNumber;
-        k.volume = gateiosbe::to_double(v->volumeMantissa, v->szExponent) * info.magnifyNumber;
-        k.amount = gateiosbe::to_double(v->amountMantissa, v->amountExponent);
-        k.complete = v->complete;
+        k.openPrice = gateiosbe::to_double(v->openMantissa, v->pxExponent) * info.reduceNumber;
+        k.highPrice = gateiosbe::to_double(v->highMantissa, v->pxExponent) * info.reduceNumber;
+        k.lowPrice = gateiosbe::to_double(v->lowMantissa, v->pxExponent) * info.reduceNumber;
+        k.closePrice = gateiosbe::to_double(v->closeMantissa, v->pxExponent) * info.reduceNumber;
+        k.totalVolume = gateiosbe::to_double(v->volumeMantissa, v->szExponent) * info.magnifyNumber;
+        k.totalAmount = gateiosbe::to_double(v->amountMantissa, v->amountExponent);
+        k.isFinished = v->complete;
         k.tsParse = crypto::getCurrentTime();
 
+        double avgPrice = 0.0;
+        if(k.totalVolume > ZERO_NUM) {
+            avgPrice = k.totalAmount / k.totalVolume;
+        }
+        kline.avgPrice = avgPrice * info.reduceNumber;
+
         std::cout << k.getString() << std::endl;
-        
-        if (!k.complete) {
+
+        if (!k.isFinished) {
             return;
         }
 

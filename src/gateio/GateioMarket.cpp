@@ -1404,7 +1404,7 @@ void md::GateioUnit::parseSwapData(const std::string& msg) {
                 double avgPrice = 0;
                 double amount = crypto::fast_atod(amountStr);
                 double volume = crypto::fast_atod(volStr);
-                if(amount > ZERO_NUM) {
+                if(volume > ZERO_NUM) {
                     avgPrice = amount / volume;
                 }
                 kline.avgPrice = avgPrice * info.reduceNumber;
