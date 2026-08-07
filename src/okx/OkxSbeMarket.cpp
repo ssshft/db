@@ -56,6 +56,16 @@ void md::OkxSbeUnit::generateSubBody() {
 
     cfg.url = OKX_WS_SBE_PUBLIC;
 
+    long ts_sec = crypto::getCurrentTimeSeconds();
+    std::string ts = std::to_string(ts_sec);
+    std::string payload = ts + "GET/users/self/verify";
+    std::string sign = hmac_sha256_base64(sbeAccount.secretKey, payload);
+
+    cfg.headers.emplace_back("OK-ACCESS-KEY", sbeAccount.apiKey);
+    cfg.headers.emplace_back("OK-ACCESS-SIGN", sign);
+    cfg.headers.emplace_back("OK-ACCESS-TIMESTAMP", std::to_string(ts));
+    cfg.headers.emplace_back("OK-ACCESS-PASSPHRASE", sbeAccount.password;
+
     // 1) 从 SecurityManager 拿 code 反查表
     buildCodeIndexFromSm();
 
@@ -67,13 +77,13 @@ void md::OkxSbeUnit::generateSubBody() {
     }
 
     // 3) 登录 JSON 插到最前面, 保证先登录后订阅
-    std::string login_json = buildLoginJson();
-    if (!login_json.empty()) {
-        cfg.subscribe_messages.insert(cfg.subscribe_messages.begin(), login_json);
-    } else {
-        LOG_WARN("[OKX_SBE] SbeAccount not configured, skipping login. "
-                 "OKX SBE endpoint requires login; subscribe will likely fail.");
-    }
+    // std::string login_json = buildLoginJson();
+    // if (!login_json.empty()) {
+    //     cfg.subscribe_messages.insert(cfg.subscribe_messages.begin(), login_json);
+    // } else {
+    //     LOG_WARN("[OKX_SBE] SbeAccount not configured, skipping login. "
+    //              "OKX SBE endpoint requires login; subscribe will likely fail.");
+    // }
 
     LOG_INFO("{} SBE ws url: {} , {} messages queued (login first)", exchIdStr, cfg.url, cfg.subscribe_messages.size());
     for (auto& m : cfg.subscribe_messages) LOG_INFO("  msg: {}", m);
@@ -178,7 +188,7 @@ void md::OkxSbeUnit::buildCodeIndexFromSm() {
         if (wanted.count(info.originInstId) == 0) {
             continue;
         }
-        
+
         mCodeToInfo[info.instIdCode] = info;
     }
 
