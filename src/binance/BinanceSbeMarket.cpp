@@ -136,23 +136,23 @@ void md::BinanceSbeUnit::parseMarketData(const std::string& msg) {
         md::Depth1 depth1;
         memset(&depth1, 0, sizeof(md::Depth1));
         depth1.exchangeTypeEnum = exchangeTypeEnum;
-        depth1.instTypeEnum     = instTypeEnum;
-        depth1.marketTypeEnum   = marketTypeEnum;
+        depth1.instTypeEnum = instTypeEnum;
+        depth1.marketTypeEnum = marketTypeEnum;
         strncpy(depth1.instId, info.instId, INSTID_SIZE);
 
         long tsUs = static_cast<long>(v->eventTime);
         depth1.tsTrans = tsUs;
         depth1.tsEvent = tsUs;
-        depth1.tsRecv  = tsNet;
+        depth1.tsRecv = tsNet;
 
         double bidPx = binancesbe::to_double(v->bidPrice, v->priceExponent);
-        double bidQty = binancesbe::to_double(v->bidQty,  v->qtyExponent);
+        double bidQty = binancesbe::to_double(v->bidQty, v->qtyExponent);
         double askPx = binancesbe::to_double(v->askPrice, v->priceExponent);
-        double askQty = binancesbe::to_double(v->askQty,  v->qtyExponent);
+        double askQty = binancesbe::to_double(v->askQty, v->qtyExponent);
 
-        depth1.bp1 = bidPx  * info.reduceNumber;
+        depth1.bp1 = bidPx * info.reduceNumber;
         depth1.bv1 = bidQty * info.magnifyNumber;
-        depth1.ap1 = askPx  * info.reduceNumber;
+        depth1.ap1 = askPx * info.reduceNumber;
         depth1.av1 = askQty * info.magnifyNumber;
 
         depth1.tsParse = crypto::getCurrentTime();
@@ -188,8 +188,8 @@ void md::BinanceSbeUnit::parseMarketData(const std::string& msg) {
 
         auto fill_common = [&](auto& d) {
             d.exchangeTypeEnum = exchangeTypeEnum;
-            d.instTypeEnum     = instTypeEnum;
-            d.marketTypeEnum   = marketTypeEnum;
+            d.instTypeEnum = instTypeEnum;
+            d.marketTypeEnum = marketTypeEnum;
             strncpy(d.instId, info.instId, INSTID_SIZE);
             d.tsTrans = tsNs;
             d.tsEvent = tsNs;
@@ -199,7 +199,10 @@ void md::BinanceSbeUnit::parseMarketData(const std::string& msg) {
         std::string key = crypto::get_md_channel_key(exchangeTypeEnum, instTypeEnum, marketTypeEnum, info.instId);
 
         if (marketTypeEnum == md::DEPTH5) {
-            md::Depth5 d; memset(&d, 0, sizeof(d)); fill_common(d);
+            md::Depth5 d; 
+            memset(&d, 0, sizeof(d)); 
+            fill_common(d);
+
             double* bpArr[5] = {&d.bp1,&d.bp2,&d.bp3,&d.bp4,&d.bp5};
             double* bvArr[5] = {&d.bv1,&d.bv2,&d.bv3,&d.bv4,&d.bv5};
             double* apArr[5] = {&d.ap1,&d.ap2,&d.ap3,&d.ap4,&d.ap5};
@@ -222,7 +225,10 @@ void md::BinanceSbeUnit::parseMarketData(const std::string& msg) {
 #endif
         }
         else if (marketTypeEnum == md::DEPTH10) {
-            md::Depth10 d; memset(&d, 0, sizeof(d)); fill_common(d);
+            md::Depth10 d; 
+            memset(&d, 0, sizeof(d)); 
+            fill_common(d);
+
             double* bpArr[10] = {&d.bp1,&d.bp2,&d.bp3,&d.bp4,&d.bp5,&d.bp6,&d.bp7,&d.bp8,&d.bp9,&d.bp10};
             double* bvArr[10] = {&d.bv1,&d.bv2,&d.bv3,&d.bv4,&d.bv5,&d.bv6,&d.bv7,&d.bv8,&d.bv9,&d.bv10};
             double* apArr[10] = {&d.ap1,&d.ap2,&d.ap3,&d.ap4,&d.ap5,&d.ap6,&d.ap7,&d.ap8,&d.ap9,&d.ap10};
@@ -247,7 +253,10 @@ void md::BinanceSbeUnit::parseMarketData(const std::string& msg) {
 #endif
         }
         else if (marketTypeEnum == md::DEPTH20) {
-            md::Depth20 d; memset(&d, 0, sizeof(d)); fill_common(d);
+            md::Depth20 d; 
+            memset(&d, 0, sizeof(d)); 
+            fill_common(d);
+
             double* bpArr[20] = {&d.bp1,&d.bp2,&d.bp3,&d.bp4,&d.bp5,&d.bp6,&d.bp7,&d.bp8,&d.bp9,&d.bp10,
                                  &d.bp11,&d.bp12,&d.bp13,&d.bp14,&d.bp15,&d.bp16,&d.bp17,&d.bp18,&d.bp19,&d.bp20};
             double* bvArr[20] = {&d.bv1,&d.bv2,&d.bv3,&d.bv4,&d.bv5,&d.bv6,&d.bv7,&d.bv8,&d.bv9,&d.bv10,
@@ -283,7 +292,9 @@ void md::BinanceSbeUnit::parseMarketData(const std::string& msg) {
     // TradesStreamEvent (10000) → Trades (每条 entry 生成一条 Trades)
     // ------------------------------------------------------------------
     case binancesbe::kTemplateTrades: {
-        if (marketTypeEnum != md::TRADES) return;
+        if (marketTypeEnum != md::TRADES) {
+            return;
+        }
 
         binancesbe::TradesIter iter(data, len);
         if (!iter.ok() || !iter.root()) {
@@ -300,7 +311,7 @@ void md::BinanceSbeUnit::parseMarketData(const std::string& msg) {
             return;
         }
 
-        std::string key = crypto::get_md_channel_key(exchangeTypeEnum, instTypeEnum, marketTypeEnum, info.instId);
+        const std::string& key = crypto::get_md_channel_key(exchangeTypeEnum, instTypeEnum, marketTypeEnum, info.instId);
 
         long tsUs = static_cast<long>(root->transactTime);
 
@@ -311,12 +322,12 @@ void md::BinanceSbeUnit::parseMarketData(const std::string& msg) {
             md::Trades trades;
             memset(&trades, 0, sizeof(trades));
             trades.exchangeTypeEnum = exchangeTypeEnum;
-            trades.instTypeEnum     = instTypeEnum;
-            trades.marketTypeEnum   = marketTypeEnum;
+            trades.instTypeEnum = instTypeEnum;
+            trades.marketTypeEnum = marketTypeEnum;
             strncpy(trades.instId, info.instId, INSTID_SIZE);
             trades.tsTrans = tsUs;
             trades.tsEvent = static_cast<long>(root->eventTime) * 1000;
-            trades.tsRecv  = tsNet;
+            trades.tsRecv = tsNet;
 
             std::string tidStr = std::to_string(e->id);
             strncpy(trades.tradeId, tidStr.c_str(), INSTID_SIZE);

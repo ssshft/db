@@ -17,13 +17,11 @@
 // ---- 深度快照填充: 泛型模板, spot/futures 的 OrderBookIter 接口一致 ----------
 
 template <typename Iter>
-inline void fill_depth5(md::Depth5& d, const Iter& iter,
-                        int8_t pxExp, int8_t szExp,
-                        const md::InstrumentInfo& info) {
-    double* bpArr[5] = {&d.bp1,&d.bp2,&d.bp3,&d.bp4,&d.bp5};
-    double* bvArr[5] = {&d.bv1,&d.bv2,&d.bv3,&d.bv4,&d.bv5};
-    double* apArr[5] = {&d.ap1,&d.ap2,&d.ap3,&d.ap4,&d.ap5};
-    double* avArr[5] = {&d.av1,&d.av2,&d.av3,&d.av4,&d.av5};
+inline void fill_depth5(md::Depth5& d, const Iter& iter, int8_t pxExp, int8_t szExp, const md::InstrumentInfo& info) {
+    double* bpArr[5] = {&d.bp1, &d.bp2, &d.bp3, &d.bp4, &d.bp5};
+    double* bvArr[5] = {&d.bv1, &d.bv2, &d.bv3, &d.bv4, &d.bv5};
+    double* apArr[5] = {&d.ap1, &d.ap2, &d.ap3, &d.ap4, &d.ap5};
+    double* avArr[5] = {&d.av1, &d.av2, &d.av3, &d.av4, &d.av5};
     uint16_t bc = std::min<uint16_t>(iter.bid_count(), 5);
     for (uint16_t i = 0; i < bc; ++i) {
         const auto* e = iter.bid(i);
@@ -39,13 +37,11 @@ inline void fill_depth5(md::Depth5& d, const Iter& iter,
 }
 
 template <typename Iter>
-inline void fill_depth10(md::Depth10& d, const Iter& iter,
-                         int8_t pxExp, int8_t szExp,
-                         const md::InstrumentInfo& info) {
-    double* bpArr[10] = {&d.bp1,&d.bp2,&d.bp3,&d.bp4,&d.bp5,&d.bp6,&d.bp7,&d.bp8,&d.bp9,&d.bp10};
-    double* bvArr[10] = {&d.bv1,&d.bv2,&d.bv3,&d.bv4,&d.bv5,&d.bv6,&d.bv7,&d.bv8,&d.bv9,&d.bv10};
-    double* apArr[10] = {&d.ap1,&d.ap2,&d.ap3,&d.ap4,&d.ap5,&d.ap6,&d.ap7,&d.ap8,&d.ap9,&d.ap10};
-    double* avArr[10] = {&d.av1,&d.av2,&d.av3,&d.av4,&d.av5,&d.av6,&d.av7,&d.av8,&d.av9,&d.av10};
+inline void fill_depth10(md::Depth10& d, const Iter& iter, int8_t pxExp, int8_t szExp, const md::InstrumentInfo& info) {
+    double* bpArr[10] = {&d.bp1, &d.bp2, &d.bp3, &d.bp4, &d.bp5, &d.bp6, &d.bp7, &d.bp8, &d.bp9, &d.bp10};
+    double* bvArr[10] = {&d.bv1, &d.bv2, &d.bv3, &d.bv4, &d.bv5, &d.bv6, &d.bv7, &d.bv8, &d.bv9, &d.bv10};
+    double* apArr[10] = {&d.ap1, &d.ap2, &d.ap3, &d.ap4, &d.ap5, &d.ap6, &d.ap7, &d.ap8, &d.ap9, &d.ap10};
+    double* avArr[10] = {&d.av1, &d.av2, &d.av3, &d.av4, &d.av5, &d.av6, &d.av7, &d.av8, &d.av9, &d.av10};
     uint16_t bc = std::min<uint16_t>(iter.bid_count(), 10);
     for (uint16_t i = 0; i < bc; ++i) {
         const auto* e = iter.bid(i);
@@ -61,9 +57,7 @@ inline void fill_depth10(md::Depth10& d, const Iter& iter,
 }
 
 template <typename Iter>
-inline void fill_depth20(md::Depth20& d, const Iter& iter,
-                         int8_t pxExp, int8_t szExp,
-                         const md::InstrumentInfo& info) {
+inline void fill_depth20(md::Depth20& d, const Iter& iter, int8_t pxExp, int8_t szExp, const md::InstrumentInfo& info) {
     double* bpArr[20] = {&d.bp1,&d.bp2,&d.bp3,&d.bp4,&d.bp5,&d.bp6,&d.bp7,&d.bp8,&d.bp9,&d.bp10,
                          &d.bp11,&d.bp12,&d.bp13,&d.bp14,&d.bp15,&d.bp16,&d.bp17,&d.bp18,&d.bp19,&d.bp20};
     double* bvArr[20] = {&d.bv1,&d.bv2,&d.bv3,&d.bv4,&d.bv5,&d.bv6,&d.bv7,&d.bv8,&d.bv9,&d.bv10,
@@ -89,10 +83,8 @@ inline void fill_depth20(md::Depth20& d, const Iter& iter,
 // Gate 应用层 pong 过滤 (spot.pong / futures.pong)
 inline bool is_gate_pong(const uint8_t* data, size_t len) noexcept {
     std::string_view sv(reinterpret_cast<const char*>(data), len);
-    return sv.find("\"pong\"") != std::string_view::npos
-        || sv.find(".pong")    != std::string_view::npos;
+    return sv.find("\"pong\"") != std::string_view::npos || sv.find(".pong") != std::string_view::npos;
 }
-
 
 
 // ============================================================================
@@ -101,6 +93,7 @@ inline bool is_gate_pong(const uint8_t* data, size_t len) noexcept {
 md::GateioSbeUnit::GateioSbeUnit(sm::SecurityManager* s, ExchangeType exchTy, InstType instTy, MarketType marketTy, std::vector<md::InstrumentInfo>& instInfoVec, SbeAccount sbeAcc, const char* host, int port, const char* passwd)
     : BaseUnit(s, exchTy, instTy, marketTy, instInfoVec, host, port, passwd) {
     sbeAccount = sbeAcc;
+
     cfg.ping_mode = net::WsConfig::PingMode::ClientPeriodicText;
     cfg.client_ping_interval_sec = 20;
     if (instTypeEnum == SPOT) {
@@ -118,23 +111,33 @@ md::GateioSbeUnit::GateioSbeUnit(sm::SecurityManager* s, ExchangeType exchTy, In
 // generateSubBody: URL + channel 名 都按 instType 分流
 // ============================================================================
 void md::GateioSbeUnit::generateSubBody() {
-    std::string exchIdStr     = ExchangeTypeEnum2StrMap[exchangeTypeEnum];
-    std::string instTypeStr   = InstTypeEnum2StrMap[instTypeEnum];
+    std::string exchIdStr = ExchangeTypeEnum2StrMap[exchangeTypeEnum];
+    std::string instTypeStr = InstTypeEnum2StrMap[instTypeEnum];
     std::string marketTypeStr = MarketTypeEnum2StrMap[marketTypeEnum];
 
     // 1) URL
-    if      (instTypeEnum == SPOT)         cfg.url = GATEIO_WS_SBE_SPOT;
-    else if (instTypeEnum == USDT_SWAP)    cfg.url = GATEIO_WS_SBE_USDT_SWAP;
-    else if (instTypeEnum == BTC_SWAP)     cfg.url = GATEIO_WS_SBE_BTC_SWAP;
-    else if (instTypeEnum == USDT_FUTURES) cfg.url = GATEIO_WS_SBE_USDT_FUTURES;
-    else if (instTypeEnum == BTC_FUTURES)  cfg.url = GATEIO_WS_SBE_BTC_FUTURES;
+    if (instTypeEnum == SPOT) {
+        cfg.url = GATEIO_WS_SBE_SPOT;
+    }       
+    else if (instTypeEnum == USDT_SWAP) {
+        cfg.url = GATEIO_WS_SBE_USDT_SWAP;
+    }   
+    else if (instTypeEnum == BTC_SWAP) {
+        cfg.url = GATEIO_WS_SBE_BTC_SWAP;
+    }
+    else if (instTypeEnum == USDT_FUTURES) {
+        cfg.url = GATEIO_WS_SBE_USDT_FUTURES;
+    }
+    else if (instTypeEnum == BTC_FUTURES) {
+        cfg.url = GATEIO_WS_SBE_BTC_FUTURES;
+    }
     else {
         LOG_ERROR("[GATEIO_SBE] unsupported instType: {}", instTypeStr);
         return;
     }
 
     // 2) channel 前缀 + orderBook 精度参数按 spot/futures 差异化
-    const char* prefix  = (instTypeEnum == SPOT) ? "spot" : "futures";
+    const char* prefix = (instTypeEnum == SPOT) ? "spot" : "futures";
     // Gate JSON 里 spot.order_book 用 interval="100ms", futures.order_book 用 accuracy="0"
     const char* obThird = (instTypeEnum == SPOT) ? "100ms" : "0";
 
@@ -149,19 +152,18 @@ void md::GateioSbeUnit::generateSubBody() {
 
         if (marketTypeEnum == md::DEPTH1) {
             // → tid=1 bbo
-            channel     = fmt::format("{}.book_ticker", prefix);
+            channel = fmt::format("{}.book_ticker", prefix);
             payloadJson = fmt::format(R"(["{}"])", originInstId);
         }
         else if (marketTypeEnum == md::DEPTH5 || marketTypeEnum == md::DEPTH10 || marketTypeEnum == md::DEPTH20) {
             // → tid=4 orderBook (snapshot, level=N)
-            int levels = (marketTypeEnum == md::DEPTH5)  ? 5
-                       : (marketTypeEnum == md::DEPTH10) ? 10 : 20;
-            channel     = fmt::format("{}.order_book", prefix);
+            int levels = (marketTypeEnum == md::DEPTH5) ? 5 : (marketTypeEnum == md::DEPTH10) ? 10 : 20;
+            channel = fmt::format("{}.order_book", prefix);
             payloadJson = fmt::format(R"(["{}","{}","{}"])", originInstId, levels, obThird);
         }
         else if (marketTypeEnum == md::TRADES) {
             // → tid=2 publicTrade  (spot 无 group, futures 有 group)
-            channel     = fmt::format("{}.trades", prefix);
+            channel = fmt::format("{}.trades", prefix);
             payloadJson = fmt::format(R"(["{}"])", originInstId);
         }
         else {
@@ -169,16 +171,15 @@ void md::GateioSbeUnit::generateSubBody() {
             continue;
         }
 
-        cfg.subscribe_messages.push_back(fmt::format(
-            R"({{"time":{},"channel":"{}","event":"subscribe","payload":{}}})",
-            timeSec, channel, payloadJson));
+        cfg.subscribe_messages.push_back(fmt::format(R"({{"time":{},"channel":"{}","event":"subscribe","payload":{}}})", timeSec, channel, payloadJson));
     }
 
-    LOG_INFO("[GATEIO_SBE] {} ({}) ws url: {}, {} subscribe msgs prepared",
-             exchIdStr, instTypeStr, cfg.url, cfg.subscribe_messages.size());
-    for (auto& s : cfg.subscribe_messages) LOG_INFO("  sub: {}", s);
+    LOG_INFO("[GATEIO_SBE] {} ({}) ws url: {}, {} subscribe msgs prepared", exchIdStr, instTypeStr, cfg.url, cfg.subscribe_messages.size());
+    
+    for (auto& s : cfg.subscribe_messages) {
+        LOG_INFO("sub: {}", s);
+    }
 }
-
 
 // ============================================================================
 // onWebsocketMsg: opcode 分流 (isBinary → SBE 入队;  text → pong 过滤 / log)
@@ -186,13 +187,15 @@ void md::GateioSbeUnit::generateSubBody() {
 void md::GateioSbeUnit::onWebsocketMsg(const uint8_t* data, size_t len, bool isBinary, int64_t /*ns*/) {
     latestDataUpdateTime = crypto::getCurrentTime();
     if (isBinary) {
-        mQueue.push(std::string(reinterpret_cast<const char*>(data), len));
-        return;
-    }
-    if (is_gate_pong(data, len)) return;
-    LOG_INFO("[GATEIO_SBE] recv text: {}", std::string(reinterpret_cast<const char*>(data), len));
-}
 
+        std::string msg(reinterpret_cast<const char*>(data), len);
+        mQueue.push(std::move(msg));
+    }
+    else {
+        std::string txt(reinterpret_cast<const char*>(data), len);
+        LOG_INFO("[GATEIO_SBE] Received sbe text msg: {}", txt);
+    }
+}
 
 // ============================================================================
 // lookupInfo
@@ -241,53 +244,75 @@ void md::GateioSbeUnit::parseFuturesData(const uint8_t* data, size_t len, long t
 
     // ---- tid=1 bbo → Depth1  (期货 wire 是 ask 在前) ----
     case fx::kTemplateBbo: {
-        if (marketTypeEnum != md::DEPTH1) return;
+        if (marketTypeEnum != md::DEPTH1) {
+            return;
+        }
+
         const auto* v = gateiosbe::view_of<fx::BboView>(data, len);
-        if (!v) { LOG_ERROR("[GATEIO_SBE][fx] Bbo view failed"); return; }
+        if (!v) { 
+            LOG_ERROR("[GATEIO_SBE][fx] Bbo view failed"); 
+            return; 
+        }
 
         md::InstrumentInfo info;
-        if (!lookupInfo(fx::bbo_symbol(data, len), info)) return;
+        if (!lookupInfo(fx::bbo_symbol(data, len), info)) {
+            return;
+        }
 
-        std::string key = crypto::get_md_channel_key(exchangeTypeEnum, instTypeEnum, marketTypeEnum, info.instId);
+        const std::string& key = crypto::get_md_channel_key(exchangeTypeEnum, instTypeEnum, marketTypeEnum, info.instId);
 
-        md::Depth1 d1; memset(&d1, 0, sizeof(d1));
+        md::Depth1 d1; 
+        memset(&d1, 0, sizeof(d1));
         d1.exchangeTypeEnum = exchangeTypeEnum;
-        d1.instTypeEnum     = instTypeEnum;
-        d1.marketTypeEnum   = marketTypeEnum;
+        d1.instTypeEnum = instTypeEnum;
+        d1.marketTypeEnum = marketTypeEnum;
         strncpy(d1.instId, info.instId, INSTID_SIZE);
         long tsNs = static_cast<long>(v->t) * 1000;
-        d1.tsTrans = tsNs; d1.tsEvent = tsNs; d1.tsRecv = tsNet;
+        d1.tsTrans = tsNs; 
+        d1.tsEvent = tsNs; 
+        d1.tsRecv = tsNet;
         d1.bp1 = gateiosbe::to_double(v->bidMantissaPrice, v->pxExponent) * info.reduceNumber;
         d1.bv1 = gateiosbe::to_double(v->bidMantissaSize,  v->szExponent) * info.magnifyNumber;
         d1.ap1 = gateiosbe::to_double(v->askMantissaPrice, v->pxExponent) * info.reduceNumber;
         d1.av1 = gateiosbe::to_double(v->askMantissaSize,  v->szExponent) * info.magnifyNumber;
         d1.tsParse = crypto::getCurrentTime();
+
+        std::cout << d1.getString() << std::endl;
 #ifdef NEED_SHM
-        auto it = mDepth1Publisher.find(key);
-        if (it != mDepth1Publisher.end()) it->second->push(d1);
+        mDepth1Publisher[key]->push(d1);;
 #endif
         break;
     }
 
     // ---- tid=2 publicTrade → Trades*  (期货是 group, size 带符号编码方向) ----
     case fx::kTemplatePublicTrade: {
-        if (marketTypeEnum != md::TRADES) return;
+        if (marketTypeEnum != md::TRADES) {
+            return;
+        }
+
         fx::PublicTradeIter iter(data, len);
-        if (!iter.ok() || !iter.root()) { LOG_ERROR("[GATEIO_SBE][fx] PublicTrade iter failed"); return; }
+        if (!iter.ok() || !iter.root()) { 
+            LOG_ERROR("[GATEIO_SBE][fx] PublicTrade iter failed"); 
+            return; 
+        }
+
         const auto* root = iter.root();
 
         md::InstrumentInfo info;
-        if (!lookupInfo(iter.symbol(), info)) return;
+        if (!lookupInfo(iter.symbol(), info)) {
+            return;
+        }
 
-        std::string key = crypto::get_md_channel_key(exchangeTypeEnum, instTypeEnum, marketTypeEnum, info.instId);
+        const std::string& key = crypto::get_md_channel_key(exchangeTypeEnum, instTypeEnum, marketTypeEnum, info.instId);
 
         for (uint16_t i = 0; i < iter.count(); ++i) {
             const auto* e = iter.entry(i);
 
-            md::Trades t; memset(&t, 0, sizeof(t));
+            md::Trades t; 
+            memset(&t, 0, sizeof(t));
             t.exchangeTypeEnum = exchangeTypeEnum;
-            t.instTypeEnum     = instTypeEnum;
-            t.marketTypeEnum   = marketTypeEnum;
+            t.instTypeEnum = instTypeEnum;
+            t.marketTypeEnum = marketTypeEnum;
             strncpy(t.instId, info.instId, INSTID_SIZE);
             t.tsTrans = static_cast<long>(e->t) * 1000;
             t.tsEvent = static_cast<long>(root->time) * 1000;
@@ -297,14 +322,15 @@ void md::GateioSbeUnit::parseFuturesData(const uint8_t* data, size_t len, long t
             strncpy(t.tradeId, tidStr.c_str(), INSTID_SIZE);
 
             double sizeAbs = std::abs(gateiosbe::to_double(e->size,  root->szExponent));
-            double px      =          gateiosbe::to_double(e->price, root->pxExponent);
-            t.px = px      * info.reduceNumber;
+            double px = gateiosbe::to_double(e->price, root->pxExponent);
+            t.px = px * info.reduceNumber;
             t.sz = sizeAbs * info.magnifyNumber;
             t.direction = (e->size >= 0) ? DT_LONG : DT_SHORT;
             t.tsParse = crypto::getCurrentTime();
+
+            std::cout << t.getString() << std::endl;
 #ifdef NEED_SHM
-            auto it = mTradesPublisher.find(key);
-            if (it != mTradesPublisher.end()) it->second->push(t);
+            mTradesPublisher[key]->push(t);
 #endif
         }
         break;
@@ -313,48 +339,64 @@ void md::GateioSbeUnit::parseFuturesData(const uint8_t* data, size_t len, long t
     // ---- tid=4 orderBook → Depth5/10/20  (期货 asks 先, OrderBookIter 已处理) ----
     case fx::kTemplateOrderBook: {
         fx::OrderBookIter iter(data, len);
-        if (!iter.ok() || !iter.root()) { LOG_ERROR("[GATEIO_SBE][fx] OrderBook iter failed"); return; }
+        if (!iter.ok() || !iter.root()) { 
+            LOG_ERROR("[GATEIO_SBE][fx] OrderBook iter failed"); 
+            return; 
+        }
         const auto* root = iter.root();
 
         md::InstrumentInfo info;
-        if (!lookupInfo(iter.symbol(), info)) return;
+        if (!lookupInfo(iter.symbol(), info)) {
+            return;
+        }
 
         long tsNs = static_cast<long>(root->t) * 1000;
-        std::string key = crypto::get_md_channel_key(exchangeTypeEnum, instTypeEnum, marketTypeEnum, info.instId);
+        const std::string& key = crypto::get_md_channel_key(exchangeTypeEnum, instTypeEnum, marketTypeEnum, info.instId);
 
         auto fill_common = [&](auto& d) {
             d.exchangeTypeEnum = exchangeTypeEnum;
-            d.instTypeEnum     = instTypeEnum;
-            d.marketTypeEnum   = marketTypeEnum;
+            d.instTypeEnum = instTypeEnum;
+            d.marketTypeEnum = marketTypeEnum;
             strncpy(d.instId, info.instId, INSTID_SIZE);
-            d.tsTrans = tsNs; d.tsEvent = tsNs; d.tsRecv = tsNet;
+            d.tsTrans = tsNs; 
+            d.tsEvent = tsNs; 
+            d.tsRecv = tsNet;
         };
 
         if (marketTypeEnum == md::DEPTH5) {
-            md::Depth5 d; memset(&d, 0, sizeof(d)); fill_common(d);
+            md::Depth5 d; 
+            memset(&d, 0, sizeof(d)); 
+            fill_common(d);
             fill_depth5(d, iter, root->pxExponent, root->szExponent, info);
             d.tsParse = crypto::getCurrentTime();
+
+            std::cout << d.getString() << std::endl;
 #ifdef NEED_SHM
-            auto it = mDepth5Publisher.find(key);
-            if (it != mDepth5Publisher.end()) it->second->push(d);
+            mDepth5Publisher[key]->push(d);
 #endif
         }
         else if (marketTypeEnum == md::DEPTH10) {
-            md::Depth10 d; memset(&d, 0, sizeof(d)); fill_common(d);
+            md::Depth10 d; 
+            memset(&d, 0, sizeof(d)); 
+            fill_common(d);
             fill_depth10(d, iter, root->pxExponent, root->szExponent, info);
             d.tsParse = crypto::getCurrentTime();
+
+            std::cout << d.getString() << std::endl;
 #ifdef NEED_SHM
-            auto it = mDepth10Publisher.find(key);
-            if (it != mDepth10Publisher.end()) it->second->push(d);
+            mDepth10Publisher[key]->push(d);
 #endif
         }
         else if (marketTypeEnum == md::DEPTH20) {
-            md::Depth20 d; memset(&d, 0, sizeof(d)); fill_common(d);
+            md::Depth20 d; 
+            memset(&d, 0, sizeof(d)); 
+            fill_common(d);
             fill_depth20(d, iter, root->pxExponent, root->szExponent, info);
             d.tsParse = crypto::getCurrentTime();
+
+            std::cout << d.getString() << std::endl;
 #ifdef NEED_SHM
-            auto it = mDepth20Publisher.find(key);
-            if (it != mDepth20Publisher.end()) it->second->push(d);
+            mDepth20Publisher[key]->push(d);
 #endif
         }
         break;
@@ -384,58 +426,77 @@ void md::GateioSbeUnit::parseSpotData(const uint8_t* data, size_t len, long tsNe
 
     // ---- tid=1 bbo → Depth1  (现货 wire 是 bid 在前, spot::BboView 已按此顺序) ----
     case sp::kTemplateBbo: {
-        if (marketTypeEnum != md::DEPTH1) return;
+        if (marketTypeEnum != md::DEPTH1) {
+            return;
+        }
         const auto* v = gateiosbe::view_of<sp::BboView>(data, len);
-        if (!v) { LOG_ERROR("[GATEIO_SBE][sp] Bbo view failed"); return; }
+        if (!v) { 
+            LOG_ERROR("[GATEIO_SBE][sp] Bbo view failed"); 
+            return; 
+        }
 
         md::InstrumentInfo info;
-        if (!lookupInfo(sp::bbo_symbol(data, len), info)) return;
+        if (!lookupInfo(sp::bbo_symbol(data, len), info)) {
+            return;
+        }
 
-        std::string key = crypto::get_md_channel_key(exchangeTypeEnum, instTypeEnum, marketTypeEnum, info.instId);
+        const std::string& key = crypto::get_md_channel_key(exchangeTypeEnum, instTypeEnum, marketTypeEnum, info.instId);
 
-        md::Depth1 d1; memset(&d1, 0, sizeof(d1));
+        md::Depth1 d1; 
+        memset(&d1, 0, sizeof(d1));
         d1.exchangeTypeEnum = exchangeTypeEnum;
-        d1.instTypeEnum     = instTypeEnum;
-        d1.marketTypeEnum   = marketTypeEnum;
+        d1.instTypeEnum = instTypeEnum;
+        d1.marketTypeEnum = marketTypeEnum;
         strncpy(d1.instId, info.instId, INSTID_SIZE);
         long tsNs = static_cast<long>(v->t) * 1000;
-        d1.tsTrans = tsNs; d1.tsEvent = tsNs; d1.tsRecv = tsNet;
+        d1.tsTrans = tsNs; 
+        d1.tsEvent = tsNs; 
+        d1.tsRecv = tsNet;
         d1.bp1 = gateiosbe::to_double(v->bidMantissaPrice, v->pxExponent) * info.reduceNumber;
-        d1.bv1 = gateiosbe::to_double(v->bidMantissaSize,  v->szExponent) * info.magnifyNumber;
+        d1.bv1 = gateiosbe::to_double(v->bidMantissaSize, v->szExponent) * info.magnifyNumber;
         d1.ap1 = gateiosbe::to_double(v->askMantissaPrice, v->pxExponent) * info.reduceNumber;
-        d1.av1 = gateiosbe::to_double(v->askMantissaSize,  v->szExponent) * info.magnifyNumber;
+        d1.av1 = gateiosbe::to_double(v->askMantissaSize, v->szExponent) * info.magnifyNumber;
         d1.tsParse = crypto::getCurrentTime();
+
+        std::cout << d1.getString() << std::endl;
 #ifdef NEED_SHM
-        auto it = mDepth1Publisher.find(key);
-        if (it != mDepth1Publisher.end()) it->second->push(d1);
+        mDepth1Publisher[key]->push(d1);
 #endif
         break;
     }
 
     // ---- tid=2 publicTrade → 单笔 Trades  (⚠️ 现货无 group, 根字段一笔成交) ----
     case sp::kTemplatePublicTrade: {
-        if (marketTypeEnum != md::TRADES) return;
+        if (marketTypeEnum != md::TRADES) {
+            return;
+        }
         const auto* v = gateiosbe::view_of<sp::PublicTradeView>(data, len);
-        if (!v) { LOG_ERROR("[GATEIO_SBE][sp] PublicTrade view failed"); return; }
+        if (!v) { 
+            LOG_ERROR("[GATEIO_SBE][sp] PublicTrade view failed"); 
+            return; 
+        }
 
         md::InstrumentInfo info;
-        if (!lookupInfo(sp::public_trade_symbol(data, len), info)) return;
+        if (!lookupInfo(sp::public_trade_symbol(data, len), info)) {
+            return;
+        }
 
-        std::string key = crypto::get_md_channel_key(exchangeTypeEnum, instTypeEnum, marketTypeEnum, info.instId);
+        const std::string& key = crypto::get_md_channel_key(exchangeTypeEnum, instTypeEnum, marketTypeEnum, info.instId);
 
-        md::Trades t; memset(&t, 0, sizeof(t));
+        md::Trades t; 
+        memset(&t, 0, sizeof(t));
         t.exchangeTypeEnum = exchangeTypeEnum;
-        t.instTypeEnum     = instTypeEnum;
-        t.marketTypeEnum   = marketTypeEnum;
+        t.instTypeEnum = instTypeEnum;
+        t.marketTypeEnum = marketTypeEnum;
         strncpy(t.instId, info.instId, INSTID_SIZE);
         t.tsTrans = static_cast<long>(v->createTimeUs) * 1000;
-        t.tsEvent = static_cast<long>(v->time)         * 1000;
-        t.tsRecv  = tsNet;
+        t.tsEvent = static_cast<long>(v->time) * 1000;
+        t.tsRecv = tsNet;
 
         std::string tidStr = std::to_string(v->id);
         strncpy(t.tradeId, tidStr.c_str(), INSTID_SIZE);
 
-        double px = gateiosbe::to_double(v->priceMantissa,  v->pxExponent);
+        double px = gateiosbe::to_double(v->priceMantissa, v->pxExponent);
         double sz = gateiosbe::to_double(v->amountMantissa, v->szExponent);
         t.px = px * info.reduceNumber;
         t.sz = sz * info.magnifyNumber;
@@ -443,9 +504,11 @@ void md::GateioSbeUnit::parseSpotData(const uint8_t* data, size_t len, long tsNe
         t.direction = (v->side == gateiosbe::Side_Buy) ? DT_LONG : DT_SHORT;
 
         t.tsParse = crypto::getCurrentTime();
+
+        std::cout << t.getString() << std::endl;
+
 #ifdef NEED_SHM
-        auto it = mTradesPublisher.find(key);
-        if (it != mTradesPublisher.end()) it->second->push(t);
+        mTradesPublisher[key]->push(t);
 #endif
         break;
     }
@@ -453,48 +516,62 @@ void md::GateioSbeUnit::parseSpotData(const uint8_t* data, size_t len, long tsNe
     // ---- tid=4 orderBook → Depth5/10/20  (现货 bids 先, spot::OrderBookIter 已处理) ----
     case sp::kTemplateOrderBook: {
         sp::OrderBookIter iter(data, len);
-        if (!iter.ok() || !iter.root()) { LOG_ERROR("[GATEIO_SBE][sp] OrderBook iter failed"); return; }
+        if (!iter.ok() || !iter.root()) { 
+            LOG_ERROR("[GATEIO_SBE][sp] OrderBook iter failed"); 
+            return; 
+        }
         const auto* root = iter.root();
 
         md::InstrumentInfo info;
-        if (!lookupInfo(iter.symbol(), info)) return;
+        if (!lookupInfo(iter.symbol(), info)) {
+            return;
+        }
 
         long tsNs = static_cast<long>(root->t) * 1000;
-        std::string key = crypto::get_md_channel_key(exchangeTypeEnum, instTypeEnum, marketTypeEnum, info.instId);
+        const std::string& key = crypto::get_md_channel_key(exchangeTypeEnum, instTypeEnum, marketTypeEnum, info.instId);
 
         auto fill_common = [&](auto& d) {
             d.exchangeTypeEnum = exchangeTypeEnum;
-            d.instTypeEnum     = instTypeEnum;
-            d.marketTypeEnum   = marketTypeEnum;
+            d.instTypeEnum = instTypeEnum;
+            d.marketTypeEnum = marketTypeEnum;
             strncpy(d.instId, info.instId, INSTID_SIZE);
             d.tsTrans = tsNs; d.tsEvent = tsNs; d.tsRecv = tsNet;
         };
 
         if (marketTypeEnum == md::DEPTH5) {
-            md::Depth5 d; memset(&d, 0, sizeof(d)); fill_common(d);
+            md::Depth5 d; 
+            memset(&d, 0, sizeof(d)); 
+            fill_common(d);
             fill_depth5(d, iter, root->pxExponent, root->szExponent, info);
             d.tsParse = crypto::getCurrentTime();
+
+            std::cout << d.getString() << std::endl;
 #ifdef NEED_SHM
-            auto it = mDepth5Publisher.find(key);
-            if (it != mDepth5Publisher.end()) it->second->push(d);
+            mDepth5Publisher[key]->push(d);
 #endif
         }
         else if (marketTypeEnum == md::DEPTH10) {
-            md::Depth10 d; memset(&d, 0, sizeof(d)); fill_common(d);
+            md::Depth10 d; 
+            memset(&d, 0, sizeof(d)); 
+            fill_common(d);
             fill_depth10(d, iter, root->pxExponent, root->szExponent, info);
             d.tsParse = crypto::getCurrentTime();
+
+            std::cout << d.getString() << std::endl;
 #ifdef NEED_SHM
-            auto it = mDepth10Publisher.find(key);
-            if (it != mDepth10Publisher.end()) it->second->push(d);
+            mDepth5Publisher[key]->push(d);
 #endif
         }
         else if (marketTypeEnum == md::DEPTH20) {
-            md::Depth20 d; memset(&d, 0, sizeof(d)); fill_common(d);
+            md::Depth20 d; 
+            memset(&d, 0, sizeof(d)); 
+            fill_common(d);
             fill_depth20(d, iter, root->pxExponent, root->szExponent, info);
             d.tsParse = crypto::getCurrentTime();
+
+            std::cout << d.getString() << std::endl;
 #ifdef NEED_SHM
-            auto it = mDepth20Publisher.find(key);
-            if (it != mDepth20Publisher.end()) it->second->push(d);
+            mDepth20Publisher[key]->push(d);
 #endif
         }
         break;
