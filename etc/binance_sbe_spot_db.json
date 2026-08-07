@@ -12,7 +12,7 @@
   },
   "BINANCE_SBE":{
     "sbe": {
-        "apiKey": "5m3WBgFV4WrlpTW3NozQM4KJXd69f9OXAr8ELsKYkPAjWIQUvIqrsNWgC189nrSZ",
+        "apiKey": "",
         "secretKey": "",
         "password": ""
     },

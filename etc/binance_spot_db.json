@@ -12,8 +12,8 @@
   },
   "BINANCE":{
     "sbe": {
-        "apiKey": "XSaUOuSFzb4HPVBzuI2J5wl10fT5WLkOkPHOJkrE8f5v6sfOayGLraqkpXhUy97p",
-        "secretKey": "ForVdJLT7SvUyM467d443C3hGrpbBN75x1yNff0A31YGD951cOxs0kJnB52RzejH",
+        "apiKey": "",
+        "secretKey": "",
         "password": ""
     },
     "tokenLot":80,
