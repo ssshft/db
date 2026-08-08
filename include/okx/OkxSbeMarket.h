@@ -6,7 +6,7 @@
 #ifdef NEED_TESTNET
 
 // SBE 模拟盘 endpoint
-constexpr auto OKX_WS_SBE_PUBLIC = "wss://wspap.okx.com:8443/ws/v5/public-sbe
+constexpr auto OKX_WS_SBE_PUBLIC = "wss://wspap.okx.com:8443/ws/v5/public-sbe;
 constexpr auto OKX_REST_HOST     = "wspap.okx.com";
 
 #else

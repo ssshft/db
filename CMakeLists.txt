@@ -110,3 +110,10 @@ add_executable(db_depth20_shm_queue_reader test/db_depth20_shm_queue_reader.cpp)
 add_executable(db_trades_shm_queue_reader test/db_trades_shm_queue_reader.cpp)
 add_executable(db_fundingrate_shm_queue_reader test/db_fundingrate_shm_queue_reader.cpp)
 add_executable(db_kline_shm_queue_reader test/db_kline_shm_queue_reader.cpp)
+
+
+add_executable(db_shm_latency tools/db_shm_latency.cpp)
+target_include_directories(db_shm_latency PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/tools)
+
+add_executable(db_shm_perf tools/db_shm_perf.cpp)
+target_include_directories(db_shm_perf PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/tools)
