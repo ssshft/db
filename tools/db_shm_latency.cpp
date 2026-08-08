@@ -296,7 +296,7 @@ void run_live_mode(const LiveConfig& cfg, int argc, char* argv[]) {
         std::cerr << "--duration must be > 0" << std::endl;
         std::exit(1);
     }
-
+    /*
     if (cfg.cpu >= 0) {
         if (crypto::set_cpu_current_thread(cfg.cpu) != 0) {
             std::cerr << "failed to bind cpu " << cfg.cpu << std::endl;
@@ -304,6 +304,7 @@ void run_live_mode(const LiveConfig& cfg, int argc, char* argv[]) {
             std::printf("pinned to cpu %d\n", cfg.cpu);
         }
     }
+    */
 
     auto channels = make_md_channels(argc, argv, cfg.topic_start);
     std::printf("=== db_shm_perf live mode (duration=%ds, channels=%zu) ===\n",
@@ -342,6 +343,7 @@ void run_live_mode(const LiveConfig& cfg, int argc, char* argv[]) {
 int main(int argc, char* argv[]) {
     const ToolConfig cfg = parse_args(argc, argv);
 
+    /*
     {
         const auto ml = crypto::lock_process_memory_detailed();
         if (!ml.ok) {
@@ -355,6 +357,7 @@ int main(int argc, char* argv[]) {
                     ml.vm_lck_after_kb);
         }
     }
+    */
 
     if (cfg.bench_mode) {
         run_bench_mode(cfg.bench);
