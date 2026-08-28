@@ -6,7 +6,7 @@
 #ifdef NEED_TESTNET
 
 // SBE 模拟盘 endpoint
-constexpr auto OKX_WS_SBE_PUBLIC = "wss://wspap.okx.com:8443/ws/v5/public-sbe;
+constexpr auto OKX_WS_SBE_PUBLIC = "wss://wspap.okx.com:8443/ws/v5/public-sbe";
 constexpr auto OKX_REST_HOST     = "wspap.okx.com";
 
 #else
@@ -38,9 +38,9 @@ namespace md {
 
     private:
         // -- SBE decode 分支 (只解 templateId 1000/1001/1005; 1002/1003/1004/1006 略过或后续扩展) --
-        void handleBboTbt(const uint8_t* data, size_t len, long tsNet);
-        void handleBooksL2(const uint8_t* data, size_t len, long tsNet);   // 1001 (asks+bids 全量)
-        void handleTrades(const uint8_t* data, size_t len, long tsNet);
+        void handleBboTbt(const uint8_t* data, size_t len, int64_t tsNet);
+        void handleBooksL2(const uint8_t* data, size_t len, int64_t tsNet);   // 1001 (asks+bids 全量)
+        void handleTrades(const uint8_t* data, size_t len, int64_t tsNet);
         void handleExpUpdate(const uint8_t* data, size_t len);             // 1002: 更新 exponent 表
 
         // 通过 instIdCode 反查 InstrumentInfo, 找不到返回 false

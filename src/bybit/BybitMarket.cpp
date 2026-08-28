@@ -92,7 +92,7 @@ void md::BybitUnit::onWebsocketMsg(const uint8_t* data, size_t len, bool isBinar
 
 //处理消息 解析json并发送给redis或共享内存
 void md::BybitUnit::parseMarketData(const std::string& msg) {
-    long tsNet = crypto::getCurrentTime();
+    int64_t tsNet = crypto::getCurrentTime();
 
     simdjson::padded_string paddedMsg(msg);
     auto doc = parser.iterate(paddedMsg);
@@ -107,7 +107,7 @@ void md::BybitUnit::parseMarketData(const std::string& msg) {
         return;    
     }
 
-    long ts = 0;
+    int64_t ts = 0;
     if (doc["ts"].get(ts) == simdjson::SUCCESS) {
         ts *= 1000;
     }
@@ -220,7 +220,7 @@ void md::BybitUnit::parseMarketData(const std::string& msg) {
             depth1.av1 = crypto::fast_atod(askVol) * info.magnifyNumber;
         }
 
-        long tsT = 0;
+        int64_t tsT = 0;
         if (data["cts"].get(tsT) == simdjson::SUCCESS) {
             tsT *= 1000;
         }
@@ -315,7 +315,7 @@ void md::BybitUnit::parseMarketData(const std::string& msg) {
             depth5.av5 = crypto::fast_atod(askVol[4]) * info.magnifyNumber;
         }
 
-        long tsT = 0;
+        int64_t tsT = 0;
         if (data["cts"].get(tsT) == simdjson::SUCCESS) {
             tsT *= 1000;
         }
@@ -431,7 +431,7 @@ void md::BybitUnit::parseMarketData(const std::string& msg) {
             depth10.av10 = crypto::fast_atod(askVol[9]) * info.magnifyNumber;
         }
 
-        long tsT = 0;
+        int64_t tsT = 0;
         if (data["cts"].get(tsT) == simdjson::SUCCESS) {
             tsT *= 1000;
         }
@@ -588,7 +588,7 @@ void md::BybitUnit::parseMarketData(const std::string& msg) {
             depth20.av20 = crypto::fast_atod(askVol[19]) * info.magnifyNumber;
         }
 
-        long tsT = 0;
+        int64_t tsT = 0;
         if (data["cts"].get(tsT) == simdjson::SUCCESS) {
             tsT *= 1000;
         }
@@ -617,7 +617,7 @@ void md::BybitUnit::parseMarketData(const std::string& msg) {
             d["i"].get(tradeIdStr);
             strncpy(trades.tradeId, tradeIdStr.data(), INSTID_SIZE);
 
-            long tsT = 0;
+            int64_t tsT = 0;
             d["T"].get(tsT);
             tsT *= 1000;
 
@@ -683,7 +683,7 @@ void md::BybitUnit::parseMarketData(const std::string& msg) {
         auto it = data.begin();
         auto d = *it;
 
-        long barTime = 0;
+        int64_t barTime = 0;
         d["start"].get(barTime);
         barTime *= 1000;
 
@@ -724,7 +724,7 @@ void md::BybitUnit::parseMarketData(const std::string& msg) {
             return;
         }
 
-        long ts = 0;
+        int64_t ts = 0;
         doc["ts"].get(ts);
         ts *= 1000;
 
@@ -757,7 +757,7 @@ void md::BybitUnit::parseMarketData(const std::string& msg) {
             fundingRate.fundingRate = crypto::fast_atod(fundingRateStr);
         }
 
-        long ts = 0;
+        int64_t ts = 0;
         if (doc["ts"].get(ts) == simdjson::SUCCESS) {
             ts *= 1000;
         }

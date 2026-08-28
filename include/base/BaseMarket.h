@@ -62,13 +62,13 @@ namespace md {
         std::string wsUrl{""};
     
 
-        long latestDataUpdateTime{0};
+        int64_t latestDataUpdateTime{0};
 
         net::WsConfig cfg;
         std::shared_ptr<net::WsClient> pWsClient{nullptr};
 
         sm::SecurityManager* smc{nullptr};
-        pubsub::ConcurrentQueueZMQ<std::string, BUFF_SIZE> mQueue; // 此queue需要替换
+        pubsub::SPSCQueue<std::string, BUFF_SIZE> mQueue; // 此queue需要替换
 
         RedisClient* redisClient{nullptr};
         std::unordered_map<std::string, std::shared_ptr<pubsub::SPMCPublisher<md::Depth1>>> mDepth1Publisher;

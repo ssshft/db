@@ -90,7 +90,7 @@ void md::BinanceSbeUnit::onWebsocketMsg(const uint8_t* data, size_t len, bool is
 }
 
 void md::BinanceSbeUnit::parseMarketData(const std::string& msg) {
-    long tsNet = crypto::getCurrentTime();
+    int64_t tsNet = crypto::getCurrentTime();
 
     // Binance SBE 只在 SPOT (stream-sbe.binance.com) 提供
     if (instTypeEnum != SPOT) {
@@ -140,7 +140,7 @@ void md::BinanceSbeUnit::parseMarketData(const std::string& msg) {
         depth1.marketTypeEnum = marketTypeEnum;
         strncpy(depth1.instId, info.instId, INSTID_SIZE);
 
-        long tsUs = static_cast<long>(v->eventTime);
+        int64_t tsUs = v->eventTime;
         depth1.tsTrans = tsUs;
         depth1.tsEvent = tsUs;
         depth1.tsRecv = tsNet;
@@ -183,16 +183,15 @@ void md::BinanceSbeUnit::parseMarketData(const std::string& msg) {
             return;
         }
 
-        long tsUs = static_cast<long>(root->eventTime);
-        long tsNs = tsUs;
+        int64_t tsUs = root->eventTime;
 
         auto fill_common = [&](auto& d) {
             d.exchangeTypeEnum = exchangeTypeEnum;
             d.instTypeEnum = instTypeEnum;
             d.marketTypeEnum = marketTypeEnum;
             strncpy(d.instId, info.instId, INSTID_SIZE);
-            d.tsTrans = tsNs;
-            d.tsEvent = tsNs;
+            d.tsTrans = tsUs;
+            d.tsEvent = tsUs;
             d.tsRecv  = tsNet;
         };
 
@@ -313,7 +312,7 @@ void md::BinanceSbeUnit::parseMarketData(const std::string& msg) {
 
         const std::string& key = crypto::get_md_channel_key(exchangeTypeEnum, instTypeEnum, marketTypeEnum, info.instId);
 
-        long tsUs = static_cast<long>(root->transactTime);
+        int64_t tsUs = root->transactTime;
 
         uint32_t n = iter.count();
         for (uint32_t i = 0; i < n; ++i) {
@@ -326,7 +325,7 @@ void md::BinanceSbeUnit::parseMarketData(const std::string& msg) {
             trades.marketTypeEnum = marketTypeEnum;
             strncpy(trades.instId, info.instId, INSTID_SIZE);
             trades.tsTrans = tsUs;
-            trades.tsEvent = static_cast<long>(root->eventTime) * 1000;
+            trades.tsEvent = root->eventTime * 1000;
             trades.tsRecv = tsNet;
 
             std::string tidStr = std::to_string(e->id);

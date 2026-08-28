@@ -34,7 +34,7 @@ namespace md {
     private:
         int subId{0};
         std::vector<std::string> subArgs;
-        std::unordered_map<std::string, long> mFundingTime;
+        std::unordered_map<std::string, int64_t> mFundingTime;
     };
 
 

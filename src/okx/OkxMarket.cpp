@@ -91,7 +91,7 @@ void md::OkxUnit::onWebsocketMsg(const uint8_t* data, size_t len, bool isBinary,
 
 //处理消息 解析json并发送给redis或共享内存
 void md::OkxUnit::parseMarketData(const std::string& msg) {
-    long tsNet = crypto::getCurrentTime();
+    int64_t tsNet = crypto::getCurrentTime();
 
     simdjson::padded_string paddedMsg(msg);
     auto doc = parser.iterate(paddedMsg);
@@ -188,7 +188,7 @@ void md::OkxUnit::parseMarketData(const std::string& msg) {
 
         std::string_view tsStr;
         data["ts"].get(tsStr);
-        long ts = crypto::fast_atol(tsStr) * 1000;
+        int64_t ts = crypto::fast_atol(tsStr) * 1000;
         depth1.tsTrans = ts;
         depth1.tsEvent = ts;
         depth1.tsRecv = tsNet;
@@ -281,7 +281,7 @@ void md::OkxUnit::parseMarketData(const std::string& msg) {
 
         std::string_view tsStr;
         data["ts"].get(tsStr);
-        long ts = crypto::fast_atol(tsStr) * 1000;
+        int64_t ts = crypto::fast_atol(tsStr) * 1000;
 
         depth5.tsTrans = ts;
         depth5.tsEvent = ts;
@@ -396,7 +396,7 @@ void md::OkxUnit::parseMarketData(const std::string& msg) {
 
         std::string_view tsStr;
         data["ts"].get(tsStr);
-        long ts = crypto::fast_atol(tsStr) * 1000;
+        int64_t ts = crypto::fast_atol(tsStr) * 1000;
 
         depth10.tsTrans = ts;
         depth10.tsEvent = ts;
@@ -553,7 +553,7 @@ void md::OkxUnit::parseMarketData(const std::string& msg) {
 
         std::string_view tsStr;
         data["ts"].get(tsStr);
-        long ts = crypto::fast_atol(tsStr) * 1000;
+        int64_t ts = crypto::fast_atol(tsStr) * 1000;
 
         depth20.tsTrans = ts;
         depth20.tsEvent = ts;
@@ -598,7 +598,7 @@ void md::OkxUnit::parseMarketData(const std::string& msg) {
 
         std::string_view tsStr;
         data["ts"].get(tsStr);
-        long ts = crypto::fast_atol(tsStr) * 1000;
+        int64_t ts = crypto::fast_atol(tsStr) * 1000;
 
         trades.tsTrans = ts;
         trades.tsEvent = ts;
@@ -654,7 +654,7 @@ void md::OkxUnit::parseMarketData(const std::string& msg) {
         ++it;
         (*it).get(finishedStr);
 
-        long ts = crypto::fast_atol(tsStr) * 1000;
+        int64_t ts = crypto::fast_atol(tsStr) * 1000;
 
         kline.tsTrans = ts;
         kline.tsEvent = ts;
@@ -717,7 +717,7 @@ void md::OkxUnit::parseMarketData(const std::string& msg) {
 
         std::string_view tsStr;
         data["ts"].get(tsStr);
-        long ts = crypto::fast_atol(tsStr) * 1000;
+        int64_t ts = crypto::fast_atol(tsStr) * 1000;
 
         fundingRate.tsTrans = ts;
         fundingRate.tsEvent = ts;

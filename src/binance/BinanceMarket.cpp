@@ -146,7 +146,7 @@ void md::BinanceUnit::onWebsocketMsg(const uint8_t* data, size_t len, bool isBin
 
 //处理消息 解析json并发送给redis或共享内存
 void md::BinanceUnit::parseMarketData(const std::string& msg) {
-    long tsNet = crypto::getCurrentTime();
+    int64_t tsNet = crypto::getCurrentTime();
 
     simdjson::padded_string paddedMsg(msg);
     auto doc = parser.iterate(paddedMsg);
@@ -574,17 +574,17 @@ void md::BinanceUnit::parseMarketData(const std::string& msg) {
             trades.marketTypeEnum = marketTypeEnum;
             strncpy(trades.instId, info.instId, INSTID_SIZE);
 
-            long tsEvent = 0;
+            int64_t tsEvent = 0;
             data["E"].get(tsEvent);
 
-            long tradeId;
+            int64_t tradeId;
             std::string_view tradePriceStr;
             std::string_view tradeVolStr;
             data["t"].get(tradeId);
             data["p"].get(tradePriceStr);
             data["q"].get(tradeVolStr);
 
-            long tsTrans = 0;
+            int64_t tsTrans = 0;
             data["T"].get(tsTrans);
 
             fmt::format_to(trades.tradeId, "{}", tradeId);
@@ -614,7 +614,7 @@ void md::BinanceUnit::parseMarketData(const std::string& msg) {
             kline.marketTypeEnum = marketTypeEnum;
             strncpy(kline.instId, info.instId, INSTID_SIZE);
 
-            long tsEvent = 0;
+            int64_t tsEvent = 0;
             data["E"].get(tsEvent);
 
             kline.tsTrans = tsEvent * 1000;
@@ -623,7 +623,7 @@ void md::BinanceUnit::parseMarketData(const std::string& msg) {
 
             auto k = data["k"];
             
-            long barTime = 0;
+            int64_t barTime = 0;
             std::string_view highPriceStr;
             std::string_view lowPriceStr;
             std::string_view openPriceStr;
@@ -699,10 +699,10 @@ void md::BinanceUnit::parseMarketData(const std::string& msg) {
             ap1.get(askPriceStr);
             av1.get(askVolStr);
    
-            long tsTrans = 0;
+            int64_t tsTrans = 0;
             data["T"].get(tsTrans);
 
-            long tsEvent = 0;
+            int64_t tsEvent = 0;
             data["E"].get(tsEvent);
 
             depth1.tsTrans = tsTrans * 1000;
@@ -728,10 +728,10 @@ void md::BinanceUnit::parseMarketData(const std::string& msg) {
             depth5.marketTypeEnum = marketTypeEnum;
             strncpy(depth5.instId, info.instId, INSTID_SIZE);
 
-            long tsEvent = 0;
+            int64_t tsEvent = 0;
             data["E"].get(tsEvent);
 
-            long tsTrans = 0;
+            int64_t tsTrans = 0;
             data["T"].get(tsTrans);
 
             depth5.tsTrans = tsTrans * 1000;
@@ -826,10 +826,10 @@ void md::BinanceUnit::parseMarketData(const std::string& msg) {
             depth10.marketTypeEnum = marketTypeEnum;
             strncpy(depth10.instId, info.instId, INSTID_SIZE);
 
-            long tsEvent = 0;
+            int64_t tsEvent = 0;
             data["E"].get(tsEvent);
 
-            long tsTrans = 0;
+            int64_t tsTrans = 0;
             data["T"].get(tsTrans);
 
             depth10.tsTrans = tsTrans * 1000;
@@ -944,10 +944,10 @@ void md::BinanceUnit::parseMarketData(const std::string& msg) {
             depth20.marketTypeEnum = marketTypeEnum;
             strncpy(depth20.instId, info.instId, INSTID_SIZE);
 
-            long tsEvent = 0;
+            int64_t tsEvent = 0;
             data["E"].get(tsEvent);
 
-            long tsTrans = 0;
+            int64_t tsTrans = 0;
             data["T"].get(tsTrans);
 
             depth20.tsTrans = tsTrans * 1000;
@@ -1103,19 +1103,19 @@ void md::BinanceUnit::parseMarketData(const std::string& msg) {
             trades.marketTypeEnum = marketTypeEnum;
             strncpy(trades.instId, info.instId, INSTID_SIZE);
 
-            long tsEvent = 0;
-            long tsTrans = 0;
+            int64_t tsEvent = 0;
+            int64_t tsTrans = 0;
             data["E"].get(tsEvent);
 
             if (instTypeEnum == USDT_SWAP || instTypeEnum == USDT_FUTURES || instTypeEnum == USDC_SWAP) {
                 data["T"].get(tsTrans);
 
-                long tradeId;
+                int64_t tradeId;
                 data["t"].get(tradeId);
                 fmt::format_to(trades.tradeId, "{}", tradeId);
             }
             else {
-                long tradeId;
+                int64_t tradeId;
                 data["a"].get(tradeId);
                 fmt::format_to(trades.tradeId, "{}", tradeId);
 
@@ -1156,7 +1156,7 @@ void md::BinanceUnit::parseMarketData(const std::string& msg) {
             kline.marketTypeEnum = marketTypeEnum;
             strncpy(kline.instId, info.instId, INSTID_SIZE);
 
-            long tsEvent = 0;
+            int64_t tsEvent = 0;
             data["E"].get(tsEvent);
 
             kline.tsTrans = tsEvent * 1000;
@@ -1165,7 +1165,7 @@ void md::BinanceUnit::parseMarketData(const std::string& msg) {
 
             auto k = data["k"];
             
-            long barTime = 0;
+            int64_t barTime = 0;
             std::string_view highPriceStr;
             std::string_view lowPriceStr;
             std::string_view openPriceStr;
@@ -1222,7 +1222,7 @@ void md::BinanceUnit::parseMarketData(const std::string& msg) {
             fundingRate.marketTypeEnum = marketTypeEnum;
             strncpy(fundingRate.instId, info.instId, INSTID_SIZE);
 
-            long tsEvent = 0;
+            int64_t tsEvent = 0;
             data["E"].get(tsEvent);
 
             fundingRate.tsTrans = tsEvent * 1000;
@@ -1232,7 +1232,7 @@ void md::BinanceUnit::parseMarketData(const std::string& msg) {
             std::string_view fundingRateStr;
             data["r"].get(fundingRateStr);
 
-            long fundingTime = 0;
+            int64_t fundingTime = 0;
             data["T"].get(fundingTime);
 
             fundingRate.fundingRate = crypto::fast_atod(fundingRateStr);

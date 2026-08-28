@@ -37,7 +37,7 @@ void md::GateioUnit::generateSubBody() {
     }
 
     cfg.subscribe_messages.clear();
-    long timeSec = crypto::getCurrentTimeSeconds();
+    int64_t timeSec = crypto::getCurrentTimeSeconds();
 
     for (auto info : vInstInfo) {
         const std::string& originInstId = info.originInstId;
@@ -143,7 +143,7 @@ void md::GateioUnit::parseMarketData(const std::string& msg) {
 }
 
 void md::GateioUnit::parseSpotData(const std::string& msg) {
-    long tsNet = crypto::getCurrentTime();
+    int64_t tsNet = crypto::getCurrentTime();
 
     simdjson::padded_string paddedMsg(msg);
     auto doc = parser.iterate(paddedMsg);
@@ -152,7 +152,7 @@ void md::GateioUnit::parseSpotData(const std::string& msg) {
         return;
     }
 
-    long tsM = 0;
+    int64_t tsM = 0;
     if (doc["time_ms"].get(tsM) == simdjson::SUCCESS) {
         tsM *= 1000;
     }
@@ -184,7 +184,7 @@ void md::GateioUnit::parseSpotData(const std::string& msg) {
             depth1.marketTypeEnum = marketTypeEnum;
             strncpy(depth1.instId, info.instId, INSTID_SIZE);
 
-            long tsT = 0;
+            int64_t tsT = 0;
             data["t"].get(tsT);
             tsT *= 1000;
 
@@ -239,9 +239,9 @@ void md::GateioUnit::parseSpotData(const std::string& msg) {
             depth5.marketTypeEnum = marketTypeEnum;
             strncpy(depth5.instId, info.instId, INSTID_SIZE);
 
-            long tsT = 0;
+            int64_t tsT = 0;
             data["t"].get(tsT);
-            long ts = tsT * 1000;
+            int64_t ts = tsT * 1000;
 
             depth5.tsTrans = ts;
             depth5.tsEvent = ts;
@@ -347,9 +347,9 @@ void md::GateioUnit::parseSpotData(const std::string& msg) {
             depth10.marketTypeEnum = marketTypeEnum;
             strncpy(depth10.instId, info.instId, INSTID_SIZE);
 
-            long tsT = 0;
+            int64_t tsT = 0;
             data["t"].get(tsT);
-            long ts = tsT * 1000;
+            int64_t ts = tsT * 1000;
 
             depth10.tsTrans = ts;
             depth10.tsEvent = ts;
@@ -475,9 +475,9 @@ void md::GateioUnit::parseSpotData(const std::string& msg) {
             depth20.marketTypeEnum = marketTypeEnum;
             strncpy(depth20.instId, info.instId, INSTID_SIZE);
 
-            long tsT = 0;
+            int64_t tsT = 0;
             data["t"].get(tsT);
-            long ts = tsT * 1000;
+            int64_t ts = tsT * 1000;
 
             depth20.tsTrans = ts;
             depth20.tsEvent = ts;
@@ -643,13 +643,13 @@ void md::GateioUnit::parseSpotData(const std::string& msg) {
             trades.marketTypeEnum = marketTypeEnum;
             strncpy(trades.instId, info.instId, INSTID_SIZE);
 
-            long tradeId;
+            int64_t tradeId;
             data["id"].get(tradeId);
             fmt::format_to(trades.tradeId, "{}", tradeId);
 
-            long tsT = 0;
+            int64_t tsT = 0;
             data["create_time_ms"].get(tsT);
-            long ts = tsT * 1000;
+            int64_t ts = tsT * 1000;
 
             trades.tsTrans = ts;
             trades.tsEvent = ts;
@@ -775,7 +775,7 @@ void md::GateioUnit::parseSpotData(const std::string& msg) {
 }
 
 void md::GateioUnit::parseSwapData(const std::string& msg) {
-    long tsNet = crypto::getCurrentTime();
+    int64_t tsNet = crypto::getCurrentTime();
 
     simdjson::padded_string paddedMsg(msg);
     auto doc = parser.iterate(paddedMsg);
@@ -784,7 +784,7 @@ void md::GateioUnit::parseSwapData(const std::string& msg) {
         return;
     }
 
-    long tsM = 0;
+    int64_t tsM = 0;
     if (doc["time_ms"].get(tsM) == simdjson::SUCCESS) {
         tsM *= 1000;
     }
@@ -872,9 +872,9 @@ void md::GateioUnit::parseSwapData(const std::string& msg) {
             depth1.marketTypeEnum = marketTypeEnum;
             strncpy(depth1.instId, info.instId, INSTID_SIZE);
 
-            long tsT = 0;
+            int64_t tsT = 0;
             data["t"].get(tsT);
-            long ts = tsT * 1000;
+            int64_t ts = tsT * 1000;
             depth1.tsTrans = ts;
             depth1.tsEvent = ts;
             depth1.tsRecv = tsNet;
@@ -925,9 +925,9 @@ void md::GateioUnit::parseSwapData(const std::string& msg) {
             depth5.marketTypeEnum = marketTypeEnum;
             strncpy(depth5.instId, info.instId, INSTID_SIZE);
 
-            long tsT = 0;
+            int64_t tsT = 0;
             data["t"].get(tsT);
-            long ts = tsT * 1000;
+            int64_t ts = tsT * 1000;
 
             depth5.tsTrans = ts;
             depth5.tsEvent = ts;
@@ -1018,9 +1018,9 @@ void md::GateioUnit::parseSwapData(const std::string& msg) {
             depth10.marketTypeEnum = marketTypeEnum;
             strncpy(depth10.instId, info.instId, INSTID_SIZE);
 
-            long tsT = 0;
+            int64_t tsT = 0;
             data["t"].get(tsT);
-            long ts = tsT * 1000;
+            int64_t ts = tsT * 1000;
 
             depth10.tsTrans = ts;
             depth10.tsEvent = ts;
@@ -1131,9 +1131,9 @@ void md::GateioUnit::parseSwapData(const std::string& msg) {
             depth20.marketTypeEnum = marketTypeEnum;
             strncpy(depth20.instId, info.instId, INSTID_SIZE);
 
-            long tsT = 0;
+            int64_t tsT = 0;
             data["t"].get(tsT);
-            long ts = tsT * 1000;
+            int64_t ts = tsT * 1000;
 
             depth20.tsTrans = ts;
             depth20.tsEvent = ts;
@@ -1288,7 +1288,7 @@ void md::GateioUnit::parseSwapData(const std::string& msg) {
             auto it = data.begin();
             auto d = *it;
 
-            long tradeId;
+            int64_t tradeId;
             d["id"].get(tradeId);
             fmt::format_to(trades.tradeId, "{}", tradeId);
 
@@ -1296,9 +1296,9 @@ void md::GateioUnit::parseSwapData(const std::string& msg) {
             d["size"].get(tradeVolStr);
 
 
-            long tsT = 0;
+            int64_t tsT = 0;
             d["create_time_ms"].get(tsT);
-            long ts = tsT * 1000;
+            int64_t ts = tsT * 1000;
 
             trades.tsTrans = ts;
             trades.tsEvent = ts;
@@ -1456,7 +1456,7 @@ void md::GateioUnit::parseSwapData(const std::string& msg) {
             fundingRate.fundingRate = crypto::fast_atod(fundingRateStr);
             fundingRate.nextFundingRate = crypto::fast_atod(nextFundingRateStr);
 
-            long fundingTime;
+            int64_t fundingTime;
             d["funding_next_apply"].get(fundingTime);
             fundingRate.fundingTime = fundingTime;
 

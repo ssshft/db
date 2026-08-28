@@ -48,7 +48,7 @@ void md::OkxSbeUnit::generateSubBody() {
 
     cfg.url = OKX_WS_SBE_PUBLIC;
 
-    long ts_sec = crypto::getCurrentTimeSeconds();
+    int64_t ts_sec = crypto::getCurrentTimeSeconds();
     std::string ts = std::to_string(ts_sec);
     std::string payload = ts + "GET/users/self/verify";
     std::string sign = hmac_sha256_base64(sbeAccount.secretKey, payload);
@@ -126,7 +126,7 @@ void md::OkxSbeUnit::onWebsocketMsg(const uint8_t* data, size_t len, bool isBina
 // parseMarketData: SBE 分派
 // ============================================================================
 void md::OkxSbeUnit::parseMarketData(const std::string& msg) {
-    long tsNet = crypto::getCurrentTime();
+    int64_t tsNet = crypto::getCurrentTime();
     const uint8_t* data = reinterpret_cast<const uint8_t*>(msg.data());
     size_t len = msg.size();
 
@@ -164,7 +164,7 @@ void md::OkxSbeUnit::parseMarketData(const std::string& msg) {
 // ============================================================================
 // handleBboTbt (templateId=1000)
 // ============================================================================
-void md::OkxSbeUnit::handleBboTbt(const uint8_t* data, size_t len, long tsNet) {
+void md::OkxSbeUnit::handleBboTbt(const uint8_t* data, size_t len, int64_t tsNet) {
     const auto* v = okxsbe::view_of<okxsbe::BboTbtView>(data, len);
     if (!v) { 
         LOG_ERROR("[OKX_SBE] BboTbt view failed, len: {}", len); 
@@ -190,7 +190,7 @@ void md::OkxSbeUnit::handleBboTbt(const uint8_t* data, size_t len, long tsNet) {
     depth1.marketTypeEnum = marketTypeEnum;
     strncpy(depth1.instId, info.instId, INSTID_SIZE);
 
-    long tsTrans = static_cast<long>(v->tsUs);
+    int64_t tsTrans = v->tsUs;
     depth1.tsTrans = tsTrans;
     depth1.tsEvent = tsTrans;
     depth1.tsRecv = tsNet;
@@ -217,7 +217,7 @@ void md::OkxSbeUnit::handleBboTbt(const uint8_t* data, size_t len, long tsNet) {
 // ============================================================================
 // handleBooksL2 (templateId=1001 / 1003)
 // ============================================================================
-void md::OkxSbeUnit::handleBooksL2(const uint8_t* data, size_t len, long tsNet) {
+void md::OkxSbeUnit::handleBooksL2(const uint8_t* data, size_t len, int64_t tsNet) {
     okxsbe::BooksL2Iter iter(data, len);
     if (!iter.ok() || !iter.root()) {
         LOG_ERROR("[OKX_SBE] BooksL2 iter failed, len: {}", len);
@@ -232,7 +232,7 @@ void md::OkxSbeUnit::handleBooksL2(const uint8_t* data, size_t len, long tsNet) 
     }
     const std::string& key = crypto::get_md_channel_key(exchangeTypeEnum, instTypeEnum, marketTypeEnum, info.instId);
 
-    long tsTrans = static_cast<long>(root->tsUs);
+    int64_t tsTrans = root->tsUs;
     int wantN = 0;
     if (marketTypeEnum == md::DEPTH5)  {
         wantN = 5;
@@ -345,7 +345,7 @@ void md::OkxSbeUnit::handleBooksL2(const uint8_t* data, size_t len, long tsNet) 
 // ============================================================================
 // handleTrades (templateId=1005)
 // ============================================================================
-void md::OkxSbeUnit::handleTrades(const uint8_t* data, size_t len, long tsNet) {
+void md::OkxSbeUnit::handleTrades(const uint8_t* data, size_t len, int64_t tsNet) {
     const auto* v = okxsbe::view_of<okxsbe::TradesView>(data, len);
     if (!v) { 
         LOG_ERROR("[OKX_SBE] Trades view failed, len: {}", len); 
@@ -370,7 +370,7 @@ void md::OkxSbeUnit::handleTrades(const uint8_t* data, size_t len, long tsNet) {
     trades.marketTypeEnum = marketTypeEnum;
     strncpy(trades.instId, info.instId, INSTID_SIZE);
 
-    long tsTrans = static_cast<long>(v->tsUs);
+    int64_t tsTrans = v->tsUs;
     trades.tsTrans = tsTrans;
     trades.tsEvent = tsTrans;
     trades.tsRecv = tsNet;

@@ -142,7 +142,7 @@ void md::GateioSbeUnit::generateSubBody() {
     const char* obThird = (instTypeEnum == SPOT) ? "100ms" : "0";
 
     cfg.subscribe_messages.clear();
-    long timeSec = crypto::getCurrentTimeSeconds();
+    int64_t timeSec = crypto::getCurrentTimeSeconds();
 
     for (auto& info : vInstInfo) {
         const std::string& originInstId = info.originInstId;
@@ -225,7 +225,7 @@ bool md::GateioSbeUnit::lookupInfo(std::string_view sym, md::InstrumentInfo& out
 // parseMarketData: 顶层按 instType 分流到 spot / futures 版本
 // ============================================================================
 void md::GateioSbeUnit::parseMarketData(const std::string& msg) {
-    long tsNet = crypto::getCurrentTime();
+    int64_t tsNet = crypto::getCurrentTime();
     const uint8_t* data = reinterpret_cast<const uint8_t*>(msg.data());
     size_t len = msg.size();
 
@@ -246,7 +246,7 @@ void md::GateioSbeUnit::parseMarketData(const std::string& msg) {
 // parseFuturesData: 期货 SBE 分派
 //   templateId 语义: 1 bbo, 2 publicTrade(有 group), 3 obu, 4 orderBook(asks 先), 5 obu-update
 // ============================================================================
-void md::GateioSbeUnit::parseFuturesData(const uint8_t* data, size_t len, long tsNet) {
+void md::GateioSbeUnit::parseFuturesData(const uint8_t* data, size_t len, int64_t tsNet) {
     namespace fx = gateiosbefutures;
     uint16_t tid = gateiosbe::peek_template_id(data, len);
 
@@ -277,7 +277,7 @@ void md::GateioSbeUnit::parseFuturesData(const uint8_t* data, size_t len, long t
         d1.instTypeEnum = instTypeEnum;
         d1.marketTypeEnum = marketTypeEnum;
         strncpy(d1.instId, info.instId, INSTID_SIZE);
-        long tsNs = static_cast<long>(v->t) * 1000;
+        int64_t tsNs = v->t * 1000;
         d1.tsTrans = tsNs; 
         d1.tsEvent = tsNs; 
         d1.tsRecv = tsNet;
@@ -324,8 +324,8 @@ void md::GateioSbeUnit::parseFuturesData(const uint8_t* data, size_t len, long t
             t.instTypeEnum = instTypeEnum;
             t.marketTypeEnum = marketTypeEnum;
             strncpy(t.instId, info.instId, INSTID_SIZE);
-            t.tsTrans = static_cast<long>(e->t) * 1000;
-            t.tsEvent = static_cast<long>(root->time) * 1000;
+            t.tsTrans = e->t * 1000;
+            t.tsEvent = root->time * 1000;
             t.tsRecv  = tsNet;
 
             std::string tidStr = std::to_string(e->id);
@@ -360,7 +360,7 @@ void md::GateioSbeUnit::parseFuturesData(const uint8_t* data, size_t len, long t
             return;
         }
 
-        long tsNs = static_cast<long>(root->t) * 1000;
+        int64_t tsNs = root->t * 1000;
         const std::string& key = crypto::get_md_channel_key(exchangeTypeEnum, instTypeEnum, marketTypeEnum, info.instId);
 
         auto fill_common = [&](auto& d) {
@@ -443,8 +443,8 @@ void md::GateioSbeUnit::parseFuturesData(const uint8_t* data, size_t len, long t
             strncpy(k.instId, info.instId, INSTID_SIZE);
 
             // Gate candlestick: t 是秒
-            k.tsTrans = static_cast<long>(e->t)*1000000L;
-            k.tsEvent = static_cast<long>(root->time);
+            k.tsTrans = e->t * 1000000L;
+            k.tsEvent = root->time;
             k.tsRecv = tsNet;
             k.openPrice = gateiosbe::to_double(e->openMantissa, root->pxExponent) * info.reduceNumber;
             k.highPrice = gateiosbe::to_double(e->highMantissa, root->pxExponent) * info.reduceNumber;
@@ -489,7 +489,7 @@ void md::GateioSbeUnit::parseFuturesData(const uint8_t* data, size_t len, long t
 // parseSpotData: 现货 SBE 分派
 //   templateId 语义: 1 bbo(bid 先), 2 publicTrade(**无 group**), 3 obu, 4 orderBook(bids 先), 5 obu-update
 // ============================================================================
-void md::GateioSbeUnit::parseSpotData(const uint8_t* data, size_t len, long tsNet) {
+void md::GateioSbeUnit::parseSpotData(const uint8_t* data, size_t len, int64_t tsNet) {
     namespace sp = gateiosbespot;
     uint16_t tid = gateiosbe::peek_template_id(data, len);
 
@@ -519,7 +519,7 @@ void md::GateioSbeUnit::parseSpotData(const uint8_t* data, size_t len, long tsNe
         d1.instTypeEnum = instTypeEnum;
         d1.marketTypeEnum = marketTypeEnum;
         strncpy(d1.instId, info.instId, INSTID_SIZE);
-        long tsNs = static_cast<long>(v->t) * 1000;
+        int64_t tsNs = v->t * 1000;
         d1.tsTrans = tsNs; 
         d1.tsEvent = tsNs; 
         d1.tsRecv = tsNet;
@@ -560,8 +560,8 @@ void md::GateioSbeUnit::parseSpotData(const uint8_t* data, size_t len, long tsNe
         t.instTypeEnum = instTypeEnum;
         t.marketTypeEnum = marketTypeEnum;
         strncpy(t.instId, info.instId, INSTID_SIZE);
-        t.tsTrans = static_cast<long>(v->createTimeUs) * 1000;
-        t.tsEvent = static_cast<long>(v->time) * 1000;
+        t.tsTrans = v->createTimeUs * 1000;
+        t.tsEvent = v->time * 1000;
         t.tsRecv = tsNet;
 
         std::string tidStr = std::to_string(v->id);
@@ -598,7 +598,7 @@ void md::GateioSbeUnit::parseSpotData(const uint8_t* data, size_t len, long tsNe
             return;
         }
 
-        long tsNs = static_cast<long>(root->t) * 1000;
+        int64_t tsNs = root->t * 1000;
         const std::string& key = crypto::get_md_channel_key(exchangeTypeEnum, instTypeEnum, marketTypeEnum, info.instId);
 
         auto fill_common = [&](auto& d) {
@@ -676,7 +676,7 @@ void md::GateioSbeUnit::parseSpotData(const uint8_t* data, size_t len, long tsNe
         strncpy(k.instId, info.instId, INSTID_SIZE);
 
         // candle timestamp
-        long ts = static_cast<long>(v->t);
+        int64_t ts = v->t;
         k.tsEvent = ts;
         k.tsTrans = ts;
         k.tsRecv = tsNet;
