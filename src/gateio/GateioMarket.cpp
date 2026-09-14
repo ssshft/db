@@ -66,7 +66,7 @@ void md::GateioUnit::generateSubBody() {
                 continue;
             }
         }
-        else if (instTypeEnum == USDT_SWAP || instTypeEnum == BTC_SWAP || instTypeEnum == USDT_FUTURES || instTypeEnum == BTC_FUTURES) {
+        else if (instTypeEnum == USDT_SWAP || instTypeEnum == C_SWAP || instTypeEnum == USDT_FUTURES || instTypeEnum == C_FUTURES) {
             if (marketTypeEnum == md::DEPTH1) {
                 channel = "futures.book_ticker";
                 payloadJson = fmt::format(R"(["{}"])", originInstId);
