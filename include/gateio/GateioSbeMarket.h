@@ -8,11 +8,11 @@ constexpr auto GATEIO_WS_SBE_SPOT = "wss://api.gateio.ws/ws/v4/sbe";
 
 constexpr auto GATEIO_WS_SBE_USDT_SWAP = "wss://fx-ws.gateio.ws/v4/ws/usdt/sbe";
 
-constexpr auto GATEIO_WS_SBE_BTC_SWAP =  "wss://fx-ws.gateio.ws/v4/ws/btc/sbe";
+constexpr auto GATEIO_WS_SBE_C_SWAP =  "wss://fx-ws.gateio.ws/v4/ws/btc/sbe";
 
 constexpr auto GATEIO_WS_SBE_USDT_FUTURES = "wss://fx-ws.gateio.ws/v4/ws/delivery/usdt/sbe";
 
-constexpr auto GATEIO_WS_SBE_BTC_FUTURES = "wss://fx-ws.gateio.ws/v4/ws/delivery/btc/sbe";
+constexpr auto GATEIO_WS_SBE_C_FUTURES = "wss://fx-ws.gateio.ws/v4/ws/delivery/btc/sbe";
 
 
 

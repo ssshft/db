@@ -8,11 +8,11 @@ constexpr auto GATEIO_WS_PUBLIC_SPOT = "wss://ws-testnet.gate.com/ws/v4/spot";
 
 constexpr auto GATEIO_WS_PUBLIC_USDT_SWAP = "wss://ws-testnet.gate.com/v4/ws/futures/usdt";
 
-constexpr auto GATEIO_WS_PUBLIC_BTC_SWAP =  "wss://fx-ws-testnet.gateio.ws/v4/ws/btc";
+constexpr auto GATEIO_WS_PUBLIC_C_SWAP =  "wss://fx-ws-testnet.gateio.ws/v4/ws/btc";
 
 constexpr auto GATEIO_WS_PUBLIC_USDT_FUTURES = "wss://fx-ws-testnet.gateio.ws/v4/ws/delivery/usdt";
 
-constexpr auto GATEIO_WS_PUBLIC_BTC_FUTURES = "wss://fx-ws-testnet.gateio.ws/v4/ws/delivery/btc";
+constexpr auto GATEIO_WS_PUBLIC_C_FUTURES = "wss://fx-ws-testnet.gateio.ws/v4/ws/delivery/btc";
 
 #else
 
@@ -21,11 +21,11 @@ constexpr auto GATEIO_WS_PUBLIC_SPOT = "wss://api.gateio.ws/ws/v4/";
 
 constexpr auto GATEIO_WS_PUBLIC_USDT_SWAP = "wss://fx-ws.gateio.ws/v4/ws/usdt";
 
-constexpr auto GATEIO_WS_PUBLIC_BTC_SWAP =  "wss://fx-ws.gateio.ws/v4/ws/btc";
+constexpr auto GATEIO_WS_PUBLIC_C_SWAP =  "wss://fx-ws.gateio.ws/v4/ws/btc";
 
 constexpr auto GATEIO_WS_PUBLIC_USDT_FUTURES = "wss://fx-ws.gateio.ws/v4/ws/delivery/usdt";
 
-constexpr auto GATEIO_WS_PUBLIC_BTC_FUTURES = "wss://fx-ws.gateio.ws/v4/ws/delivery/btc";
+constexpr auto GATEIO_WS_PUBLIC_C_FUTURES = "wss://fx-ws.gateio.ws/v4/ws/delivery/btc";
 
 #endif
 

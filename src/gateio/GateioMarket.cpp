@@ -29,11 +29,11 @@ void md::GateioUnit::generateSubBody() {
     else if (instTypeEnum == USDT_FUTURES) {
         cfg.url = GATEIO_WS_PUBLIC_USDT_FUTURES;
     }
-    else if (instTypeEnum == BTC_SWAP) {
-        cfg.url = GATEIO_WS_PUBLIC_BTC_SWAP;
+    else if (instTypeEnum == C_SWAP) {
+        cfg.url = GATEIO_WS_PUBLIC_C_SWAP;
     }
-    else if (instTypeEnum == BTC_FUTURES) {
-        cfg.url = GATEIO_WS_PUBLIC_BTC_FUTURES;
+    else if (instTypeEnum == C_FUTURES) {
+        cfg.url = GATEIO_WS_PUBLIC_C_FUTURES;
     }
 
     cfg.subscribe_messages.clear();

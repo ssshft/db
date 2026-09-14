@@ -122,14 +122,14 @@ void md::GateioSbeUnit::generateSubBody() {
     else if (instTypeEnum == USDT_SWAP) {
         cfg.url = GATEIO_WS_SBE_USDT_SWAP;
     }   
-    else if (instTypeEnum == BTC_SWAP) {
-        cfg.url = GATEIO_WS_SBE_BTC_SWAP;
+    else if (instTypeEnum == C_SWAP) {
+        cfg.url = GATEIO_WS_SBE_C_SWAP;
     }
     else if (instTypeEnum == USDT_FUTURES) {
         cfg.url = GATEIO_WS_SBE_USDT_FUTURES;
     }
-    else if (instTypeEnum == BTC_FUTURES) {
-        cfg.url = GATEIO_WS_SBE_BTC_FUTURES;
+    else if (instTypeEnum == C_FUTURES) {
+        cfg.url = GATEIO_WS_SBE_C_FUTURES;
     }
     else {
         LOG_ERROR("[GATEIO_SBE] unsupported instType: {}", instTypeStr);
