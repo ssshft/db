@@ -742,7 +742,7 @@ void md::GateioUnit::parseSpotData(const std::string& msg) {
             }
 
             strncpy(kline.instId, info.instId, INSTID_SIZE);
-            
+
             const std::string& key = crypto::get_md_channel_key(exchangeTypeEnum, instTypeEnum, marketTypeEnum, info.instId);
 
 
@@ -1272,21 +1272,7 @@ void md::GateioUnit::parseSwapData(const std::string& msg) {
 
             std::string_view tradePriceStr;
             d["price"].get(tradePriceStr);
-            
-            trades.px = crypto::fast_atod(tradePriceStr) * info.reduceNumber;
-
-            double size = crypto::fast_atod(tradeVolStr);
-            trades.sz = fabs(size) * info.magnifyNumber;
-
-            if (size > 0) {
-                trades.direction = DT_LONG; 
-            }
-            else {
-                trades.direction = DT_SHORT;
-            }
-
-            trades.tsParse = crypto::getCurrentTime();
-
+        
 
             std::string originInstId = "";
             std::string_view sVal;
@@ -1301,6 +1287,21 @@ void md::GateioUnit::parseSwapData(const std::string& msg) {
             }
 
             strncpy(trades.instId, info.instId, INSTID_SIZE);
+
+            trades.px = crypto::fast_atod(tradePriceStr) * info.reduceNumber;
+
+            double size = crypto::fast_atod(tradeVolStr);
+            trades.sz = fabs(size) * info.magnifyNumber;
+
+            if (size > 0) {
+                trades.direction = DT_LONG; 
+            }
+            else {
+                trades.direction = DT_SHORT;
+            }
+
+            trades.tsParse = crypto::getCurrentTime();
+
 
             const std::string& key = crypto::get_md_channel_key(exchangeTypeEnum, instTypeEnum, marketTypeEnum, info.instId);
 
