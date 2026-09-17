@@ -855,18 +855,18 @@ void md::GateioUnit::parseSwapData(const std::string& msg) {
             auto av1 = data["A"];
             
             std::string_view bidPriceStr;
-            std::string_view bidVolStr;
+            int64_t bidVol;
             std::string_view askPriceStr;
-            std::string_view askVolStr;
-            if (bp1.get(bidPriceStr) || bv1.get(bidVolStr) || ap1.get(askPriceStr) || av1.get(askVolStr)) {
+            int64_t askVol;
+            if (bp1.get(bidPriceStr) || bv1.get(bidVol) || ap1.get(askPriceStr) || av1.get(askVol)) {
                 LOG_ERROR("Failed to get string values, msg: {}", msg);
                 return;
             }
 
             depth1.bp1 = crypto::fast_atod(bidPriceStr) * info.reduceNumber;
-            depth1.bv1 = crypto::fast_atod(bidVolStr) * info.magnifyNumber;
+            depth1.bv1 = bidVol * info.magnifyNumber;
             depth1.ap1 = crypto::fast_atod(askPriceStr) * info.reduceNumber;
-            depth1.av1 = crypto::fast_atod(askVolStr) * info.magnifyNumber;
+            depth1.av1 = askVol * info.magnifyNumber;
 
             depth1.tsParse = crypto::getCurrentTime();
 #ifdef NEED_SHM
