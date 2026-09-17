@@ -908,7 +908,7 @@ void md::GateioUnit::parseSwapData(const std::string& msg) {
 
             auto bidsArray = data["bids"];
             std::string_view bidPrice[5];
-            std::string_view bidVol[5];
+            int64_t bidVol[5];
 
             size_t bidsCount = 0;
             for (auto bidLevel : bidsArray) {
@@ -924,20 +924,20 @@ void md::GateioUnit::parseSwapData(const std::string& msg) {
 
             if (bidsCount == 5) {
                 depth5.bp1 = crypto::fast_atod(bidPrice[0]) * info.reduceNumber;
-                depth5.bv1 = crypto::fast_atod(bidVol[0]) * info.magnifyNumber;
+                depth5.bv1 = bidVol[0] * info.magnifyNumber;
                 depth5.bp2 = crypto::fast_atod(bidPrice[1]) * info.reduceNumber;
-                depth5.bv2 = crypto::fast_atod(bidVol[1]) * info.magnifyNumber;
+                depth5.bv2 = bidVol[1] * info.magnifyNumber;
                 depth5.bp3 = crypto::fast_atod(bidPrice[2]) * info.reduceNumber;
-                depth5.bv3 = crypto::fast_atod(bidVol[2]) * info.magnifyNumber;
+                depth5.bv3 = bidVol[2] * info.magnifyNumber;
                 depth5.bp4 = crypto::fast_atod(bidPrice[3]) * info.reduceNumber;
-                depth5.bv4 = crypto::fast_atod(bidVol[3]) * info.magnifyNumber;
+                depth5.bv4 = bidVol[3] * info.magnifyNumber;
                 depth5.bp5 = crypto::fast_atod(bidPrice[4]) * info.reduceNumber;
-                depth5.bv5 = crypto::fast_atod(bidVol[4]) * info.magnifyNumber;
+                depth5.bv5 = bidVol[4] * info.magnifyNumber;
             }
 
             auto asksArray = data["asks"];
             std::string_view askPrice[5];
-            std::string_view askVol[5];
+            int64_t askVol[5];
 
             size_t asksCount = 0;
             for (auto askLevel : asksArray) {
@@ -953,15 +953,15 @@ void md::GateioUnit::parseSwapData(const std::string& msg) {
 
             if (asksCount == 5) {
                 depth5.ap1 = crypto::fast_atod(askPrice[0]) * info.reduceNumber;
-                depth5.av1 = crypto::fast_atod(askVol[0]) * info.magnifyNumber;
+                depth5.av1 = askVol[0] * info.magnifyNumber;
                 depth5.ap2 = crypto::fast_atod(askPrice[1]) * info.reduceNumber;
-                depth5.av2 = crypto::fast_atod(askVol[1]) * info.magnifyNumber;
+                depth5.av2 = askVol[1] * info.magnifyNumber;
                 depth5.ap3 = crypto::fast_atod(askPrice[2]) * info.reduceNumber;
-                depth5.av3 = crypto::fast_atod(askVol[2]) * info.magnifyNumber;
+                depth5.av3 = askVol[2] * info.magnifyNumber;
                 depth5.ap4 = crypto::fast_atod(askPrice[3]) * info.reduceNumber;
-                depth5.av4 = crypto::fast_atod(askVol[3]) * info.magnifyNumber;
+                depth5.av4 = askVol[3] * info.magnifyNumber;
                 depth5.ap5 = crypto::fast_atod(askPrice[4]) * info.reduceNumber;
-                depth5.av5 = crypto::fast_atod(askVol[4]) * info.magnifyNumber;
+                depth5.av5 = askVol[4] * info.magnifyNumber;
             }
 
             depth5.tsParse = crypto::getCurrentTime();
@@ -1004,7 +1004,7 @@ void md::GateioUnit::parseSwapData(const std::string& msg) {
 
             auto bidsArray = data["bids"];
             std::string_view bidPrice[10];
-            std::string_view bidVol[10];
+            int64_t bidVol[10];
 
             size_t bidsCount = 0;
             for (auto bidLevel : bidsArray) {
@@ -1020,30 +1020,30 @@ void md::GateioUnit::parseSwapData(const std::string& msg) {
 
             if (bidsCount == 10) {
                 depth10.bp1 = crypto::fast_atod(bidPrice[0]) * info.reduceNumber;
-                depth10.bv1 = crypto::fast_atod(bidVol[0]) * info.magnifyNumber;
+                depth10.bv1 = bidVol[0] * info.magnifyNumber;
                 depth10.bp2 = crypto::fast_atod(bidPrice[1]) * info.reduceNumber;
-                depth10.bv2 = crypto::fast_atod(bidVol[1]) * info.magnifyNumber;
+                depth10.bv2 = bidVol[1] * info.magnifyNumber;
                 depth10.bp3 = crypto::fast_atod(bidPrice[2]) * info.reduceNumber;
-                depth10.bv3 = crypto::fast_atod(bidVol[2]) * info.magnifyNumber;
+                depth10.bv3 = bidVol[2] * info.magnifyNumber;
                 depth10.bp4 = crypto::fast_atod(bidPrice[3]) * info.reduceNumber;
-                depth10.bv4 = crypto::fast_atod(bidVol[3]) * info.magnifyNumber;
+                depth10.bv4 = bidVol[3] * info.magnifyNumber;
                 depth10.bp5 = crypto::fast_atod(bidPrice[4]) * info.reduceNumber;
-                depth10.bv5 = crypto::fast_atod(bidVol[4]) * info.magnifyNumber;
+                depth10.bv5 = bidVol[4] * info.magnifyNumber;
                 depth10.bp6 = crypto::fast_atod(bidPrice[5]) * info.reduceNumber;
-                depth10.bv6 = crypto::fast_atod(bidVol[5]) * info.magnifyNumber;
+                depth10.bv6 = bidVol[5] * info.magnifyNumber;
                 depth10.bp7 = crypto::fast_atod(bidPrice[6]) * info.reduceNumber;
-                depth10.bv7 = crypto::fast_atod(bidVol[6]) * info.magnifyNumber;
+                depth10.bv7 = bidVol[6] * info.magnifyNumber;
                 depth10.bp8 = crypto::fast_atod(bidPrice[7]) * info.reduceNumber;
-                depth10.bv8 = crypto::fast_atod(bidVol[7]) * info.magnifyNumber;
+                depth10.bv8 = bidVol[7] * info.magnifyNumber;
                 depth10.bp9 = crypto::fast_atod(bidPrice[8]) * info.reduceNumber;
-                depth10.bv9 = crypto::fast_atod(bidVol[8]) * info.magnifyNumber;
+                depth10.bv9 = bidVol[8] * info.magnifyNumber;
                 depth10.bp10 = crypto::fast_atod(bidPrice[9]) * info.reduceNumber;
-                depth10.bv10 = crypto::fast_atod(bidVol[9]) * info.magnifyNumber;
+                depth10.bv10 = bidVol[9] * info.magnifyNumber;
             }
 
             auto asksArray = data["asks"];
             std::string_view askPrice[10];
-            std::string_view askVol[10];
+            int64_t askVol[10];
 
             size_t asksCount = 0;
             for (auto askLevel : asksArray) {
@@ -1059,25 +1059,25 @@ void md::GateioUnit::parseSwapData(const std::string& msg) {
 
             if (asksCount == 10) {
                 depth10.ap1 = crypto::fast_atod(askPrice[0]) * info.reduceNumber;
-                depth10.av1 = crypto::fast_atod(askVol[0]) * info.magnifyNumber;
+                depth10.av1 = askVol[0] * info.magnifyNumber;
                 depth10.ap2 = crypto::fast_atod(askPrice[1]) * info.reduceNumber;
-                depth10.av2 = crypto::fast_atod(askVol[1]) * info.magnifyNumber;
+                depth10.av2 = askVol[1] * info.magnifyNumber;
                 depth10.ap3 = crypto::fast_atod(askPrice[2]) * info.reduceNumber;
-                depth10.av3 = crypto::fast_atod(askVol[2]) * info.magnifyNumber;
+                depth10.av3 = askVol[2] * info.magnifyNumber;
                 depth10.ap4 = crypto::fast_atod(askPrice[3]) * info.reduceNumber;
-                depth10.av4 = crypto::fast_atod(askVol[3]) * info.magnifyNumber;
+                depth10.av4 = askVol[3] * info.magnifyNumber;
                 depth10.ap5 = crypto::fast_atod(askPrice[4]) * info.reduceNumber;
-                depth10.av5 = crypto::fast_atod(askVol[4]) * info.magnifyNumber;
+                depth10.av5 = askVol[4] * info.magnifyNumber;
                 depth10.ap6 = crypto::fast_atod(askPrice[5]) * info.reduceNumber;
-                depth10.av6 = crypto::fast_atod(askVol[5]) * info.magnifyNumber;
+                depth10.av6 = askVol[5] * info.magnifyNumber;
                 depth10.ap7 = crypto::fast_atod(askPrice[6]) * info.reduceNumber;
-                depth10.av7 = crypto::fast_atod(askVol[6]) * info.magnifyNumber;
+                depth10.av7 = askVol[6] * info.magnifyNumber;
                 depth10.ap8 = crypto::fast_atod(askPrice[7]) * info.reduceNumber;
-                depth10.av8 = crypto::fast_atod(askVol[7]) * info.magnifyNumber;
+                depth10.av8 = askVol[7] * info.magnifyNumber;
                 depth10.ap9 = crypto::fast_atod(askPrice[8]) * info.reduceNumber;
-                depth10.av9 = crypto::fast_atod(askVol[8]) * info.magnifyNumber;
+                depth10.av9 = askVol[8] * info.magnifyNumber;
                 depth10.ap10 = crypto::fast_atod(askPrice[9]) * info.reduceNumber;
-                depth10.av10 = crypto::fast_atod(askVol[9]) * info.magnifyNumber;
+                depth10.av10 = askVol[9] * info.magnifyNumber;
             }
 
             depth10.tsParse = crypto::getCurrentTime();
@@ -1120,7 +1120,7 @@ void md::GateioUnit::parseSwapData(const std::string& msg) {
 
             auto bidsArray = data["bids"];
             std::string_view bidPrice[20];
-            std::string_view bidVol[20];
+            int64_t bidVol[20];
 
             size_t bidsCount = 0;
             for (auto bidLevel : bidsArray) {
@@ -1136,51 +1136,51 @@ void md::GateioUnit::parseSwapData(const std::string& msg) {
 
             if (bidsCount == 20) {
                 depth20.bp1 = crypto::fast_atod(bidPrice[0]) * info.reduceNumber;
-                depth20.bv1 = crypto::fast_atod(bidVol[0]) * info.magnifyNumber;
+                depth20.bv1 = bidVol[0] * info.magnifyNumber;
                 depth20.bp2 = crypto::fast_atod(bidPrice[1]) * info.reduceNumber;
-                depth20.bv2 = crypto::fast_atod(bidVol[1]) * info.magnifyNumber;
+                depth20.bv2 = bidVol[1] * info.magnifyNumber;
                 depth20.bp3 = crypto::fast_atod(bidPrice[2]) * info.reduceNumber;
-                depth20.bv3 = crypto::fast_atod(bidVol[2]) * info.magnifyNumber;
+                depth20.bv3 = bidVol[2] * info.magnifyNumber;
                 depth20.bp4 = crypto::fast_atod(bidPrice[3]) * info.reduceNumber;
-                depth20.bv4 = crypto::fast_atod(bidVol[3]) * info.magnifyNumber;
+                depth20.bv4 = bidVol[3] * info.magnifyNumber;
                 depth20.bp5 = crypto::fast_atod(bidPrice[4]) * info.reduceNumber;
-                depth20.bv5 = crypto::fast_atod(bidVol[4]) * info.magnifyNumber;
+                depth20.bv5 = bidVol[4] * info.magnifyNumber;
                 depth20.bp6 = crypto::fast_atod(bidPrice[5]) * info.reduceNumber;
-                depth20.bv6 = crypto::fast_atod(bidVol[5]) * info.magnifyNumber;
+                depth20.bv6 = bidVol[5] * info.magnifyNumber;
                 depth20.bp7 = crypto::fast_atod(bidPrice[6]) * info.reduceNumber;
-                depth20.bv7 = crypto::fast_atod(bidVol[6]) * info.magnifyNumber;
+                depth20.bv7 = bidVol[6] * info.magnifyNumber;
                 depth20.bp8 = crypto::fast_atod(bidPrice[7]) * info.reduceNumber;
-                depth20.bv8 = crypto::fast_atod(bidVol[7]) * info.magnifyNumber;
+                depth20.bv8 = bidVol[7] * info.magnifyNumber;
                 depth20.bp9 = crypto::fast_atod(bidPrice[8]) * info.reduceNumber;
-                depth20.bv9 = crypto::fast_atod(bidVol[8]) * info.magnifyNumber;
+                depth20.bv9 = bidVol[8] * info.magnifyNumber;
                 depth20.bp10 = crypto::fast_atod(bidPrice[9]) * info.reduceNumber;
-                depth20.bv10 = crypto::fast_atod(bidVol[9]) * info.magnifyNumber;
+                depth20.bv10 = bidVol[9] * info.magnifyNumber;
                 depth20.bp11 = crypto::fast_atod(bidPrice[10]) * info.reduceNumber;
-                depth20.bv11 = crypto::fast_atod(bidVol[10]) * info.magnifyNumber;
+                depth20.bv11 = bidVol[10] * info.magnifyNumber;
                 depth20.bp12 = crypto::fast_atod(bidPrice[11]) * info.reduceNumber;
-                depth20.bv12 = crypto::fast_atod(bidVol[11]) * info.magnifyNumber;
+                depth20.bv12 = bidVol[11] * info.magnifyNumber;
                 depth20.bp13 = crypto::fast_atod(bidPrice[12]) * info.reduceNumber;
-                depth20.bv13 = crypto::fast_atod(bidVol[12]) * info.magnifyNumber;
+                depth20.bv13 = bidVol[12] * info.magnifyNumber;
                 depth20.bp14 = crypto::fast_atod(bidPrice[13]) * info.reduceNumber;
-                depth20.bv14 = crypto::fast_atod(bidVol[13]) * info.magnifyNumber;
+                depth20.bv14 = bidVol[13] * info.magnifyNumber;
                 depth20.bp15 = crypto::fast_atod(bidPrice[14]) * info.reduceNumber;
-                depth20.bv15 = crypto::fast_atod(bidVol[14]) * info.magnifyNumber;
+                depth20.bv15 = bidVol[14] * info.magnifyNumber;
                 depth20.bp16 = crypto::fast_atod(bidPrice[15]) * info.reduceNumber;
-                depth20.bv16 = crypto::fast_atod(bidVol[15]) * info.magnifyNumber;
+                depth20.bv16 = bidVol[15] * info.magnifyNumber;
                 depth20.bp17 = crypto::fast_atod(bidPrice[16]) * info.reduceNumber;
-                depth20.bv17 = crypto::fast_atod(bidVol[16]) * info.magnifyNumber;
+                depth20.bv17 = bidVol[16] * info.magnifyNumber;
                 depth20.bp18 = crypto::fast_atod(bidPrice[17]) * info.reduceNumber;
-                depth20.bv18 = crypto::fast_atod(bidVol[17]) * info.magnifyNumber;
+                depth20.bv18 = bidVol[17] * info.magnifyNumber;
                 depth20.bp19 = crypto::fast_atod(bidPrice[18]) * info.reduceNumber;
-                depth20.bv19 = crypto::fast_atod(bidVol[18]) * info.magnifyNumber;
+                depth20.bv19 = bidVol[18] * info.magnifyNumber;
                 depth20.bp20 = crypto::fast_atod(bidPrice[19]) * info.reduceNumber;
-                depth20.bv20 = crypto::fast_atod(bidVol[19]) * info.magnifyNumber;
+                depth20.bv20 = bidVol[19] * info.magnifyNumber;
 
             }
 
             auto asksArray = data["asks"];
             std::string_view askPrice[20];
-            std::string_view askVol[20];
+            int64_t askVol[20];
 
             size_t asksCount = 0;
             for (auto askLevel : asksArray) {
@@ -1196,45 +1196,45 @@ void md::GateioUnit::parseSwapData(const std::string& msg) {
 
             if (asksCount == 20) {
                 depth20.ap1 = crypto::fast_atod(askPrice[0]) * info.reduceNumber;
-                depth20.av1 = crypto::fast_atod(askVol[0]) * info.magnifyNumber;
+                depth20.av1 = askVol[0] * info.magnifyNumber;
                 depth20.ap2 = crypto::fast_atod(askPrice[1]) * info.reduceNumber;
-                depth20.av2 = crypto::fast_atod(askVol[1]) * info.magnifyNumber;
+                depth20.av2 = askVol[1] * info.magnifyNumber;
                 depth20.ap3 = crypto::fast_atod(askPrice[2]) * info.reduceNumber;
-                depth20.av3 = crypto::fast_atod(askVol[2]) * info.magnifyNumber;
+                depth20.av3 = askVol[2] * info.magnifyNumber;
                 depth20.ap4 = crypto::fast_atod(askPrice[3]) * info.reduceNumber;
-                depth20.av4 = crypto::fast_atod(askVol[3]) * info.magnifyNumber;
+                depth20.av4 = askVol[3] * info.magnifyNumber;
                 depth20.ap5 = crypto::fast_atod(askPrice[4]) * info.reduceNumber;
-                depth20.av5 = crypto::fast_atod(askVol[4]) * info.magnifyNumber;
+                depth20.av5 = askVol[4] * info.magnifyNumber;
                 depth20.ap6 = crypto::fast_atod(askPrice[5]) * info.reduceNumber;
-                depth20.av6 = crypto::fast_atod(askVol[5]) * info.magnifyNumber;
+                depth20.av6 = askVol[5] * info.magnifyNumber;
                 depth20.ap7 = crypto::fast_atod(askPrice[6]) * info.reduceNumber;
-                depth20.av7 = crypto::fast_atod(askVol[6]) * info.magnifyNumber;
+                depth20.av7 = askVol[6] * info.magnifyNumber;
                 depth20.ap8 = crypto::fast_atod(askPrice[7]) * info.reduceNumber;
-                depth20.av8 = crypto::fast_atod(askVol[7]) * info.magnifyNumber;
+                depth20.av8 = askVol[7] * info.magnifyNumber;
                 depth20.ap9 = crypto::fast_atod(askPrice[8]) * info.reduceNumber;
-                depth20.av9 = crypto::fast_atod(askVol[8]) * info.magnifyNumber;
+                depth20.av9 = askVol[8] * info.magnifyNumber;
                 depth20.ap10 = crypto::fast_atod(askPrice[9]) * info.reduceNumber;
-                depth20.av10 = crypto::fast_atod(askVol[9]) * info.magnifyNumber;
+                depth20.av10 = askVol[9] * info.magnifyNumber;
                 depth20.ap11 = crypto::fast_atod(askPrice[10]) * info.reduceNumber;
-                depth20.av11 = crypto::fast_atod(askVol[10]) * info.magnifyNumber;
+                depth20.av11 = askVol[10] * info.magnifyNumber;
                 depth20.ap12 = crypto::fast_atod(askPrice[11]) * info.reduceNumber;
-                depth20.av12 = crypto::fast_atod(askVol[11]) * info.magnifyNumber;
+                depth20.av12 = askVol[11] * info.magnifyNumber;
                 depth20.ap13 = crypto::fast_atod(askPrice[12]) * info.reduceNumber;
-                depth20.av13 = crypto::fast_atod(askVol[12]) * info.magnifyNumber;
+                depth20.av13 = askVol[12] * info.magnifyNumber;
                 depth20.ap14 = crypto::fast_atod(askPrice[13]) * info.reduceNumber;
-                depth20.av14 = crypto::fast_atod(askVol[13]) * info.magnifyNumber;
+                depth20.av14 = askVol[13] * info.magnifyNumber;
                 depth20.ap15 = crypto::fast_atod(askPrice[14]) * info.reduceNumber;
-                depth20.av15 = crypto::fast_atod(askVol[14]) * info.magnifyNumber;
+                depth20.av15 = askVol[14] * info.magnifyNumber;
                 depth20.ap16 = crypto::fast_atod(askPrice[15]) * info.reduceNumber;
-                depth20.av16 = crypto::fast_atod(askVol[15]) * info.magnifyNumber;
+                depth20.av16 = askVol[15] * info.magnifyNumber;
                 depth20.ap17 = crypto::fast_atod(askPrice[16]) * info.reduceNumber;
-                depth20.av17 = crypto::fast_atod(askVol[16]) * info.magnifyNumber;
+                depth20.av17 = askVol[16] * info.magnifyNumber;
                 depth20.ap18 = crypto::fast_atod(askPrice[17]) * info.reduceNumber;
-                depth20.av18 = crypto::fast_atod(askVol[17]) * info.magnifyNumber;
+                depth20.av18 = askVol[17] * info.magnifyNumber;
                 depth20.ap19 = crypto::fast_atod(askPrice[18]) * info.reduceNumber;
-                depth20.av19 = crypto::fast_atod(askVol[18]) * info.magnifyNumber;
+                depth20.av19 = askVol[18] * info.magnifyNumber;
                 depth20.ap20 = crypto::fast_atod(askPrice[19]) * info.reduceNumber;
-                depth20.av20 = crypto::fast_atod(askVol[19]) * info.magnifyNumber;
+                depth20.av20 = askVol[19] * info.magnifyNumber;
             }
 
             depth20.tsParse = crypto::getCurrentTime();
@@ -1258,8 +1258,8 @@ void md::GateioUnit::parseSwapData(const std::string& msg) {
             d["id"].get(tradeId);
             fmt::format_to(trades.tradeId, "{}", tradeId);
 
-            std::string_view tradeVolStr;
-            d["size"].get(tradeVolStr);
+            int64_t size;
+            d["size"].get(size);
 
 
             int64_t tsT = 0;
@@ -1290,7 +1290,6 @@ void md::GateioUnit::parseSwapData(const std::string& msg) {
 
             trades.px = crypto::fast_atod(tradePriceStr) * info.reduceNumber;
 
-            double size = crypto::fast_atod(tradeVolStr);
             trades.sz = fabs(size) * info.magnifyNumber;
 
             if (size > 0) {
