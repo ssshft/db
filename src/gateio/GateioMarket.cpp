@@ -806,63 +806,6 @@ void md::GateioUnit::parseSwapData(const std::string& msg) {
         return;
     }
 
-    std::string originInstId = "";
-
-    switch (marketTypeEnum) {
-        case md::DEPTH1: {
-            std::string_view sVal;
-            if (data["s"].get(sVal) == simdjson::SUCCESS) {
-                originInstId = std::string(sVal);
-            }
-            break;
-        }
-        case md::DEPTH5:
-        case md::DEPTH10:
-        case md::DEPTH20: {
-            std::string_view sVal;
-            if (data["contract"].get(sVal) == simdjson::SUCCESS) {
-                originInstId = std::string(sVal);
-            }
-            break;
-        }
-        case md::TRADES:
-        case md::FUNDING_RATE: {
-            auto it = data.begin();
-            auto firstElement = *it;
-            std::string_view sVal;
-            if (firstElement["contract"].get(sVal) == simdjson::SUCCESS) {
-                originInstId = std::string(sVal);
-            }
-            break;        
-        }
-        case md::KLINE_1m: {
-            for (auto element : data) {
-                std::string_view nStr;
-                if (element["n"].get(nStr) != simdjson::SUCCESS) {
-                    continue;
-                }
-
-                std::vector<std::string> v = crypto::split(std::string(nStr), "_");
-                if (v.size() >= 3) {
-                    originInstId = v[1] + "_" + v[2];
-                    break;
-                }
-            }
-            break;
-        }
-        default: {
-            LOG_ERROR("not support marketType: {}", md::MarketTypeEnum2StrMap[marketTypeEnum]);
-        }
-    }
-
-    md::InstrumentInfo info;
-    if (smc->get_instrument_info(exchangeTypeEnum, instTypeEnum, originInstId.c_str(), info) == false) {
-        LOG_ERROR("smc cannot find originInstId: {}", originInstId);
-        return;
-    }
-
-    std::string key = crypto::get_md_channel_key(exchangeTypeEnum, instTypeEnum, marketTypeEnum, info.instId);
-
     switch (marketTypeEnum) {
         case md::DEPTH1: {
             md::Depth1 depth1;
