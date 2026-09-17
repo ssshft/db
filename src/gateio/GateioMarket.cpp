@@ -182,7 +182,6 @@ void md::GateioUnit::parseSpotData(const std::string& msg) {
             depth1.exchangeTypeEnum = exchangeTypeEnum;
             depth1.instTypeEnum = instTypeEnum;
             depth1.marketTypeEnum = marketTypeEnum;
-            strncpy(depth1.instId, info.instId, INSTID_SIZE);
 
             int64_t tsT = 0;
             data["t"].get(tsT);
@@ -201,6 +200,9 @@ void md::GateioUnit::parseSpotData(const std::string& msg) {
                 LOG_ERROR("smc cannot find originInstId: {}", originInstId);
                 return;
             }
+
+            strncpy(depth1.instId, info.instId, INSTID_SIZE);
+
             const std::string& key = crypto::get_md_channel_key(exchangeTypeEnum, instTypeEnum, marketTypeEnum, info.instId);
 
             auto bp1 = data["b"];
@@ -237,7 +239,6 @@ void md::GateioUnit::parseSpotData(const std::string& msg) {
             depth5.exchangeTypeEnum = exchangeTypeEnum;
             depth5.instTypeEnum = instTypeEnum;
             depth5.marketTypeEnum = marketTypeEnum;
-            strncpy(depth5.instId, info.instId, INSTID_SIZE);
 
             int64_t tsT = 0;
             data["t"].get(tsT);
@@ -256,6 +257,9 @@ void md::GateioUnit::parseSpotData(const std::string& msg) {
                 LOG_ERROR("smc cannot find originInstId: {}", originInstId);
                 return;
             }
+
+            strncpy(depth5.instId, info.instId, INSTID_SIZE);
+
             const std::string& key = crypto::get_md_channel_key(exchangeTypeEnum, instTypeEnum, marketTypeEnum, info.instId);
 
             auto bidsArray = data["bids"];
@@ -345,7 +349,6 @@ void md::GateioUnit::parseSpotData(const std::string& msg) {
             depth10.exchangeTypeEnum = exchangeTypeEnum;
             depth10.instTypeEnum = instTypeEnum;
             depth10.marketTypeEnum = marketTypeEnum;
-            strncpy(depth10.instId, info.instId, INSTID_SIZE);
 
             int64_t tsT = 0;
             data["t"].get(tsT);
@@ -364,6 +367,9 @@ void md::GateioUnit::parseSpotData(const std::string& msg) {
                 LOG_ERROR("smc cannot find originInstId: {}", originInstId);
                 return;
             }
+
+            strncpy(depth10.instId, info.instId, INSTID_SIZE);
+
             const std::string& key = crypto::get_md_channel_key(exchangeTypeEnum, instTypeEnum, marketTypeEnum, info.instId);
 
             auto bidsArray = data["bids"];
@@ -473,7 +479,6 @@ void md::GateioUnit::parseSpotData(const std::string& msg) {
             depth20.exchangeTypeEnum = exchangeTypeEnum;
             depth20.instTypeEnum = instTypeEnum;
             depth20.marketTypeEnum = marketTypeEnum;
-            strncpy(depth20.instId, info.instId, INSTID_SIZE);
 
             int64_t tsT = 0;
             data["t"].get(tsT);
@@ -492,6 +497,9 @@ void md::GateioUnit::parseSpotData(const std::string& msg) {
                 LOG_ERROR("smc cannot find originInstId: {}", originInstId);
                 return;
             }
+
+            strncpy(depth20.instId, info.instId, INSTID_SIZE);
+
             const std::string& key = crypto::get_md_channel_key(exchangeTypeEnum, instTypeEnum, marketTypeEnum, info.instId);
 
             auto bidsArray = data["bids"];
@@ -641,7 +649,6 @@ void md::GateioUnit::parseSpotData(const std::string& msg) {
             trades.exchangeTypeEnum = exchangeTypeEnum;
             trades.instTypeEnum = instTypeEnum;
             trades.marketTypeEnum = marketTypeEnum;
-            strncpy(trades.instId, info.instId, INSTID_SIZE);
 
             int64_t tradeId;
             data["id"].get(tradeId);
@@ -674,6 +681,9 @@ void md::GateioUnit::parseSpotData(const std::string& msg) {
                 LOG_ERROR("smc cannot find originInstId: {}", originInstId);
                 return;
             }
+
+            strncpy(trades.instId, info.instId, INSTID_SIZE);
+
             const std::string& key = crypto::get_md_channel_key(exchangeTypeEnum, instTypeEnum, marketTypeEnum, info.instId);
 
             std::string_view tradeVolStr;
@@ -697,7 +707,6 @@ void md::GateioUnit::parseSpotData(const std::string& msg) {
             kline.exchangeTypeEnum = exchangeTypeEnum;
             kline.instTypeEnum = instTypeEnum;
             kline.marketTypeEnum = marketTypeEnum;
-            strncpy(kline.instId, info.instId, INSTID_SIZE);
 
             kline.tsTrans = tsM;
             kline.tsEvent = tsM;
@@ -731,6 +740,9 @@ void md::GateioUnit::parseSpotData(const std::string& msg) {
                 LOG_ERROR("smc cannot find originInstId: {}", originInstId);
                 return;
             }
+
+            strncpy(kline.instId, info.instId, INSTID_SIZE);
+            
             const std::string& key = crypto::get_md_channel_key(exchangeTypeEnum, instTypeEnum, marketTypeEnum, info.instId);
 
 
@@ -813,7 +825,6 @@ void md::GateioUnit::parseSwapData(const std::string& msg) {
             depth1.exchangeTypeEnum = exchangeTypeEnum;
             depth1.instTypeEnum = instTypeEnum;
             depth1.marketTypeEnum = marketTypeEnum;
-            strncpy(depth1.instId, info.instId, INSTID_SIZE);
 
             int64_t tsT = 0;
             data["t"].get(tsT);
@@ -828,10 +839,14 @@ void md::GateioUnit::parseSwapData(const std::string& msg) {
                 originInstId = std::string(sVal);
             }
 
+            md::InstrumentInfo info;
             if (smc->get_instrument_info(exchangeTypeEnum, instTypeEnum, originInstId.c_str(), info) == false) {
                 LOG_ERROR("smc cannot find originInstId: {}", originInstId);
                 return;
             }
+
+            strncpy(depth1.instId, info.instId, INSTID_SIZE);
+
             const std::string& key = crypto::get_md_channel_key(exchangeTypeEnum, instTypeEnum, marketTypeEnum, info.instId);
 
             auto bp1 = data["b"];
@@ -866,7 +881,6 @@ void md::GateioUnit::parseSwapData(const std::string& msg) {
             depth5.exchangeTypeEnum = exchangeTypeEnum;
             depth5.instTypeEnum = instTypeEnum;
             depth5.marketTypeEnum = marketTypeEnum;
-            strncpy(depth5.instId, info.instId, INSTID_SIZE);
 
             int64_t tsT = 0;
             data["t"].get(tsT);
@@ -882,10 +896,14 @@ void md::GateioUnit::parseSwapData(const std::string& msg) {
                 originInstId = std::string(sVal);
             }
 
+            md::InstrumentInfo info;
             if (smc->get_instrument_info(exchangeTypeEnum, instTypeEnum, originInstId.c_str(), info) == false) {
                 LOG_ERROR("smc cannot find originInstId: {}", originInstId);
                 return;
             }
+
+            strncpy(depth5.instId, info.instId, INSTID_SIZE);
+
             const std::string& key = crypto::get_md_channel_key(exchangeTypeEnum, instTypeEnum, marketTypeEnum, info.instId);
 
             auto bidsArray = data["bids"];
@@ -959,7 +977,6 @@ void md::GateioUnit::parseSwapData(const std::string& msg) {
             depth10.exchangeTypeEnum = exchangeTypeEnum;
             depth10.instTypeEnum = instTypeEnum;
             depth10.marketTypeEnum = marketTypeEnum;
-            strncpy(depth10.instId, info.instId, INSTID_SIZE);
 
             int64_t tsT = 0;
             data["t"].get(tsT);
@@ -975,10 +992,14 @@ void md::GateioUnit::parseSwapData(const std::string& msg) {
                 originInstId = std::string(sVal);
             }
 
+            md::InstrumentInfo info;
             if (smc->get_instrument_info(exchangeTypeEnum, instTypeEnum, originInstId.c_str(), info) == false) {
                 LOG_ERROR("smc cannot find originInstId: {}", originInstId);
                 return;
             }
+
+            strncpy(depth10.instId, info.instId, INSTID_SIZE);
+
             const std::string& key = crypto::get_md_channel_key(exchangeTypeEnum, instTypeEnum, marketTypeEnum, info.instId);
 
             auto bidsArray = data["bids"];
@@ -1072,7 +1093,6 @@ void md::GateioUnit::parseSwapData(const std::string& msg) {
             depth20.exchangeTypeEnum = exchangeTypeEnum;
             depth20.instTypeEnum = instTypeEnum;
             depth20.marketTypeEnum = marketTypeEnum;
-            strncpy(depth20.instId, info.instId, INSTID_SIZE);
 
             int64_t tsT = 0;
             data["t"].get(tsT);
@@ -1088,10 +1108,14 @@ void md::GateioUnit::parseSwapData(const std::string& msg) {
                 originInstId = std::string(sVal);
             }
 
+            md::InstrumentInfo info;
             if (smc->get_instrument_info(exchangeTypeEnum, instTypeEnum, originInstId.c_str(), info) == false) {
                 LOG_ERROR("smc cannot find originInstId: {}", originInstId);
                 return;
             }
+
+            strncpy(depth20.instId, info.instId, INSTID_SIZE);
+
             const std::string& key = crypto::get_md_channel_key(exchangeTypeEnum, instTypeEnum, marketTypeEnum, info.instId);
 
             auto bidsArray = data["bids"];
@@ -1226,7 +1250,6 @@ void md::GateioUnit::parseSwapData(const std::string& msg) {
             trades.exchangeTypeEnum = exchangeTypeEnum;
             trades.instTypeEnum = instTypeEnum;
             trades.marketTypeEnum = marketTypeEnum;
-            strncpy(trades.instId, info.instId, INSTID_SIZE);
 
             auto it = data.begin();
             auto d = *it;
@@ -1271,10 +1294,14 @@ void md::GateioUnit::parseSwapData(const std::string& msg) {
                 originInstId = std::string(sVal);
             }
 
+            md::InstrumentInfo info;
             if (smc->get_instrument_info(exchangeTypeEnum, instTypeEnum, originInstId.c_str(), info) == false) {
                 LOG_ERROR("smc cannot find originInstId: {}", originInstId);
                 return;
             }
+
+            strncpy(trades.instId, info.instId, INSTID_SIZE);
+
             const std::string& key = crypto::get_md_channel_key(exchangeTypeEnum, instTypeEnum, marketTypeEnum, info.instId);
 
 #ifdef NEED_SHM
@@ -1289,7 +1316,6 @@ void md::GateioUnit::parseSwapData(const std::string& msg) {
                 kline.exchangeTypeEnum = exchangeTypeEnum;
                 kline.instTypeEnum = instTypeEnum;
                 kline.marketTypeEnum = marketTypeEnum;
-                strncpy(kline.instId, info.instId, INSTID_SIZE);
 
                 kline.tsTrans = tsM;
                 kline.tsEvent = tsM;
@@ -1322,10 +1348,14 @@ void md::GateioUnit::parseSwapData(const std::string& msg) {
                     break;
                 }
 
+                md::InstrumentInfo info;
                 if (smc->get_instrument_info(exchangeTypeEnum, instTypeEnum, originInstId.c_str(), info) == false) {
                     LOG_ERROR("smc cannot find originInstId: {}", originInstId);
                     return;
                 }
+
+                strncpy(kline.instId, info.instId, INSTID_SIZE);
+
                 const std::string& key = crypto::get_md_channel_key(exchangeTypeEnum, instTypeEnum, marketTypeEnum, info.instId);
 
                 bool isFinished = false;
@@ -1369,7 +1399,6 @@ void md::GateioUnit::parseSwapData(const std::string& msg) {
             fundingRate.exchangeTypeEnum = exchangeTypeEnum;
             fundingRate.instTypeEnum = instTypeEnum;
             fundingRate.marketTypeEnum = marketTypeEnum;
-            strncpy(fundingRate.instId, info.instId, INSTID_SIZE);
 
             fundingRate.tsTrans = tsM;
             fundingRate.tsEvent = tsM;
@@ -1384,12 +1413,15 @@ void md::GateioUnit::parseSwapData(const std::string& msg) {
                 originInstId = std::string(sVal);
             }
 
+            md::InstrumentInfo info;
             if (smc->get_instrument_info(exchangeTypeEnum, instTypeEnum, originInstId.c_str(), info) == false) {
                 LOG_ERROR("smc cannot find originInstId: {}", originInstId);
                 return;
             }
-            const std::string& key = crypto::get_md_channel_key(exchangeTypeEnum, instTypeEnum, marketTypeEnum, info.instId);
 
+            strncpy(fundingRate.instId, info.instId, INSTID_SIZE);
+
+            const std::string& key = crypto::get_md_channel_key(exchangeTypeEnum, instTypeEnum, marketTypeEnum, info.instId);
 
             std::string_view fundingRateStr;
             std::string_view nextFundingRateStr;
