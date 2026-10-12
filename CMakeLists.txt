@@ -15,7 +15,6 @@ set(EXECUTABLE_OUTPUT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/bin)
 add_definitions("-DNEED_SHM")
 add_definitions("-DNEED_SET_REDIS")
 add_definitions("-D_TURN_OFF_PLATFORM_STRING")
-
 add_definitions(-DUSE_INFO_SHM)
 
 

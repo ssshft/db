@@ -157,7 +157,6 @@ void md::BinanceSbeUnit::parseMarketData(const std::string& msg) {
 
         depth1.tsParse = crypto::getCurrentTime();
 
-        std::cout << depth1.getString() << std::endl;
 #ifdef NEED_SHM
         mDepth1Publisher[key]->push(depth1);
 #endif
@@ -246,7 +245,6 @@ void md::BinanceSbeUnit::parseMarketData(const std::string& msg) {
             }
             d.tsParse = crypto::getCurrentTime();
 
-            std::cout << d.getString() << std::endl;
 #ifdef NEED_SHM
             mDepth10Publisher[key]->push(d);
 #endif
@@ -278,7 +276,6 @@ void md::BinanceSbeUnit::parseMarketData(const std::string& msg) {
             }
             d.tsParse = crypto::getCurrentTime();
 
-            std::cout << d.getString() << std::endl;
 #ifdef NEED_SHM
             mDepth20Publisher[key]->push(d);
 #endif
@@ -341,7 +338,6 @@ void md::BinanceSbeUnit::parseMarketData(const std::string& msg) {
 
             trades.tsParse = crypto::getCurrentTime();
 
-            std::cout << trades.getString() << std::endl;
 #ifdef NEED_SHM
             mTradesPublisher[key]->push(trades);
 #endif
@@ -363,14 +359,9 @@ void md::BinanceSbeUnit::parseMarketData(const std::string& msg) {
 }
 
 md::BinanceSbeMarket::BinanceSbeMarket(sm::SecurityManager* s, const char* exId, std::vector<std::string>& instTypeVec, std::vector<std::string>& marketTypeVec, std::vector<std::string>& instIdVec, SbeAccount sbeAccount, int lot, const char* host, const int port, const char* passwd) : md::BaseMarket(s, exId, instTypeVec, marketTypeVec, instIdVec, lot, host, port, passwd) {
-    std::cout << "============ " << exchId << std::endl;
-    std::cout << "--=-=-=-=" << unitInfoVec.size() << std::endl;
-
     for (size_t i = 0; i < unitInfoVec.size(); ++i) {
-        std::cout << "start create binance unit" << std::endl;
         auto& info = unitInfoVec[i];
         md::BinanceSbeUnit* unit = new md::BinanceSbeUnit(smc, info.exchangeTypeEnum, info.instTypeEnum, info.marketTypeEnum, info.vInstInfo, sbeAccount, _host, _port, _passwd);
-        std::cout << "start generate sub body" << std::endl;
         unit->generateSubBody();
         binanceSbeUnitVec.push_back(unit);
     }

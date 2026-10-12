@@ -124,7 +124,6 @@ void md::GateioUnit::onWebsocketMsg(const uint8_t* data, size_t len, bool /*isBi
     }
 
     std::string msg(sv);
-    std::cout << "onWebsocketMsg: " << msg << std::endl;
     mQueue.push(std::move(msg));
 }
 
@@ -226,7 +225,6 @@ void md::GateioUnit::parseSpotData(const std::string& msg) {
 
             depth1.tsParse = crypto::getCurrentTime();
 
-            std::cout << depth1.getString() << std::endl;
 #ifdef NEED_SHM
             mDepth1Publisher[key]->push(depth1);                
 #endif
@@ -335,8 +333,6 @@ void md::GateioUnit::parseSpotData(const std::string& msg) {
             }
 
             depth5.tsParse = crypto::getCurrentTime();
-
-            std::cout << depth5.getString() << std::endl;
 
 #ifdef NEED_SHM
             mDepth5Publisher[key]->push(depth5);                
@@ -465,8 +461,6 @@ void md::GateioUnit::parseSpotData(const std::string& msg) {
             }
 
             depth10.tsParse = crypto::getCurrentTime();
-
-            std::cout << depth10.getString() << std::endl;
 
 #ifdef NEED_SHM
             mDepth10Publisher[key]->push(depth10);                
@@ -635,8 +629,6 @@ void md::GateioUnit::parseSpotData(const std::string& msg) {
             }
 
             depth20.tsParse = crypto::getCurrentTime();
-
-            std::cout << depth20.getString() << std::endl;
 
 #ifdef NEED_SHM
             mDepth20Publisher[key]->push(depth20);                
@@ -1451,10 +1443,8 @@ void md::GateioUnit::parseSwapData(const std::string& msg) {
 
 md::GateioMarket::GateioMarket(sm::SecurityManager* s, const char* exId, std::vector<std::string>& instTypeVec, std::vector<std::string>& marketTypeVec, std::vector<std::string>& instIdVec, int lot, const char* host, const int port, const char* passwd) : md::BaseMarket(s, exId, instTypeVec, marketTypeVec, instIdVec, lot, host, port, passwd) {
     for (size_t i = 0; i < unitInfoVec.size(); ++i) {
-        std::cout << "start create gateio unit" << std::endl;
         auto& info = unitInfoVec[i];
         md::GateioUnit* unit = new md::GateioUnit(smc, info.exchangeTypeEnum, info.instTypeEnum, info.marketTypeEnum, info.vInstInfo, _host, _port, _passwd);
-        std::cout << "start generate sub body" << std::endl;
         unit->generateSubBody();
         gateioUnitVec.push_back(unit);
     }

@@ -140,7 +140,6 @@ void md::BinanceUnit::generateSubBody() {
 void md::BinanceUnit::onWebsocketMsg(const uint8_t* data, size_t len, bool isBinary, int64_t ns) {
     latestDataUpdateTime = crypto::getCurrentTime();
     std::string msg(reinterpret_cast<const char*>(data), len);
-    std::cout << "onWebsocketMsg: " << msg << std::endl;
     mQueue.push(std::move(msg));
 }
 
@@ -209,7 +208,6 @@ void md::BinanceUnit::parseMarketData(const std::string& msg) {
             depth1.av1 = crypto::fast_atod(askVolStr) * info.magnifyNumber;
             depth1.tsParse = crypto::getCurrentTime();
 
-            std::cout << "--- depth1-- " << depth1.getString() << std::endl;
 #ifdef NEED_SHM
             mDepth1Publisher[key]->push(depth1);                
 #endif
@@ -298,8 +296,6 @@ void md::BinanceUnit::parseMarketData(const std::string& msg) {
             }
 
             depth5.tsParse = crypto::getCurrentTime();
-
-            std::cout << "--- depth5-- " << depth5.getString() << std::endl;
 
 #ifdef NEED_SHM
             mDepth5Publisher[key]->push(depth5);                
@@ -409,8 +405,6 @@ void md::BinanceUnit::parseMarketData(const std::string& msg) {
             }
 
             depth10.tsParse = crypto::getCurrentTime();
-
-            std::cout << "--- depth10-- " << depth10.getString() << std::endl;
 
 #ifdef NEED_SHM
             mDepth10Publisher[key]->push(depth10);                
@@ -600,8 +594,6 @@ void md::BinanceUnit::parseMarketData(const std::string& msg) {
             trades.tsRecv = tsNet;
             trades.tsParse = crypto::getCurrentTime();
 
-            std::cout << trades.getString() << std::endl;
-
 #ifdef NEED_SHM
             mTradesPublisher[key]->push(trades); 
 #endif
@@ -666,8 +658,6 @@ void md::BinanceUnit::parseMarketData(const std::string& msg) {
 
             kline.tsParse = crypto::getCurrentTime();
 
-            std::cout << kline.getString() << std::endl;
-
 #ifdef NEED_SHM
             mKlinePublisher[key]->push(kline); 
 #endif
@@ -715,7 +705,6 @@ void md::BinanceUnit::parseMarketData(const std::string& msg) {
 
             depth1.tsParse = crypto::getCurrentTime();
 
-            std::cout << depth1.getString() << std::endl;
 #ifdef NEED_SHM
             mDepth1Publisher[key]->push(depth1);             
 #endif
@@ -811,8 +800,6 @@ void md::BinanceUnit::parseMarketData(const std::string& msg) {
             }
 
             depth5.tsParse = crypto::getCurrentTime();
-
-            std::cout << depth5.getString() << std::endl;
 
 #ifdef NEED_SHM
             mDepth5Publisher[key]->push(depth5);                
@@ -929,8 +916,6 @@ void md::BinanceUnit::parseMarketData(const std::string& msg) {
             }
 
             depth10.tsParse = crypto::getCurrentTime();
-
-            std::cout << depth10.getString() << std::endl;
 
 #ifdef NEED_SHM
             mDepth10Publisher[key]->push(depth10);                
@@ -1089,8 +1074,6 @@ void md::BinanceUnit::parseMarketData(const std::string& msg) {
 
             depth20.tsParse = crypto::getCurrentTime();
 
-            std::cout << depth20.getString() << std::endl;
-
 #ifdef NEED_SHM
             mDepth20Publisher[key]->push(depth20);                
 #endif
@@ -1141,8 +1124,6 @@ void md::BinanceUnit::parseMarketData(const std::string& msg) {
             trades.tsEvent = tsEvent * 1000;
             trades.tsRecv = tsNet;
             trades.tsParse = crypto::getCurrentTime();
-
-            std::cout << trades.getString() << std::endl;
 
 #ifdef NEED_SHM
             mTradesPublisher[key]->push(trades); 
@@ -1208,8 +1189,6 @@ void md::BinanceUnit::parseMarketData(const std::string& msg) {
 
             kline.tsParse = crypto::getCurrentTime();
 
-            std::cout << kline.getString() << std::endl;
-
 #ifdef NEED_SHM
             mKlinePublisher[key]->push(kline); 
 #endif
@@ -1238,8 +1217,6 @@ void md::BinanceUnit::parseMarketData(const std::string& msg) {
             fundingRate.fundingRate = crypto::fast_atod(fundingRateStr);
             fundingRate.fundingTime = fundingTime * 1000;
             fundingRate.tsParse = crypto::getCurrentTime();
-
-            std::cout << fundingRate.getString() << std::endl;
 
 #ifdef NEED_SHM
             mFundingRatePublisher[key]->push(fundingRate); 

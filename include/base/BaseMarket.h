@@ -12,7 +12,7 @@
 #include "securitymanager.h"
 #include "log_engine.h"
 #include "concurrent_queue.h"
-#include "shm_spmc_queue.h"
+#include "shm_global.h"
 
 #include "BeastWsClient.h"
 #include <simdjson.h>
@@ -71,13 +71,13 @@ namespace md {
         pubsub::SPSCQueue<std::string, BUFF_SIZE> mQueue; // 此queue需要替换
 
         RedisClient* redisClient{nullptr};
-        std::unordered_map<std::string, std::shared_ptr<pubsub::SPMCPublisher<md::Depth1>>> mDepth1Publisher;
-        std::unordered_map<std::string, std::shared_ptr<pubsub::SPMCPublisher<md::Depth5>>> mDepth5Publisher;
-        std::unordered_map<std::string, std::shared_ptr<pubsub::SPMCPublisher<md::Depth10>>> mDepth10Publisher;
-        std::unordered_map<std::string, std::shared_ptr<pubsub::SPMCPublisher<md::Depth20>>> mDepth20Publisher;
-        std::unordered_map<std::string, std::shared_ptr<pubsub::SPMCPublisher<md::Trades>>> mTradesPublisher;
-        std::unordered_map<std::string, std::shared_ptr<pubsub::SPMCPublisher<md::Kline>>> mKlinePublisher;
-        std::unordered_map<std::string, std::shared_ptr<pubsub::SPMCPublisher<md::FundingRate>>> mFundingRatePublisher;
+        std::unordered_map<std::string, std::shared_ptr<Depth1Spmc>> mDepth1Publisher;
+        std::unordered_map<std::string, std::shared_ptr<Depth5Spmc>> mDepth5Publisher;
+        std::unordered_map<std::string, std::shared_ptr<Depth10Spmc>> mDepth10Publisher;
+        std::unordered_map<std::string, std::shared_ptr<Depth20Spmc>> mDepth20Publisher;
+        std::unordered_map<std::string, std::shared_ptr<TradesSpmc>> mTradesPublisher;
+        std::unordered_map<std::string, std::shared_ptr<KlineSpmc>> mKlinePublisher;
+        std::unordered_map<std::string, std::shared_ptr<FundingRateSpmc>> mFundingRatePublisher;
 
         simdjson::ondemand::parser parser;
     };

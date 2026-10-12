@@ -17,32 +17,25 @@ md::BaseUnit::BaseUnit(sm::SecurityManager* s, ExchangeType exchTy, InstType ins
         auto& info = vInstInfo[i];
         std::string key = crypto::get_md_channel_key(info.exchangeTypeEnum, info.instTypeEnum, marketTypeEnum, info.instId);
         if (marketTypeEnum == md::DEPTH1) {
-            std::shared_ptr<pubsub::SPMCPublisher<md::Depth1>> shmQueue = std::make_shared<pubsub::SPMCPublisher<md::Depth1>>(key.c_str());
-            mDepth1Publisher[key] = shmQueue;
+            mDepth1Publisher[key] = std::make_shared<Depth1Spmc>(key);
         }
         else if (marketTypeEnum == md::DEPTH5) {
-            std::shared_ptr<pubsub::SPMCPublisher<md::Depth5>> shmQueue = std::make_shared<pubsub::SPMCPublisher<md::Depth5>>(key.c_str());
-            mDepth5Publisher[key] = shmQueue;
+            mDepth5Publisher[key] = std::make_shared<Depth5Spmc>(key);
         }
         else if (marketTypeEnum == md::DEPTH10) {
-            std::shared_ptr<pubsub::SPMCPublisher<md::Depth10>> shmQueue = std::make_shared<pubsub::SPMCPublisher<md::Depth10>>(key.c_str());
-            mDepth10Publisher[key] = shmQueue;
+            mDepth10Publisher[key] = std::make_shared<Depth10Spmc>(key.c_str());
         }
         else if (marketTypeEnum == md::DEPTH20) {
-            std::shared_ptr<pubsub::SPMCPublisher<md::Depth20>> shmQueue = std::make_shared<pubsub::SPMCPublisher<md::Depth20>>(key.c_str());
-            mDepth20Publisher[key] = shmQueue;
+            mDepth20Publisher[key] = std::make_shared<Depth20Spmc>(key.c_str());
         }
         else if (marketTypeEnum == md::TRADES) {
-            std::shared_ptr<pubsub::SPMCPublisher<md::Trades>> shmQueue = std::make_shared<pubsub::SPMCPublisher<md::Trades>>(key.c_str());
-            mTradesPublisher[key] = shmQueue;
+            mTradesPublisher[key] = std::make_shared<TradesSpmc>(key.c_str());
         }
         else if (marketTypeEnum == md::KLINE_1m) {
-            std::shared_ptr<pubsub::SPMCPublisher<md::Kline>> shmQueue = std::make_shared<pubsub::SPMCPublisher<md::Kline>>(key.c_str());
-            mKlinePublisher[key] = shmQueue;
+            mKlinePublisher[key] = std::make_shared<KlineSpmc>(key.c_str());
         }
         else if (marketTypeEnum == md::FUNDING_RATE) {
-            std::shared_ptr<pubsub::SPMCPublisher<md::FundingRate>> shmQueue = std::make_shared<pubsub::SPMCPublisher<md::FundingRate>>(key.c_str());
-            mFundingRatePublisher[key] = shmQueue;
+            mFundingRatePublisher[key] = std::make_shared<FundingRateSpmc>(key.c_str());
         }
     }
 #endif

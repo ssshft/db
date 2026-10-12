@@ -287,7 +287,6 @@ void md::GateioSbeUnit::parseFuturesData(const uint8_t* data, size_t len, int64_
         d1.av1 = gateiosbe::to_double(v->askMantissaSize,  v->szExponent) * info.magnifyNumber;
         d1.tsParse = crypto::getCurrentTime();
 
-        std::cout << d1.getString() << std::endl;
 #ifdef NEED_SHM
         mDepth1Publisher[key]->push(d1);;
 #endif
@@ -338,7 +337,6 @@ void md::GateioSbeUnit::parseFuturesData(const uint8_t* data, size_t len, int64_
             t.direction = (e->size >= 0) ? DT_LONG : DT_SHORT;
             t.tsParse = crypto::getCurrentTime();
 
-            std::cout << t.getString() << std::endl;
 #ifdef NEED_SHM
             mTradesPublisher[key]->push(t);
 #endif
@@ -380,7 +378,6 @@ void md::GateioSbeUnit::parseFuturesData(const uint8_t* data, size_t len, int64_
             fill_depth5(d, iter, root->pxExponent, root->szExponent, info);
             d.tsParse = crypto::getCurrentTime();
 
-            std::cout << d.getString() << std::endl;
 #ifdef NEED_SHM
             mDepth5Publisher[key]->push(d);
 #endif
@@ -392,7 +389,6 @@ void md::GateioSbeUnit::parseFuturesData(const uint8_t* data, size_t len, int64_
             fill_depth10(d, iter, root->pxExponent, root->szExponent, info);
             d.tsParse = crypto::getCurrentTime();
 
-            std::cout << d.getString() << std::endl;
 #ifdef NEED_SHM
             mDepth10Publisher[key]->push(d);
 #endif
@@ -404,7 +400,6 @@ void md::GateioSbeUnit::parseFuturesData(const uint8_t* data, size_t len, int64_
             fill_depth20(d, iter, root->pxExponent, root->szExponent, info);
             d.tsParse = crypto::getCurrentTime();
 
-            std::cout << d.getString() << std::endl;
 #ifdef NEED_SHM
             mDepth20Publisher[key]->push(d);
 #endif
@@ -461,8 +456,6 @@ void md::GateioSbeUnit::parseFuturesData(const uint8_t* data, size_t len, int64_
 
             k.isFinished = e->complete;
             k.tsParse = crypto::getCurrentTime();
-
-            std::cout << k.getString() << std::endl;
 
             if (!k.isFinished) {
                 continue;
@@ -529,7 +522,6 @@ void md::GateioSbeUnit::parseSpotData(const uint8_t* data, size_t len, int64_t t
         d1.av1 = gateiosbe::to_double(v->askMantissaSize, v->szExponent) * info.magnifyNumber;
         d1.tsParse = crypto::getCurrentTime();
 
-        std::cout << d1.getString() << std::endl;
 #ifdef NEED_SHM
         mDepth1Publisher[key]->push(d1);
 #endif
@@ -576,8 +568,6 @@ void md::GateioSbeUnit::parseSpotData(const uint8_t* data, size_t len, int64_t t
 
         t.tsParse = crypto::getCurrentTime();
 
-        std::cout << t.getString() << std::endl;
-
 #ifdef NEED_SHM
         mTradesPublisher[key]->push(t);
 #endif
@@ -616,7 +606,6 @@ void md::GateioSbeUnit::parseSpotData(const uint8_t* data, size_t len, int64_t t
             fill_depth5(d, iter, root->pxExponent, root->szExponent, info);
             d.tsParse = crypto::getCurrentTime();
 
-            std::cout << d.getString() << std::endl;
 #ifdef NEED_SHM
             mDepth5Publisher[key]->push(d);
 #endif
@@ -628,7 +617,6 @@ void md::GateioSbeUnit::parseSpotData(const uint8_t* data, size_t len, int64_t t
             fill_depth10(d, iter, root->pxExponent, root->szExponent, info);
             d.tsParse = crypto::getCurrentTime();
 
-            std::cout << d.getString() << std::endl;
 #ifdef NEED_SHM
             mDepth10Publisher[key]->push(d);
 #endif
@@ -640,7 +628,6 @@ void md::GateioSbeUnit::parseSpotData(const uint8_t* data, size_t len, int64_t t
             fill_depth20(d, iter, root->pxExponent, root->szExponent, info);
             d.tsParse = crypto::getCurrentTime();
 
-            std::cout << d.getString() << std::endl;
 #ifdef NEED_SHM
             mDepth20Publisher[key]->push(d);
 #endif
@@ -695,8 +682,6 @@ void md::GateioSbeUnit::parseSpotData(const uint8_t* data, size_t len, int64_t t
         }
         k.avgPrice = avgPrice * info.reduceNumber;
 
-        std::cout << k.getString() << std::endl;
-
         if (!k.isFinished) {
             return;
         }
@@ -707,8 +692,6 @@ void md::GateioSbeUnit::parseSpotData(const uint8_t* data, size_t len, int64_t t
 
         break;
     }
-
-
 
     case sp::kTemplateObu:
     case sp::kTemplateOrderBookUpdate:

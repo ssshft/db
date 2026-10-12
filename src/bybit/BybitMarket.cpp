@@ -86,7 +86,6 @@ void md::BybitUnit::onWebsocketMsg(const uint8_t* data, size_t len, bool isBinar
     }
 
     std::string msg(sv);
-    std::cout << "onWebsocketMsg: " << msg << std::endl;
     mQueue.push(std::move(msg));
 }
 
@@ -230,7 +229,6 @@ void md::BybitUnit::parseMarketData(const std::string& msg) {
         depth1.tsRecv = tsNet;
         depth1.tsParse = crypto::getCurrentTime();
 
-        std::cout << depth1.getString() << std::endl;
 #ifdef NEED_SHM
         mDepth1Publisher[key]->push(depth1);             
 #endif
@@ -324,8 +322,6 @@ void md::BybitUnit::parseMarketData(const std::string& msg) {
         depth5.tsEvent = ts;
         depth5.tsRecv = tsNet;
         depth5.tsParse = crypto::getCurrentTime();
-
-        std::cout << depth5.getString() << std::endl;
 
 #ifdef NEED_SHM
         mDepth5Publisher[key]->push(depth5);                
@@ -440,8 +436,6 @@ void md::BybitUnit::parseMarketData(const std::string& msg) {
         depth10.tsEvent = ts;
         depth10.tsRecv = tsNet;
         depth10.tsParse = crypto::getCurrentTime();
-
-        std::cout << depth10.getString() << std::endl;
 
 #ifdef NEED_SHM
         mDepth10Publisher[key]->push(depth10);                
@@ -598,8 +592,6 @@ void md::BybitUnit::parseMarketData(const std::string& msg) {
         depth20.tsRecv = tsNet;
         depth20.tsParse = crypto::getCurrentTime();
 
-        std::cout << depth20.getString() << std::endl;
-
 #ifdef NEED_SHM
         mDepth20Publisher[key]->push(depth20);                
 #endif
@@ -663,8 +655,6 @@ void md::BybitUnit::parseMarketData(const std::string& msg) {
             trades.tsEvent = ts;
             trades.tsRecv = tsNet;
             trades.tsParse = crypto::getCurrentTime();
-
-            std::cout << trades.getString() << std::endl;
 
     #ifdef NEED_SHM
             mTradesPublisher[key]->push(trades); 
@@ -733,8 +723,6 @@ void md::BybitUnit::parseMarketData(const std::string& msg) {
         kline.tsRecv = tsNet;
         kline.tsParse = crypto::getCurrentTime();
 
-        std::cout << kline.getString() << std::endl;
-
 #ifdef NEED_SHM
         mKlinePublisher[key]->push(kline); 
 #endif
@@ -766,7 +754,6 @@ void md::BybitUnit::parseMarketData(const std::string& msg) {
         fundingRate.tsEvent = ts;
         fundingRate.tsRecv = tsNet;
         fundingRate.tsParse = crypto::getCurrentTime();
-        std::cout << fundingRate.getString() << std::endl;
 
     #ifdef NEED_SHM
         mFundingRatePublisher[key]->push(fundingRate); 
@@ -776,14 +763,9 @@ void md::BybitUnit::parseMarketData(const std::string& msg) {
 
 
 md::BybitMarket::BybitMarket(sm::SecurityManager* s, const char* exId, std::vector<std::string>& instTypeVec, std::vector<std::string>& marketTypeVec, std::vector<std::string>& instIdVec, int lot, const char* host, const int port, const char* passwd) : md::BaseMarket(s, exId, instTypeVec, marketTypeVec, instIdVec, lot, host, port, passwd) {
-    std::cout << "============ " << exchId << std::endl;
-    std::cout << "--=-=-=-=" << unitInfoVec.size() << std::endl;
-
     for (size_t i = 0; i < unitInfoVec.size(); ++i) {
-        std::cout << "start create bybit unit" << std::endl;
         auto& info = unitInfoVec[i];
         md::BybitUnit* unit = new md::BybitUnit(smc, info.exchangeTypeEnum, info.instTypeEnum, info.marketTypeEnum, info.vInstInfo, _host, _port, _passwd);
-        std::cout << "start generate sub body" << std::endl;
         unit->generateSubBody();
         bybitUnitVec.push_back(unit);
     }
