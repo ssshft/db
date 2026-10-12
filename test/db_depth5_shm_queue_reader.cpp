@@ -21,15 +21,14 @@
 #include "precision_util.h"
 
 using Data = md::Depth5;
-using Suber = pubsub::SPMCSubscriber<md::Depth5>;
 
 int main(int argc, char* argv[]) {
-    std::vector<Suber> subers;
+    std::vector<Depth5Spmc> subers;
     for (int i = 1; i < argc; ++i) {
         const char* topic = argv[i];
         std::cout << topic << std::endl;
         if (crypto::has_str(topic, "DEPTH5")) {
-            Suber suber(topic);
+            Depth5Spmc suber(topic);
             subers.push_back(suber);
         }
         else {
@@ -41,7 +40,7 @@ int main(int argc, char* argv[]) {
     Data cmd;
     while (1) {
         for (auto& suber : subers) {
-            if (suber.pop_last(cmd)) {
+            if (suber.tryPopLatest(cmd)) {
                 std::cout << cmd.getString() << std::endl;
             }
         }
