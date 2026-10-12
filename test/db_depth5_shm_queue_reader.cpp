@@ -23,7 +23,7 @@
 using Data = md::Depth5;
 
 int main(int argc, char* argv[]) {
-    std::vector<Depth5Spmc> subers;
+    std::vector<std::shared_ptr<Depth5Spmc>> subers;
     for (int i = 1; i < argc; ++i) {
         const char* topic = argv[i];
         std::cout << topic << std::endl;
