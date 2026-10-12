@@ -23,12 +23,12 @@
 using Data = md::Kline;
 
 int main(int argc, char* argv[]) {
-    std::vector<KlineSpmc> subers;
+    std::vector<std::shared_ptr<KlineSpmc>> subers;
     for (int i = 1; i < argc; ++i) {
         const char* topic = argv[i];
         std::cout << topic << std::endl;
         if (crypto::has_str(topic, "KLINE")) {
-            KlineSpmc suber(topic);
+            std::shared_ptr<KlineSpmc> suber = std::make_shared<KlineSpmc>(topic);
             subers.push_back(suber);
         }
         else {
@@ -40,7 +40,7 @@ int main(int argc, char* argv[]) {
     Data cmd;
     while (1) {
         for (auto& suber : subers) {
-            if (suber.tryPopLatest(cmd)) {
+            if (suber->tryPopLatest(cmd)) {
                 std::cout << cmd.getString() << std::endl;
             }
         }
