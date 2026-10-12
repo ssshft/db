@@ -24,12 +24,12 @@ using Data = md::Trades;
 
 
 int main(int argc, char* argv[]) {
-    std::vector<std::shared_ptr<Depth1Spmc>> subers;
+    std::vector<std::shared_ptr<TradesSpmc>> subers;
     for (int i = 1; i < argc; ++i) {
         const char* topic = argv[i];
         std::cout << topic << std::endl;
         if (crypto::has_str(topic, "TRADES")) {
-            std::shared_ptr<Depth1Spmc> suber = std::make_shared<Depth1Spmc>(topic);
+            std::shared_ptr<TradesSpmc> suber = std::make_shared<TradesSpmc>(topic);
             subers.push_back(suber);
         }
         else {
