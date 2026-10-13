@@ -61,7 +61,6 @@ namespace md {
         std::vector<md::InstrumentInfo> vInstInfo;
         std::string wsUrl{""};
     
-
         int64_t latestDataUpdateTime{0};
 
         net::WsConfig cfg;

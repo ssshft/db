@@ -1,5 +1,6 @@
 #include "base/BaseMarket.h"
 #include "key_util.h"
+#include "SpinBackoff.h"
 
 
 md::BaseUnit::BaseUnit(sm::SecurityManager* s, ExchangeType exchTy, InstType instTy, md::MarketType marketTy, std::vector<md::InstrumentInfo>& instInfoVec, const char* host, int port, const char* password) {
@@ -94,6 +95,7 @@ void md::BaseUnit::consume() {
             LOG_ERROR("{}.{}.{} exception {} happened, msg: {}", ExchangeTypeEnum2StrMap[exchangeTypeEnum], InstTypeEnum2StrMap[instTypeEnum], md::MarketTypeEnum2StrMap[marketTypeEnum], e.what(), msg);
         }
 
+        spin::cpu_relax();
     }
     
 }
