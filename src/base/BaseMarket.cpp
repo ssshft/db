@@ -13,8 +13,8 @@ md::BaseUnit::BaseUnit(sm::SecurityManager* s, ExchangeType exchTy, InstType ins
     latestDataUpdateTime = 0;
     pWsClient = nullptr;
 
-    int slotSize = 0;
-    int maxMsg = 0;
+    int slotSize = 512;
+    int maxMsg = 512;
     if (marketTypeEnum == md::DEPTH1) {
         slotSize = 32768;
         maxMsg = 512;
