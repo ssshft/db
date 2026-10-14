@@ -109,6 +109,8 @@ bool md::OkxSbeUnit::lookupByCode(int64_t code, md::InstrumentInfo& out) const {
 // onWebsocketMsg
 // ============================================================================
 void md::OkxSbeUnit::onWebsocketMsg(const uint8_t* data, size_t len, bool isBinary, int64_t /*ns*/) {
+    std::cout << "onWebsocketMsg: len " << len << std::endl;
+    
     latestDataUpdateTime = crypto::getCurrentTime();
 
     if (isBinary) {

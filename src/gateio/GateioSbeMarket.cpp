@@ -195,6 +195,8 @@ void md::GateioSbeUnit::generateSubBody() {
 // onWebsocketMsg: opcode 分流 (isBinary → SBE 入队;  text → pong 过滤 / log)
 // ============================================================================
 void md::GateioSbeUnit::onWebsocketMsg(const uint8_t* data, size_t len, bool isBinary, int64_t /*ns*/) {
+    std::cout << "onWebsocketMsg: len " << len << std::endl;
+    
     latestDataUpdateTime = crypto::getCurrentTime();
     if (isBinary) {
 

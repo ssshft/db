@@ -112,6 +112,7 @@ void md::GateioUnit::generateSubBody() {
 // subWebsocekt / ping / pong 由 BaseUnit + BeastWsClient 处理
 
 void md::GateioUnit::onWebsocketMsg(const uint8_t* data, size_t len, bool /*isBinary*/, int64_t /*ns*/) {
+    std::cout << "onWebsocketMsg: len " << len << std::endl;
     latestDataUpdateTime = crypto::getCurrentTime();
 
     // Gateio pong 回执: {"time":XXXX,"channel":"spot.pong",...} 或 futures.pong

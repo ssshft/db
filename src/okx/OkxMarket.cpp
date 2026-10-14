@@ -78,6 +78,8 @@ void md::OkxUnit::generateSubBody() {
 
 
 void md::OkxUnit::onWebsocketMsg(const uint8_t* data, size_t len, bool isBinary, int64_t ns) {
+    std::cout << "onWebsocketMsg: len " << len << std::endl;
+    
     latestDataUpdateTime = crypto::getCurrentTime();
 
     if (len == 4 && std::string_view(reinterpret_cast<const char*>(data), len) == "pong") {

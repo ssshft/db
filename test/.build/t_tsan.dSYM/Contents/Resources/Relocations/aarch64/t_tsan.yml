@@ -1,0 +1,5 @@
+---
+triple:          'arm64-apple-darwin'
+binary-path:     '/Users/lawson/Documents/hft/db/test/.build/t_tsan'
+relocations:     []
+...

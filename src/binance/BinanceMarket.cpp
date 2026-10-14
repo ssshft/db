@@ -138,6 +138,7 @@ void md::BinanceUnit::generateSubBody() {
 }
 
 void md::BinanceUnit::onWebsocketMsg(const uint8_t* data, size_t len, bool isBinary, int64_t ns) {
+    std::cout << "onWebsocketMsg: len " << len << std::endl;
     latestDataUpdateTime = crypto::getCurrentTime();
     std::string msg(reinterpret_cast<const char*>(data), len);
     mQueue.push(std::move(msg));
