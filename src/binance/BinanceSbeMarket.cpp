@@ -77,12 +77,9 @@ void md::BinanceSbeUnit::generateSubBody() {
 
 
 void md::BinanceSbeUnit::onWebsocketMsg(const uint8_t* data, size_t len, bool isBinary, int64_t ns) {
-    std::cout << "onWebsocketMsg: len " << len << std::endl;
-    latestDataUpdateTime = crypto::getCurrentTime();
-
     if (isBinary) {
-        std::string msg(reinterpret_cast<const char*>(data), len);
-        mQueue.push(std::move(msg));
+        int64_t tsNet = crypto::getCurrentTime();
+        mdRing->write(reinterpret_cast<const char*>(data), len, tsNet);
     }
     else {
         std::string txt(reinterpret_cast<const char*>(data), len);
@@ -90,9 +87,7 @@ void md::BinanceSbeUnit::onWebsocketMsg(const uint8_t* data, size_t len, bool is
     }
 }
 
-void md::BinanceSbeUnit::parseMarketData(const std::string& msg) {
-    int64_t tsNet = crypto::getCurrentTime();
-
+void md::BinanceSbeUnit::parseMarketData(const std::string& msg, int64_t tsNet) {
     // Binance SBE 只在 SPOT (stream-sbe.binance.com) 提供
     if (instTypeEnum != SPOT) {
         LOG_ERROR("BinanceSbeUnit only supports SPOT, got instType: {}", InstTypeEnum2StrMap[instTypeEnum]);

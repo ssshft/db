@@ -23,13 +23,10 @@
 
 #include "crypto_exception.h"
 #include "precision_util.h"
+#include "MdSlotRing.h"
 
                                                          
 namespace md {
-    constexpr int BUFF_SIZE = 1024 * 512;
-    constexpr int kDelayCountThenRestart = 1024 * 16;
-    constexpr int kTokenUnitSize = 2048;
-
     struct UnitInfo {
         ExchangeType exchangeTypeEnum;
         InstType instTypeEnum;
@@ -37,8 +34,7 @@ namespace md {
         std::vector<md::InstrumentInfo> vInstInfo;
     };
 
-
-    class BaseUnit { // 需要有两次跳转的功能
+    class BaseUnit {
     public:
         BaseUnit(sm::SecurityManager* s, ExchangeType exchTy, InstType instTy, md::MarketType marketTy, std::vector<md::InstrumentInfo>& instInfoVec, const char* host = "127.0.0.1", int port = 9379, const char* password = "");
         virtual ~BaseUnit();
@@ -47,7 +43,7 @@ namespace md {
         void subWebsocekt();
 
         virtual void generateSubBody() = 0;
-        virtual void parseMarketData(const std::string& msg) = 0;
+        virtual void parseMarketData(const std::string& msg, int64_t tsNet) = 0;
         virtual void onWebsocketMsg(const uint8_t* data, size_t len, bool isBinary, int64_t ns) = 0;
         virtual void onOpen();
         virtual void onClose(int code, const std::string& reason);
@@ -67,8 +63,8 @@ namespace md {
         std::shared_ptr<net::WsClient> pWsClient{nullptr};
 
         sm::SecurityManager* smc{nullptr};
-        pubsub::SPSCQueue<std::string, BUFF_SIZE> mQueue; // 此queue需要替换
-
+        md::MdSlotRing* mdRing{nullptr};
+        
         RedisClient* redisClient{nullptr};
         std::unordered_map<std::string, std::shared_ptr<Depth1Spmc>> mDepth1Publisher;
         std::unordered_map<std::string, std::shared_ptr<Depth5Spmc>> mDepth5Publisher;

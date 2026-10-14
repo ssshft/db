@@ -112,9 +112,6 @@ void md::GateioUnit::generateSubBody() {
 // subWebsocekt / ping / pong 由 BaseUnit + BeastWsClient 处理
 
 void md::GateioUnit::onWebsocketMsg(const uint8_t* data, size_t len, bool /*isBinary*/, int64_t /*ns*/) {
-    std::cout << "onWebsocketMsg: len " << len << std::endl;
-    latestDataUpdateTime = crypto::getCurrentTime();
-
     // Gateio pong 回执: {"time":XXXX,"channel":"spot.pong",...} 或 futures.pong
     // 简单方式: 看 channel 是否含 "pong" 就 skip
     std::string_view sv(reinterpret_cast<const char*>(data), len);
@@ -124,27 +121,26 @@ void md::GateioUnit::onWebsocketMsg(const uint8_t* data, size_t len, bool /*isBi
         return;
     }
 
-    std::string msg(sv);
-    mQueue.push(std::move(msg));
+    int64_t tsNet = crypto::getCurrentTime();
+    mdRing->write(reinterpret_cast<const char*>(data), len, tsNet);
+
 }
 
 //处理消息 解析json并发送给redis或共享内存
-void md::GateioUnit::parseMarketData(const std::string& msg) {
+void md::GateioUnit::parseMarketData(const std::string& msg, int64_t tsNet) {
     switch (instTypeEnum) {
         case SPOT:
-            parseSpotData(msg);
+            parseSpotData(msg, tsNet);
             return;
         case USDT_SWAP:
-            parseSwapData(msg);
+            parseSwapData(msg, tsNet);
             return;
         default:
             return;
     }
 }
 
-void md::GateioUnit::parseSpotData(const std::string& msg) {
-    int64_t tsNet = crypto::getCurrentTime();
-
+void md::GateioUnit::parseSpotData(const std::string& msg, int64_t tsNet) {
     simdjson::padded_string paddedMsg(msg);
     auto doc = parser.iterate(paddedMsg);
     if (doc.error()) {
@@ -779,9 +775,7 @@ void md::GateioUnit::parseSpotData(const std::string& msg) {
     }
 }
 
-void md::GateioUnit::parseSwapData(const std::string& msg) {
-    int64_t tsNet = crypto::getCurrentTime();
-
+void md::GateioUnit::parseSwapData(const std::string& msg, int64_t tsNet) {
     simdjson::padded_string paddedMsg(msg);
     auto doc = parser.iterate(paddedMsg);
     if (doc.error()) {

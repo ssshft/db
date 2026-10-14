@@ -195,13 +195,9 @@ void md::GateioSbeUnit::generateSubBody() {
 // onWebsocketMsg: opcode 分流 (isBinary → SBE 入队;  text → pong 过滤 / log)
 // ============================================================================
 void md::GateioSbeUnit::onWebsocketMsg(const uint8_t* data, size_t len, bool isBinary, int64_t /*ns*/) {
-    std::cout << "onWebsocketMsg: len " << len << std::endl;
-    
-    latestDataUpdateTime = crypto::getCurrentTime();
     if (isBinary) {
-
-        std::string msg(reinterpret_cast<const char*>(data), len);
-        mQueue.push(std::move(msg));
+        int64_t tsNet = crypto::getCurrentTime();
+        mdRing->write(reinterpret_cast<const char*>(data), len, tsNet);
     }
     else {
         std::string txt(reinterpret_cast<const char*>(data), len);
@@ -226,8 +222,7 @@ bool md::GateioSbeUnit::lookupInfo(std::string_view sym, md::InstrumentInfo& out
 // ============================================================================
 // parseMarketData: 顶层按 instType 分流到 spot / futures 版本
 // ============================================================================
-void md::GateioSbeUnit::parseMarketData(const std::string& msg) {
-    int64_t tsNet = crypto::getCurrentTime();
+void md::GateioSbeUnit::parseMarketData(const std::string& msg, int64_t tsNet) {
     const uint8_t* data = reinterpret_cast<const uint8_t*>(msg.data());
     size_t len = msg.size();
 

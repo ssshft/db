@@ -78,22 +78,16 @@ void md::OkxUnit::generateSubBody() {
 
 
 void md::OkxUnit::onWebsocketMsg(const uint8_t* data, size_t len, bool isBinary, int64_t ns) {
-    std::cout << "onWebsocketMsg: len " << len << std::endl;
-    
-    latestDataUpdateTime = crypto::getCurrentTime();
-
     if (len == 4 && std::string_view(reinterpret_cast<const char*>(data), len) == "pong") {
         return;
     }
 
-    std::string msg(reinterpret_cast<const char*>(data), len);
-    mQueue.push(std::move(msg));
+    int64_t tsNet = crypto::getCurrentTime();
+    mdRing->write(reinterpret_cast<const char*>(data), len, tsNet);
 }
 
 //处理消息 解析json并发送给redis或共享内存
-void md::OkxUnit::parseMarketData(const std::string& msg) {
-    int64_t tsNet = crypto::getCurrentTime();
-
+void md::OkxUnit::parseMarketData(const std::string& msg, int64_t tsNet) {
     simdjson::padded_string paddedMsg(msg);
     auto doc = parser.iterate(paddedMsg);
     if (doc.error()) {

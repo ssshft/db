@@ -109,13 +109,9 @@ bool md::OkxSbeUnit::lookupByCode(int64_t code, md::InstrumentInfo& out) const {
 // onWebsocketMsg
 // ============================================================================
 void md::OkxSbeUnit::onWebsocketMsg(const uint8_t* data, size_t len, bool isBinary, int64_t /*ns*/) {
-    std::cout << "onWebsocketMsg: len " << len << std::endl;
-    
-    latestDataUpdateTime = crypto::getCurrentTime();
-
     if (isBinary) {
-        std::string msg(reinterpret_cast<const char*>(data), len);
-        mQueue.push(std::move(msg));
+        int64_t tsNet = crypto::getCurrentTime();
+        mdRing->write(reinterpret_cast<const char*>(data), len, tsNet);
     }
     else {
         std::string txt(reinterpret_cast<const char*>(data), len);
@@ -127,8 +123,7 @@ void md::OkxSbeUnit::onWebsocketMsg(const uint8_t* data, size_t len, bool isBina
 // ============================================================================
 // parseMarketData: SBE 分派
 // ============================================================================
-void md::OkxSbeUnit::parseMarketData(const std::string& msg) {
-    int64_t tsNet = crypto::getCurrentTime();
+void md::OkxSbeUnit::parseMarketData(const std::string& msg, int64_t tsNet) {
     const uint8_t* data = reinterpret_cast<const uint8_t*>(msg.data());
     size_t len = msg.size();
 

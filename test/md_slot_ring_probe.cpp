@@ -14,7 +14,7 @@
 #include <cstdint>
 #include <string>
 
-using Ring = md::MdSlotRing<1024>;
+using Ring = md::MdSlotRing;
 
 extern "C" int probe_write(Ring& r, const char* d, size_t n, int64_t t) {
     return static_cast<int>(r.write(d, n, t));

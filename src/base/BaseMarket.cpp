@@ -13,6 +13,39 @@ md::BaseUnit::BaseUnit(sm::SecurityManager* s, ExchangeType exchTy, InstType ins
     latestDataUpdateTime = 0;
     pWsClient = nullptr;
 
+    int slotSize = 0;
+    int maxMsg = 0;
+    if (marketTypeEnum == md::Depth1) {
+        slotSize = 32768;
+        maxMsg = 512;
+    }
+    else if (marketTypeEnum == md::Depth5) {
+        slotSize = 16384;
+        maxMsg = 512;
+    }
+    else if (marketTypeEnum == md::Depth10) {
+        slotSize = 16384;
+        maxMsg = 1024;
+    }
+    else if (marketTypeEnum == md::Depth20) {
+        slotSize = 16384;
+        maxMsg = 2048;   
+    }
+    else if (marketTypeEnum == md::TRADES) {
+        slotSize = 65536;
+        maxMsg = 512;
+    }
+    else if (marketTypeEnum == md::FUNDING_RATE) {
+        slotSize = 1024;
+        maxMsg = 512;
+    }
+    else if (marketTypeEnum == md::KLINE_1m) {
+        slotSize = 1024;
+        maxMsg = 512;
+    }
+
+    mdRing = new md::MdSlotRing(slotSize, maxMsg);
+
 #ifdef NEED_SHM
     for (size_t i = 0; i < vInstInfo.size(); ++i) {
         auto& info = vInstInfo[i];
@@ -97,6 +130,34 @@ void md::BaseUnit::consume() {
 
         spin::cpu_relax();
     }
+
+
+
+    const std::string* msg = nullptr;
+    int64_t tsNet = 0;
+    bool pending = false;                    // 已 peek、还没 release
+    while (1) {
+        try {
+            if (mdRing->peek(msg, tsNet)) {
+                pending = true;
+                parseMarketData(*msg, tsNet);   // ← 解析发生在 r 被钉住的期间
+                mdRing->release();                 // ← 读完才发布 r_
+                pending = false;
+                continue;
+            }
+        } 
+        catch (const std::exception& e) {   // ← 异常也必须推进
+            if (pending) { 
+                mdRing->release(); 
+                pending = false; 
+            } 
+            LOG_ERROR("{}.{}.{} exception {} happened, msg: {}", ExchangeTypeEnum2StrMap[exchangeTypeEnum], InstTypeEnum2StrMap[instTypeEnum], md::MarketTypeEnum2StrMap[marketTypeEnum], e.what(), msg);
+        }
+        spin::cpu_relax();
+    }
+
+
+
     
 }
 

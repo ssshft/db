@@ -85,9 +85,8 @@ uint64_t seqOf(const std::string& m) {
 // ---------------------------------------------------------------------------
 // t1 —— 不丢、不重、有序、载荷不撕裂
 // ---------------------------------------------------------------------------
-template <uint32_t N>
-void t1_fifo(uint64_t total, const char* tag) {
-    md::MdSlotRing<N> ring(kMaxMsg);
+void t1_fifo(size_t N, uint64_t total, const char* tag) {
+    md::MdSlotRing ring(N, kMaxMsg);
     std::atomic<uint64_t> retries{0};
     std::atomic<uint64_t> consumed{0};
     std::atomic<uint64_t> bad{0};
@@ -127,7 +126,7 @@ void t1_fifo(uint64_t total, const char* tag) {
     CHECK_EQ_U64(ring.overflow(), 0);
     CHECK_EQ_U64(ring.readable(), 0);                      // 排空
     CHECK_EQ_U64(ring.writeSeq(), total);
-    std::printf("  t1 %-22s N=%-5u total=%-9llu dropped=%-9llu (全部重试成功)\n",
+    std::printf("  t1 %-22s N=%-5zu total=%-9llu dropped=%-9llu (全部重试成功)\n",
                 tag, N, static_cast<unsigned long long>(total),
                 static_cast<unsigned long long>(ring.dropped()));
 }
@@ -138,7 +137,7 @@ void t1_fifo(uint64_t total, const char* tag) {
 void t2_drop_newest_keep_oldest() {
     constexpr uint32_t N = 64;
     constexpr uint64_t kExtra = 37;
-    md::MdSlotRing<N> ring(kMaxMsg);
+    md::MdSlotRing ring(N, kMaxMsg);
     char buf[kMaxMsg];
 
     uint64_t ok = 0, drop = 0;
@@ -176,7 +175,7 @@ void t2_drop_newest_keep_oldest() {
 void t3_overflow() {
     constexpr uint32_t N = 8;
     constexpr size_t kMax = 64;
-    md::MdSlotRing<N> ring(kMax);
+    md::MdSlotRing ring(N, kMax);
     char buf[512];
 
     const size_t len0 = fill(buf, 7);                          // 39 B
@@ -217,7 +216,7 @@ void t3_overflow() {
 // ---------------------------------------------------------------------------
 void t4_exception_no_livelock() {
     constexpr uint32_t N = 16;
-    md::MdSlotRing<N> ring(kMaxMsg);
+    md::MdSlotRing ring(N, kMaxMsg);
     char buf[kMaxMsg];
     for (uint64_t s = 0; s < 3; ++s) {
         CHECK(ring.write(buf, fill(buf, s), static_cast<int64_t>(s)) == md::WriteResult::kOk);
@@ -259,7 +258,7 @@ void t4_exception_no_livelock() {
 // t5 —— N = 1 的边界
 // ---------------------------------------------------------------------------
 void t5_n1() {
-    md::MdSlotRing<1> ring(kMaxMsg);
+    md::MdSlotRing ring(1, kMaxMsg);
     char buf[kMaxMsg];
     const size_t len = fill(buf, 0);
 
@@ -312,7 +311,7 @@ void t6_payload_sizing() {
     constexpr uint32_t N = 8;
 
     // maxMsg = 4096 必须装得下，且逐字节一致
-    md::MdSlotRing<N> ring(4096);
+    md::MdSlotRing ring(N, 4096);
     CHECK(ring.write(frame.data(), frame.size(), 12345) == md::WriteResult::kOk);
     const std::string* m = nullptr;
     int64_t ns = 0;
@@ -323,7 +322,7 @@ void t6_payload_sizing() {
     ring.release();
 
     // 反证：同样的帧喂给 maxMsg = 1024，必须被 kOverflow 挡下（**不静默损坏**）
-    md::MdSlotRing<N> small(1024);
+    md::MdSlotRing small(N, 1024);
     CHECK(small.write(frame.data(), frame.size(), 1) == md::WriteResult::kOverflow);
     CHECK_EQ_U64(small.overflow(), 1);
     CHECK_EQ_U64(small.readable(), 0);            // 没进环
@@ -339,7 +338,7 @@ void t6_payload_sizing() {
 // ---------------------------------------------------------------------------
 void t8_hold_peek_across_wrap() {
     constexpr uint32_t N = 4;
-    md::MdSlotRing<N> ring(kMaxMsg);
+    md::MdSlotRing ring(N, kMaxMsg);
     char buf[kMaxMsg];
 
     CHECK(ring.write(buf, fill(buf, 0), 0) == md::WriteResult::kOk);   // w = 1
@@ -384,22 +383,57 @@ void t8_hold_peek_across_wrap() {
 // t7 —— ABI / 内存实测（对上方案文档 §4.3）
 // ---------------------------------------------------------------------------
 void t7_abi() {
-    using R1024 = md::MdSlotRing<1024>;
-    std::printf("  t7 %-22s sizeof(Slot)=%zu  sizeof(Ring<1024>)=%zu\n",
-                "ABI", sizeof(R1024::Slot), sizeof(R1024));
+    using Ring = md::MdSlotRing;
+    std::printf("  t7 %-22s sizeof(Slot)=%zu  sizeof(Ring)=%zu\n",
+                "ABI", sizeof(Ring::Slot), sizeof(Ring));
 
     {
-        R1024 r(4096);
+        Ring r(1024, 4096);
         std::printf("     N=1024 maxMsg=4096  bytes()=%8zu B (%.2f MiB)  "
                     "对照今天 SPSCQueue<std::string,524288> = 16 MiB\n",
                     r.bytes(), double(r.bytes()) / (1024.0 * 1024.0));
-        CHECK_EQ_U64(r.capacity(), 1024);
+        CHECK_EQ_U64(r.depth(), 1024);
         CHECK_EQ_U64(r.maxMsg(), 4096);
     }
     {
-        R1024 r(1024);
+        Ring r(1024, 1024);
         std::printf("     N=1024 maxMsg=1024  bytes()=%8zu B (%.2f MiB)\n",
                     r.bytes(), double(r.bytes()) / (1024.0 * 1024.0));
+    }
+
+    // depth 不再是模板参数 ⇒ 必须验证"非 2 的幂会被向上取整"（否则 w & mask_ 就错了）
+    {
+        Ring r(1000, 512);
+        CHECK_EQ_U64(r.depth(), 1024);
+        char buf[32];
+        CHECK(r.write(buf, 8, 0) == md::WriteResult::kOk);      // 取整后仍然能正常写
+        const std::string* m = nullptr;
+        int64_t ns = 0;
+        CHECK(r.peek(m, ns));
+        r.release();
+        CHECK_EQ_U64(r.readable(), 0);
+    }
+    {
+        Ring r(0, 512);                                        // 退化输入：取整到 1
+        CHECK_EQ_U64(r.depth(), 1);
+    }
+
+    // 每个 marketType 一档的实际占用（方案文档 §4.5 的表）
+    {
+        struct { const char* tag; size_t depth, maxMsg; } kSizes[] = {
+            {"TRADES",        1024,  512},
+            {"DEPTH1",         256,  256},
+            {"DEPTH5",         128,  512},
+            {"DEPTH10",        128, 1024},
+            {"DEPTH20",        256, 2048},
+            {"KLINE/FUNDING",   64,  512},
+        };
+        for (const auto& s : kSizes) {
+            Ring r(s.depth, s.maxMsg);
+            std::printf("     %-14s depth=%-5zu maxMsg=%-5zu  bytes()=%7zu B (%6.1f KiB)\n",
+                        s.tag, r.depth(), r.maxMsg(), r.bytes(),
+                        double(r.bytes()) / 1024.0);
+        }
     }
 }
 
@@ -415,9 +449,9 @@ int main(int argc, char** argv) {
 
     std::printf("== MdSlotRing 功能测试（%s）==\n", quick ? "quick" : "full");
 
-    t1_fifo<1024>(big,   "N=1024 生产配置");
-    t1_fifo<8>(small,    "N=8 高压重试");      // 小环 ⇒ 大量满/重试，压 release/acquire
-    t1_fifo<2>(small,    "N=2 极端");
+    t1_fifo(1024, big,   "N=1024 生产配置");
+    t1_fifo(8,    small, "N=8 高压重试");      // 小环 ⇒ 大量满/重试，压 release/acquire
+    t1_fifo(2,    small, "N=2 极端");
     t2_drop_newest_keep_oldest();
     t3_overflow();
     t4_exception_no_livelock();

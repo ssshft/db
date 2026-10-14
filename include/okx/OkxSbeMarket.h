@@ -34,7 +34,7 @@ namespace md {
         virtual void onWebsocketMsg(const uint8_t* data, size_t len, bool isBinary, int64_t ns);
 
         // consume 线程调, 从 mQueue 里取出 raw bytes, 走 OkxSbeDecoder 解码。
-        virtual void parseMarketData(const std::string& msg);
+        virtual void parseMarketData(const std::string& msg, int64_t tsNet);
 
     private:
         // -- SBE decode 分支 (只解 templateId 1000/1001/1005; 1002/1003/1004/1006 略过或后续扩展) --
