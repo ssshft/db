@@ -15,19 +15,19 @@ md::BaseUnit::BaseUnit(sm::SecurityManager* s, ExchangeType exchTy, InstType ins
 
     int slotSize = 0;
     int maxMsg = 0;
-    if (marketTypeEnum == md::Depth1) {
+    if (marketTypeEnum == md::DEPTH1) {
         slotSize = 32768;
         maxMsg = 512;
     }
-    else if (marketTypeEnum == md::Depth5) {
+    else if (marketTypeEnum == md::DEPTH5) {
         slotSize = 16384;
         maxMsg = 512;
     }
-    else if (marketTypeEnum == md::Depth10) {
+    else if (marketTypeEnum == md::DEPTH10) {
         slotSize = 16384;
         maxMsg = 1024;
     }
-    else if (marketTypeEnum == md::Depth20) {
+    else if (marketTypeEnum == md::DEPTH20) {
         slotSize = 16384;
         maxMsg = 2048;   
     }
@@ -116,23 +116,6 @@ void md::BaseUnit::subWebsocekt() {
 }
 
 void md::BaseUnit::consume() {
-    std::string msg;
-    while (1) {
-        try {
-            if (mQueue.pop(msg)) {
-                parseMarketData(msg);
-                continue;
-            }
-        }
-        catch (const std::exception& e) {
-            LOG_ERROR("{}.{}.{} exception {} happened, msg: {}", ExchangeTypeEnum2StrMap[exchangeTypeEnum], InstTypeEnum2StrMap[instTypeEnum], md::MarketTypeEnum2StrMap[marketTypeEnum], e.what(), msg);
-        }
-
-        spin::cpu_relax();
-    }
-
-
-
     const std::string* msg = nullptr;
     int64_t tsNet = 0;
     bool pending = false;                    // 已 peek、还没 release
@@ -155,10 +138,6 @@ void md::BaseUnit::consume() {
         }
         spin::cpu_relax();
     }
-
-
-
-    
 }
 
 void md::BaseUnit::onOpen() {
