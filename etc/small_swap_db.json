@@ -1,0 +1,48 @@
+{
+  "tag": "DB_small_swap",
+  "log": {
+      "level": "info",
+      "log_path": "/logs"
+  },
+  "redis": {
+    "host": "localhost",
+    "port": 9379,
+    "password":"refZa2KcTj$QjyXk"
+  },
+  "HTX":{
+    "tokenLot":30,
+    "instType": ["USDT_SWAP"],
+    "marketType": ["DEPTH1", "TRADES", "FUNDING_RATE"],
+    "instId": ["BTC-USDT", "DOGE-USDT"]
+  },
+  "BITGET":{
+    "tokenLot":30,
+    "instType": ["USDT_SWAP"],
+    "marketType": ["DEPTH1", "TRADES", "FUNDING_RATE"],
+    "instId": ["BTC-USDT", "DOGE-USDT"]
+  },
+  "MEXC":{
+    "tokenLot":30,
+    "instType": ["USDT_SWAP"],
+    "marketType": ["DEPTH1", "TRADES", "FUNDING_RATE"],
+    "instId": ["BTC-USDT", "DOGE-USDT"]
+  },
+  "KUCOIN":{
+    "tokenLot":30,
+    "instType": ["USDT_SWAP"],
+    "marketType": ["DEPTH1", "TRADES", "FUNDING_RATE"],
+    "instId": ["BTC-USDT", "DOGE-USDT"]
+  },
+  "BINGX":{
+    "tokenLot":30,
+    "instType": ["USDT_SWAP"],
+    "marketType": ["DEPTH1", "TRADES", "FUNDING_RATE"],
+    "instId": ["BTC-USDT", "DOGE-USDT"]
+  },
+  "XT":{
+    "tokenLot":30,
+    "instType": ["USDT_SWAP"],
+    "marketType": ["DEPTH1", "TRADES", "FUNDING_RATE"],
+    "instId": ["BTC-USDT", "DOGE-USDT"]
+  }
+}

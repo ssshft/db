@@ -144,7 +144,7 @@ void md::BinanceUnit::onWebsocketMsg(const uint8_t* data, size_t len, bool isBin
 
 //处理消息 解析json并发送给redis或共享内存
 void md::BinanceUnit::parseMarketData(const std::string& msg, int64_t tsNet) {
-    simdjson::padded_string paddedMsg(msg);
+    simdjson::padded_string paddedMsg(msg); // padded_string_view
     auto doc = parser.iterate(paddedMsg);
     if (doc.error()) {
         LOG_ERROR("simdjson parse msg: {} error: {}", msg, simdjson::error_message(doc.error()));

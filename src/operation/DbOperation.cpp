@@ -6,6 +6,12 @@
 #include "okx/OkxMarket.h"
 #include "okx/OkxSbeMarket.h"
 #include "bybit/BybitMarket.h"
+#include "htx/HtxMarket.h"
+#include "bitget/BitgetMarket.h"
+#include "mexc/MexcMarket.h"
+#include "kucoin/KucoinMarket.h"
+#include "bingx/BingxMarket.h"
+#include "xt/XtMarket.h"
 
 
 DbOperation::DbOperation() {
@@ -58,10 +64,36 @@ bool DbOperation::preStart(Config* config) {
         else if (crypto::str_cmp(exchId.c_str(), "BYBIT")) {
             mMarket[exchId] = new md::BybitMarket(smc, exchId.c_str(), node.instType, node.marketType, node.instId, node.tokenLot, host.c_str(), std::stoi(port), password.c_str());
         }
+        else if (crypto::str_cmp(exchId.c_str(), "HTX")) {
+            mMarket[exchId] = new md::HtxMarket(smc, exchId.c_str(), node.instType, node.marketType, node.instId, node.tokenLot, host.c_str(), std::stoi(port), password.c_str());
+        }
+        else if (crypto::str_cmp(exchId.c_str(), "BITGET")) {
+            mMarket[exchId] = new md::BitgetMarket(smc, exchId.c_str(), node.instType, node.marketType, node.instId, node.tokenLot, host.c_str(), std::stoi(port), password.c_str());
+        }
+        else if (crypto::str_cmp(exchId.c_str(), "MEXC")) {
+            mMarket[exchId] = new md::MexcMarket(smc, exchId.c_str(), node.instType, node.marketType, node.instId, node.tokenLot, host.c_str(), std::stoi(port), password.c_str());
+        }
+        else if (crypto::str_cmp(exchId.c_str(), "KUCOIN")) {
+            mMarket[exchId] = new md::KucoinMarket(smc, exchId.c_str(), node.instType, node.marketType, node.instId, node.tokenLot, host.c_str(), std::stoi(port), password.c_str());
+        }
+        else if (crypto::str_cmp(exchId.c_str(), "BINGX")) {
+            mMarket[exchId] = new md::BingxMarket(smc, exchId.c_str(), node.instType, node.marketType, node.instId, node.tokenLot, host.c_str(), std::stoi(port), password.c_str());
+        }
+        else if (crypto::str_cmp(exchId.c_str(), "XT")) {
+            mMarket[exchId] = new md::XtMarket(smc, exchId.c_str(), node.instType, node.marketType, node.instId, node.tokenLot, host.c_str(), std::stoi(port), password.c_str());
+        }
+        else {
+            // 原来没有 else：配置里写错一个字母（或写了还没实现的交易所）就**静默不启动**，
+            // 进程照跑、日志干净、一条行情都没有 —— 最费时间的排查。
+            LOG_WARN("DB does not support exchangeId: {}, skipped (check config key spelling)", exchId);
+        }
     }
 
 
-    if (mExchange.size() > 0) {
+    // 原来判的是 mExchange.size()（配置里解析到的条目数）—— 全是拼错/未实现的交易所时
+    // 它仍然 > 0，进程照常启动、一个 unit 都没有。改成判真正建出来的 market 数。
+    LOG_INFO("DB preStart done: config exchanges = {}, markets created = {}", mExchange.size(), mMarket.size());
+    if (mMarket.size() > 0) {
         return true;
     }
 

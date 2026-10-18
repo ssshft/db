@@ -75,6 +75,20 @@ namespace md {
         std::unordered_map<std::string, std::shared_ptr<FundingRateSpmc>> mFundingRatePublisher;
 
         simdjson::ondemand::parser parser;
+
+        // ---- 新接入交易所（HTX/BITGET/MEXC/KUCOIN/BINGX/XT）共用的两个小工具 ----
+        //
+        // 把一帧原始报文写进 ring。比直接调 mdRing->write 多两件事：
+        //   ① kOverflow（len > maxMsg）打**一次性** LOG_ERROR —— 现有各 unit 都忽略返回值，
+        //      一旦单帧超长就是静默丢数据，录数据时最难查。
+        //   ② 不改变 kDropped（背压）语义。
+        void pushRaw(const char* data, size_t len, int64_t tsNet);
+
+        // 按 originInstId 反查 InstrumentInfo 并算出 md channel key。
+        // 六家的 parseMarketData 都要做这一步，抄六遍容易漏 smc 查不到时的日志。
+        bool resolveInst(const std::string& originInstId, md::InstrumentInfo& info, std::string& key);
+
+        bool overflowLogged_{false};   // pushRaw 的一次性告警标志（每个 unit 一个）
     };
 
 

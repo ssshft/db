@@ -1,0 +1,10 @@
+{"id":"1","status":"ok","subbed":"market.BTC-USDT.bbo","ts":1792228167571}
+{"ch":"market.BTC-USDT.bbo","ts":1792228167459,"tick":{"mrid":100131188041392,"id":1792228167,"bid":[81676.7,6012],"ask":[81676.8,512],"ts":1792228167457,"version":100131188041392,"ch":"market.BTC-USDT.bbo"}}
+{"ch":"market.BTC-USDT.bbo","ts":1792228167806,"tick":{"mrid":100131188041560,"id":1792228167,"bid":[81676.7,6012],"ask":[81676.8,521],"ts":1792228167803,"version":100131188041560,"ch":"market.BTC-USDT.bbo"}}
+{"id":"2","status":"ok","subbed":"market.BTC-USDT.trade.detail","ts":1792228167842}
+{"ch":"market.BTC-USDT.trade.detail","ts":1792228065086,"tick":{"id":100131187968133,"ts":1792228065084,"data":[{"amount":2,"quantity":0.002,"trade_turnover":163.3536,"ts":1792228065084,"id":1001311879681330000,"price":81676.8,"direction":"buy","is_rpi_trade":false},{"amount":2,"quantity":0.002,"trade_turnover":163.3536,"ts":1792228065084,"id":1001311879681330001,"price":81676.8,"direction":"buy","is_rpi_trade":false}]}}
+{"ch":"market.BTC-USDT.bbo","ts":1792228168508,"tick":{"mrid":100131188042011,"id":1792228168,"bid":[81676.7,6012],"ask":[81676.8,512],"ts":1792228168502,"version":100131188042011,"ch":"market.BTC-USDT.bbo"}}
+{"ch":"market.BTC-USDT.bbo","ts":1792228168509,"tick":{"mrid":100131188042012,"id":1792228168,"bid":[81676.7,6012],"ask":[81676.8,481],"ts":1792228168502,"version":100131188042012,"ch":"market.BTC-USDT.bbo"}}
+{"ch":"market.BTC-USDT.bbo","ts":1792228169284,"tick":{"mrid":100131188042503,"id":1792228169,"bid":[81676.7,6012],"ask":[81676.8,480],"ts":1792228169282,"version":100131188042503,"ch":"market.BTC-USDT.bbo"}}
+{"ch":"market.BTC-USDT.bbo","ts":1792228169507,"tick":{"mrid":100131188042659,"id":1792228169,"bid":[81676.7,6012],"ask":[81676.8,511],"ts":1792228169504,"version":100131188042659,"ch":"market.BTC-USDT.bbo"}}
+{"ch":"market.BTC-USDT.bbo","ts":1792228169507,"tick":{"mrid":100131188042660,"id":1792228169,"bid":[81676.7,6012],"ask":[81676.8,520],"ts":1792228169505,"version":100131188042660,"ch":"market.BTC-USDT.bbo"}}

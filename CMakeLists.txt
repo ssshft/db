@@ -29,6 +29,13 @@ aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src/binance   DIR_BINANCE_SRCS)
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src/gateio    DIR_GATEIO_SRCS)
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src/okx     DIR_OKX_SRCS)
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src/bybit    DIR_BYBIT_SRCS)
+# 2026-10-17 新增六家（只做永续：DEPTH1 / TRADES / FUNDING_RATE）
+aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src/htx      DIR_HTX_SRCS)
+aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src/bitget   DIR_BITGET_SRCS)
+aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src/mexc     DIR_MEXC_SRCS)
+aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src/kucoin   DIR_KUCOIN_SRCS)
+aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src/bingx    DIR_BINGX_SRCS)
+aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src/xt       DIR_XT_SRCS)
 
 
 
@@ -61,6 +68,12 @@ add_executable(DB
         ${DIR_GATEIO_SRCS}
         ${DIR_OKX_SRCS}
         ${DIR_BYBIT_SRCS}
+        ${DIR_HTX_SRCS}
+        ${DIR_BITGET_SRCS}
+        ${DIR_MEXC_SRCS}
+        ${DIR_KUCOIN_SRCS}
+        ${DIR_BINGX_SRCS}
+        ${DIR_XT_SRCS}
 )
 
 add_executable(db_depth1_shm_queue_reader test/db_depth1_shm_queue_reader.cpp)

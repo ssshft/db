@@ -15,8 +15,11 @@ md::BaseUnit::BaseUnit(sm::SecurityManager* s, ExchangeType exchTy, InstType ins
     int slotSize = 512;
     int maxMsg = 512;
     if (marketTypeEnum == md::DEPTH1) {
-        slotSize = 32768;
-        maxMsg = 512;
+        // 2026-10-17: 原 (32768, 512) → (16384, 1024)，内存不变 (16 MiB)，单帧上限 ×2。
+        // 实测六家 DEPTH1 帧最大 424 B（HTX bbo），512 只剩 20% 余量，价格位数一变就溢出
+        // （kOverflow 不写入、静默丢数据）。depth 16384 在 10 帧/s/symbol 下仍有 ~54 s 容忍。
+        slotSize = 16384;
+        maxMsg = 1024;
     }
     else if (marketTypeEnum == md::DEPTH5) {
         slotSize = 16384;
@@ -31,8 +34,14 @@ md::BaseUnit::BaseUnit(sm::SecurityManager* s, ExchangeType exchTy, InstType ins
         maxMsg = 2048;   
     }
     else if (marketTypeEnum == md::TRADES) {
-        slotSize = 65536;
-        maxMsg = 512;
+        // 2026-10-17: 原 (65536, 512) → (4096, 8192)，内存不变 (32 MiB)，单帧上限 ×16。
+        // 原因：成交推送是**合批**的，512 B 会把整批静默丢掉（kOverflow 不写入）：
+        //   实测 Bitget trade 的 action=snapshot 一次 50 笔 = 5236 B（~105 B/笔）；
+        //   HTX trade.detail / MEXC sub.deal 同样合批。
+        // 8192 B ≈ 78 笔，覆盖 Bitget 的 50 笔快照还有 56% 余量。
+        // depth 4096 在 1 symbol/unit、100 笔/s 下有 40 s 容忍（录数据通常 1 个 unit 1~2 个 symbol）。
+        slotSize = 4096;
+        maxMsg = 8192;
     }
     else if (marketTypeEnum == md::FUNDING_RATE) {
         slotSize = 1024;
@@ -93,6 +102,32 @@ void md::BaseUnit::start() {
     catch (const std::exception& e) {
         LOG_ERROR("unit start error: {}", e.what());
     }
+}
+
+void md::BaseUnit::pushRaw(const char* data, size_t len, int64_t tsNet) {
+    const md::WriteResult r = mdRing->write(data, len, tsNet);
+    if (r == md::WriteResult::kOverflow && !overflowLogged_) {
+        overflowLogged_ = true;
+        LOG_ERROR("{}.{}.{} single frame too long: len={} > maxMsg={}, frame DROPPED "
+                  "(本 unit 后续同类报文不再打日志；改 BaseMarket.cpp 里该 marketType 的 maxMsg)",
+                  ExchangeTypeEnum2StrMap[exchangeTypeEnum], InstTypeEnum2StrMap[instTypeEnum],
+                  md::MarketTypeEnum2StrMap[marketTypeEnum], len, mdRing->maxMsg());
+    }
+    // kDropped 是背压，由调用方按需观测 mdRing->dropped()，这里不打日志（否则刷屏）
+}
+
+bool md::BaseUnit::resolveInst(const std::string& originInstId, md::InstrumentInfo& info, std::string& key) {
+    if (originInstId.empty()) {
+        return false;
+    }
+    if (smc->get_instrument_info(exchangeTypeEnum, instTypeEnum, originInstId.c_str(), info) == false) {
+        LOG_ERROR("{}.{}.{} smc cannot find originInstId: {}",
+                  ExchangeTypeEnum2StrMap[exchangeTypeEnum], InstTypeEnum2StrMap[instTypeEnum],
+                  md::MarketTypeEnum2StrMap[marketTypeEnum], originInstId);
+        return false;
+    }
+    key = crypto::get_md_channel_key(exchangeTypeEnum, instTypeEnum, marketTypeEnum, info.instId);
+    return true;
 }
 
 void md::BaseUnit::subWebsocekt() {
