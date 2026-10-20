@@ -12,6 +12,15 @@
 #include "kucoin/KucoinMarket.h"
 #include "bingx/BingxMarket.h"
 #include "xt/XtMarket.h"
+// 2026-10-20 新增七家（只做永续：DEPTH1 / TRADES / FUNDING_RATE）
+// 第八家 FAMEEX 暂未实现，原因见 preStart 末尾的 LOG_WARN
+#include "bitunix/BitunixMarket.h"
+#include "phemex/PhemexMarket.h"
+#include "weex/WeexMarket.h"
+#include "hotcoin/HotcoinMarket.h"
+#include "echobit/EchobitMarket.h"
+#include "mgbx/MgbxMarket.h"
+#include "blofin/BlofinMarket.h"
 
 
 DbOperation::DbOperation() {
@@ -81,6 +90,35 @@ bool DbOperation::preStart(Config* config) {
         }
         else if (crypto::str_cmp(exchId.c_str(), "XT")) {
             mMarket[exchId] = new md::XtMarket(smc, exchId.c_str(), node.instType, node.marketType, node.instId, node.tokenLot, host.c_str(), std::stoi(port), password.c_str());
+        }
+        else if (crypto::str_cmp(exchId.c_str(), "BITUNIX")) {
+            mMarket[exchId] = new md::BitunixMarket(smc, exchId.c_str(), node.instType, node.marketType, node.instId, node.tokenLot, host.c_str(), std::stoi(port), password.c_str());
+        }
+        else if (crypto::str_cmp(exchId.c_str(), "PHEMEX")) {
+            mMarket[exchId] = new md::PhemexMarket(smc, exchId.c_str(), node.instType, node.marketType, node.instId, node.tokenLot, host.c_str(), std::stoi(port), password.c_str());
+        }
+        else if (crypto::str_cmp(exchId.c_str(), "WEEX")) {
+            mMarket[exchId] = new md::WeexMarket(smc, exchId.c_str(), node.instType, node.marketType, node.instId, node.tokenLot, host.c_str(), std::stoi(port), password.c_str());
+        }
+        else if (crypto::str_cmp(exchId.c_str(), "HOTCOIN")) {
+            mMarket[exchId] = new md::HotcoinMarket(smc, exchId.c_str(), node.instType, node.marketType, node.instId, node.tokenLot, host.c_str(), std::stoi(port), password.c_str());
+        }
+        else if (crypto::str_cmp(exchId.c_str(), "ECHOBIT")) {
+            mMarket[exchId] = new md::EchobitMarket(smc, exchId.c_str(), node.instType, node.marketType, node.instId, node.tokenLot, host.c_str(), std::stoi(port), password.c_str());
+        }
+        else if (crypto::str_cmp(exchId.c_str(), "MGBX")) {
+            mMarket[exchId] = new md::MgbxMarket(smc, exchId.c_str(), node.instType, node.marketType, node.instId, node.tokenLot, host.c_str(), std::stoi(port), password.c_str());
+        }
+        else if (crypto::str_cmp(exchId.c_str(), "BLOFIN")) {
+            mMarket[exchId] = new md::BlofinMarket(smc, exchId.c_str(), node.instType, node.marketType, node.instId, node.tokenLot, host.c_str(), std::stoi(port), password.c_str());
+        }
+        else if (crypto::str_cmp(exchId.c_str(), "FAMEEX")) {
+            // FAMEEX 的公开 WS 协议**查不到**：官网 API 文档是 SPA、抓不到正文，
+            // 其前端 bundle 里也没有 wss:// 地址；REST 侧 /fapi/v1/depth 对
+            // E-BTC-USDT / BTCUSDT / btcusdt 全部返回 "无效的合约"。
+            // 与其按猜测写一套必然静默零数据的代码，不如在这里明确报出来。
+            LOG_ERROR("DB does not support FAMEEX yet: no public WS protocol could be verified "
+                      "(see docs/db-新增七家交易所.md). exchangeId: {}", exchId);
         }
         else {
             // 原来没有 else：配置里写错一个字母（或写了还没实现的交易所）就**静默不启动**，

@@ -15,11 +15,18 @@ md::BaseUnit::BaseUnit(sm::SecurityManager* s, ExchangeType exchTy, InstType ins
     int slotSize = 512;
     int maxMsg = 512;
     if (marketTypeEnum == md::DEPTH1) {
-        // 2026-10-17: 原 (32768, 512) → (16384, 1024)，内存不变 (16 MiB)，单帧上限 ×2。
-        // 实测六家 DEPTH1 帧最大 424 B（HTX bbo），512 只剩 20% 余量，价格位数一变就溢出
-        // （kOverflow 不写入、静默丢数据）。depth 16384 在 10 帧/s/symbol 下仍有 ~54 s 容忍。
-        slotSize = 16384;
-        maxMsg = 1024;
+        // 2026-10-20: 原 (16384, 1024) → (2048, 8192)，内存不变 (16 MiB)，单帧上限 ×8。
+        // 原因：原 1024 是照着"六家最大 424 B（HTX bbo）"定的，新接的八家里有**整本推送**：
+        //   实测 MGBX push.deep.full 4017 B（30 档 a/b 全量，每 2 s 一次）
+        //        Hotcoin depth          2724 B（asks/bids 全量 + 累计量）
+        //        Echobit depth          2621 B（b/a 各 30 档全量）
+        //        Phemex  orderbook_p    ~1500 B（depth=30 全量快照；**该参数交易所忽略，改不小**）
+        //   1024 会让这几家的快照帧直接 kOverflow 丢掉 ⇒ 增量簿子永远初始化不出来 ⇒
+        //   整家交易所静默零数据（只留一条一次性 LOG_ERROR）。
+        // 8192 对 4017 B 留 2× 余量；slot 从 16384 降到 2048 是等价换算（16 MiB），
+        // 2048 在"1 unit 30 symbol × 17 帧/s"下仍有 ~4 s 缓冲，而消费线程是自旋的、从不睡眠。
+        slotSize = 2048;
+        maxMsg = 8192;
     }
     else if (marketTypeEnum == md::DEPTH5) {
         slotSize = 16384;
@@ -44,8 +51,14 @@ md::BaseUnit::BaseUnit(sm::SecurityManager* s, ExchangeType exchTy, InstType ins
         maxMsg = 8192;
     }
     else if (marketTypeEnum == md::FUNDING_RATE) {
-        slotSize = 1024;
-        maxMsg = 512;
+        // 2026-10-20: 原 (1024, 512) → (32, 131072)，512 KiB → 4 MiB。
+        // 原因：Echobit 的资金费率走 WS 的 inform 端点，一帧是**全市场 200+ 个 symbol** 的
+        // 批量推送（202 个合约 × ~210 B ≈ 42 KB，服务端按 8192 B 分片、由 Beast 自动重组）。
+        // 512 B 会被整帧丢掉。其余家的 REST 轮询一帧 ≤ 512 B，131072 对它们没有副作用。
+        // slot 从 1024 降到 32 是因为费率最多 2 s 一帧（REST 是 60 s 一批 30 个 symbol），
+        // 32 个槽足够吸收突发，多出来的槽纯属浪费内存。
+        slotSize = 32;
+        maxMsg = 131072;
     }
     else if (marketTypeEnum == md::KLINE_1m) {
         slotSize = 1024;

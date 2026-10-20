@@ -36,6 +36,14 @@ aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src/mexc     DIR_MEXC_SRCS)
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src/kucoin   DIR_KUCOIN_SRCS)
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src/bingx    DIR_BINGX_SRCS)
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src/xt       DIR_XT_SRCS)
+# 2026-10-20 新增七家（只做永续：DEPTH1 / TRADES / FUNDING_RATE）
+aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src/bitunix  DIR_BITUNIX_SRCS)
+aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src/phemex   DIR_PHEMEX_SRCS)
+aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src/weex     DIR_WEEX_SRCS)
+aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src/hotcoin  DIR_HOTCOIN_SRCS)
+aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src/echobit  DIR_ECHOBIT_SRCS)
+aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src/mgbx     DIR_MGBX_SRCS)
+aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src/blofin   DIR_BLOFIN_SRCS)
 
 
 
@@ -74,6 +82,13 @@ add_executable(DB
         ${DIR_KUCOIN_SRCS}
         ${DIR_BINGX_SRCS}
         ${DIR_XT_SRCS}
+        ${DIR_BITUNIX_SRCS}
+        ${DIR_PHEMEX_SRCS}
+        ${DIR_WEEX_SRCS}
+        ${DIR_HOTCOIN_SRCS}
+        ${DIR_ECHOBIT_SRCS}
+        ${DIR_MGBX_SRCS}
+        ${DIR_BLOFIN_SRCS}
 )
 
 add_executable(db_depth1_shm_queue_reader test/db_depth1_shm_queue_reader.cpp)

@@ -44,5 +44,47 @@
     "instType": ["USDT_SWAP"],
     "marketType": ["DEPTH1", "TRADES", "FUNDING_RATE"],
     "instId": ["BTC-USDT", "DOGE-USDT"]
+  },
+  "BITUNIX":{
+    "tokenLot":30,
+    "instType": ["USDT_SWAP"],
+    "marketType": ["DEPTH1", "TRADES", "FUNDING_RATE"],
+    "instId": ["BTC-USDT", "DOGE-USDT"]
+  },
+  "PHEMEX":{
+    "tokenLot":30,
+    "instType": ["USDT_SWAP"],
+    "marketType": ["DEPTH1", "TRADES", "FUNDING_RATE"],
+    "instId": ["BTC-USDT", "DOGE-USDT"]
+  },
+  "WEEX":{
+    "tokenLot":30,
+    "instType": ["USDT_SWAP"],
+    "marketType": ["DEPTH1", "TRADES", "FUNDING_RATE"],
+    "instId": ["BTC-USDT", "DOGE-USDT"]
+  },
+  "HOTCOIN":{
+    "tokenLot":30,
+    "instType": ["USDT_SWAP"],
+    "marketType": ["DEPTH1", "TRADES", "FUNDING_RATE"],
+    "instId": ["BTC-USDT", "DOGE-USDT"]
+  },
+  "ECHOBIT":{
+    "tokenLot":30,
+    "instType": ["USDT_SWAP"],
+    "marketType": ["DEPTH1", "TRADES", "FUNDING_RATE"],
+    "instId": ["BTC-USDT", "DOGE-USDT"]
+  },
+  "MGBX":{
+    "tokenLot":30,
+    "instType": ["USDT_SWAP"],
+    "marketType": ["DEPTH1", "TRADES"],
+    "instId": ["BTC-USDT", "DOGE-USDT"]
+  },
+  "BLOFIN":{
+    "tokenLot":30,
+    "instType": ["USDT_SWAP"],
+    "marketType": ["DEPTH1", "TRADES", "FUNDING_RATE"],
+    "instId": ["BTC-USDT", "DOGE-USDT"]
   }
 }
