@@ -1,4 +1,5 @@
 #include "binance/BinanceMarket.h"
+#include "hft_metrics.h"   // HFT_CNT：parseMarketData 三个提前 return 点的分项计数（-I ../include 已覆盖）
 
 
 md::BinanceUnit::BinanceUnit(sm::SecurityManager* s, ExchangeType exchTy, InstType instTy, MarketType marketTy, std::vector<md::InstrumentInfo>& instInfoVec, const char* host, int port, const char* passwd) : BaseUnit(s, exchTy, instTy, marketTy, instInfoVec, host, port, passwd) {
@@ -147,27 +148,38 @@ void md::BinanceUnit::parseMarketData(const std::string& msg, int64_t tsNet) {
     simdjson::padded_string paddedMsg(msg); // padded_string_view
     auto doc = parser.iterate(paddedMsg);
     if (doc.error()) {
+        // 下面三个 HFT_CNT 用来回答"为什么 db.parse 的 count 比 db.netdelay 的 count 多"：
+        // 线上实测差了 11.5%，而 netdelay 自己的 noevent/negative 两个计数器一次都没出现
+        // ⇒ 缺的帧不是在 recordNetDelay 里被拦的，是在这三个提前 return 点丢的。
+        // 三个计数器只在 binance 有；别家要看同样三行搬过去。
+        HFT_CNT("db.parse.nojson");
         LOG_ERROR("simdjson parse msg: {} error: {}", msg, simdjson::error_message(doc.error()));
         return;
     }
     
     auto data = doc["data"];
     if (data.error()) {
+        HFT_CNT("db.parse.nodata");
         LOG_ERROR("msg has no data field! msg: {}", msg);
         return;
     }
     
-    std::string originInstId = "";
+    char originInstId[64] = {0}; 
     std::string_view streamVal;
     if (doc["stream"].get(streamVal) == simdjson::SUCCESS) {
-        std::vector<std::string> v = crypto::split(std::string(streamVal), "@");
-        if (!v.empty()) {
-            originInstId = crypto::to_upper(v[0]);
+        std::string_view sym = streamVal.substr(0, streamVal.find('@'));
+        size_t n = sym.size() < sizeof(originInstId) - 1 ? sym.size() : sizeof(originInstId) - 1;
+        for (size_t i = 0; i < n; ++i) {
+            const char c = sym[i];
+            originInstId[i] = (c >= 'a' && c <= 'z') ? static_cast<char>(c - 32) : c;
         }
     }
-    
+
     md::InstrumentInfo info;
-    if (smc->get_instrument_info(exchangeTypeEnum, instTypeEnum, originInstId.c_str(), info) == false){
+    if (smc->get_instrument_info(exchangeTypeEnum, instTypeEnum, originInstId, info) == false){
+        // stream 字段缺失时 originInstId 是空串，也会落到这里 —— 所以这一项命中之后，
+        // 下一步才是把"空 originInstId"和"symbol 查不到"再拆成两个计数器。
+        HFT_CNT("db.parse.noinst");
         LOG_ERROR("smc cannot find originInstId: {}", originInstId);
         return;
     }

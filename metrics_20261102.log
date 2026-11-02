@@ -1,0 +1,412 @@
+# 2026-11-02 11:14:09.399
+name                                     type              count       p50_ns       p90_ns       p99_ns      p999_ns       max_ns
+db.parse                                 histogram           513       2688.0      59392.0     950272.0    3801088.0    3730403.0
+db.netdelay.binance.usdt_swap.depth1     histogram           470   17825792.0   17825792.0   35651584.0   35651584.0   35687000.0
+# 2026-11-02 11:14:19.399
+db.parse                                 histogram           586       2688.0      43008.0     102400.0    1114112.0    1179648.0
+db.netdelay.binance.usdt_swap.depth1     histogram           531   17825792.0   30408704.0   35651584.0   39845888.0   41943040.0
+# 2026-11-02 11:14:29.400
+db.parse                                 histogram           581       3200.0      38912.0      86016.0    1114112.0    1179648.0
+db.netdelay.binance.usdt_swap.depth1     histogram           523   17825792.0   17825792.0   22020096.0   24117248.0   25165824.0
+# 2026-11-02 11:14:39.401
+db.parse                                 histogram           347       3200.0      47104.0     110592.0    1114112.0    1179648.0
+db.netdelay.binance.usdt_swap.depth1     histogram           309   17825792.0   17825792.0   19922944.0   22020096.0   23068672.0
+# 2026-11-02 11:14:49.402
+db.parse                                 histogram           422       2944.0      47104.0      94208.0    3276800.0    3407872.0
+db.netdelay.binance.usdt_swap.depth1     histogram           382   17825792.0   35651584.0   44040192.0   44040192.0   46137344.0
+# 2026-11-02 11:14:59.402
+db.parse                                 histogram           261       3712.0      59392.0      94208.0     102400.0     106496.0
+db.netdelay.binance.usdt_swap.depth1     histogram           235   17825792.0   17825792.0   17825792.0   17825792.0   18874368.0
+# 2026-11-02 11:15:09.402
+db.parse                                 histogram           507       3456.0      38912.0      94208.0    1114112.0    1179648.0
+db.netdelay.binance.usdt_swap.depth1     histogram           441   17825792.0   22020096.0   32505856.0   35651584.0   37748736.0
+# 2026-11-02 11:15:19.403
+db.parse                                 histogram           318       4352.0      51200.0      94208.0    1114112.0    1179648.0
+db.netdelay.binance.usdt_swap.depth1     histogram           293   17825792.0   17825792.0   19922944.0   24117248.0   25165824.0
+# 2026-11-02 11:15:29.403
+db.parse                                 histogram           427       2944.0      43008.0      86016.0    1114112.0    1179648.0
+db.netdelay.binance.usdt_swap.depth1     histogram           380   17825792.0   17825792.0   17825792.0   19922944.0   20971520.0
+# 2026-11-02 11:15:39.403
+db.parse                                 histogram           336       3200.0      47104.0      94208.0     126976.0     131072.0
+db.netdelay.binance.usdt_swap.depth1     histogram           296   17825792.0   22020096.0   28311552.0   28311552.0   29360128.0
+# 2026-11-02 11:15:49.404
+db.parse                                 histogram           726       2176.0      21504.0      86016.0    1507328.0    1572864.0
+db.netdelay.binance.usdt_swap.depth1     histogram           657   17825792.0   26214400.0   32505856.0   35651584.0   37748736.0
+# 2026-11-02 11:15:59.404
+db.parse                                 histogram           267       3712.0      69632.0     102400.0     110592.0     114688.0
+db.netdelay.binance.usdt_swap.depth1     histogram           216   17825792.0   17825792.0   17825792.0   17825792.0   18874368.0
+# 2026-11-02 11:16:09.405
+db.parse                                 histogram           566       2688.0      34816.0      94208.0     102400.0     106496.0
+db.netdelay.binance.usdt_swap.depth1     histogram           519   17825792.0   22020096.0   24117248.0   28311552.0   29360128.0
+# 2026-11-02 11:16:19.405
+db.parse                                 histogram           349       3456.0      51200.0      94208.0     376832.0     393216.0
+db.netdelay.binance.usdt_swap.depth1     histogram           326   17825792.0   17825792.0   19922944.0   19922944.0   20971520.0
+# 2026-11-02 11:16:29.406
+db.parse                                 histogram           399       3456.0      43008.0      94208.0     237568.0     245760.0
+db.netdelay.binance.usdt_swap.depth1     histogram           367   17825792.0   17825792.0   17825792.0   19922944.0   20971520.0
+# 2026-11-02 11:16:39.407
+db.parse                                 histogram           345       3200.0      51200.0     102400.0     311296.0     327680.0
+db.netdelay.binance.usdt_swap.depth1     histogram           322   17825792.0   17825792.0   17825792.0   17825792.0   18874368.0
+# 2026-11-02 11:16:49.407
+db.parse                                 histogram           334       3456.0      51200.0      94208.0     110592.0     114688.0
+db.netdelay.binance.usdt_swap.depth1     histogram           288   17825792.0   17825792.0   22020096.0   24117248.0   25165824.0
+# 2026-11-02 11:16:59.408
+db.parse                                 histogram           361       3456.0      43008.0      94208.0     110592.0     114688.0
+db.netdelay.binance.usdt_swap.depth1     histogram           340   17825792.0   17825792.0   24117248.0   26214400.0   27262976.0
+# 2026-11-02 11:17:09.408
+db.parse                                 histogram           374       3712.0      51200.0      94208.0    2752512.0    2883584.0
+db.netdelay.binance.usdt_swap.depth1     histogram           316   17825792.0   17825792.0   19922944.0   19922944.0   20971520.0
+# 2026-11-02 11:17:19.408
+db.parse                                 histogram           277       5376.0      55296.0      86016.0    4456448.0    4718592.0
+db.netdelay.binance.usdt_swap.depth1     histogram           235   17825792.0   17825792.0   17825792.0   19922944.0   20971520.0
+# 2026-11-02 11:17:29.409
+db.parse                                 histogram           251       4864.0      55296.0      94208.0      94208.0      98304.0
+db.netdelay.binance.usdt_swap.depth1     histogram           209   17825792.0   17825792.0   17825792.0   24117248.0   25165824.0
+# 2026-11-02 11:17:39.410
+db.parse                                 histogram           463       2944.0      43008.0      86016.0    1245184.0    1310720.0
+db.netdelay.binance.usdt_swap.depth1     histogram           409   17825792.0   17825792.0   19922944.0   19922944.0   20971520.0
+# 2026-11-02 11:17:49.410
+db.parse                                 histogram           495       3456.0      34816.0      86016.0    1114112.0    1179648.0
+db.netdelay.binance.usdt_swap.depth1     histogram           424   17825792.0   17825792.0   24117248.0   26214400.0   27262976.0
+# 2026-11-02 11:17:59.411
+db.parse                                 histogram           378       3712.0      51200.0     753664.0    1114112.0    1179648.0
+db.netdelay.binance.usdt_swap.depth1     histogram           331   17825792.0   19922944.0   19922944.0   22020096.0   23068672.0
+# 2026-11-02 11:18:09.412
+db.parse                                 histogram           380       3456.0      51200.0      94208.0     950272.0     983040.0
+db.netdelay.binance.usdt_swap.depth1     histogram           319   17825792.0   17825792.0   24117248.0   24117248.0   25165824.0
+# 2026-11-02 11:18:19.412
+db.parse                                 histogram           170       6912.0      77824.0     102400.0     204800.0     212992.0
+db.netdelay.binance.usdt_swap.depth1     histogram           132   17825792.0   17825792.0   17825792.0   17825792.0   18874368.0
+# 2026-11-02 11:18:29.413
+db.parse                                 histogram           238       5376.0      63488.0      94208.0     110592.0     114688.0
+db.netdelay.binance.usdt_swap.depth1     histogram           199   17825792.0   17825792.0   17825792.0   17825792.0   18874368.0
+# 2026-11-02 11:18:39.414
+db.parse                                 histogram           366       3968.0      55296.0     102400.0    9961472.0   10485760.0
+db.netdelay.binance.usdt_swap.depth1     histogram           313   17825792.0   17825792.0   17825792.0   17825792.0   18874368.0
+# 2026-11-02 11:18:49.414
+db.parse                                 histogram           213       5376.0      59392.0      94208.0     110592.0     114688.0
+db.netdelay.binance.usdt_swap.depth1     histogram           185   17825792.0   17825792.0   19922944.0   19922944.0   20971520.0
+# 2026-11-02 11:18:59.415
+db.parse                                 histogram           487       3200.0      38912.0      86016.0     110592.0     114688.0
+db.netdelay.binance.usdt_swap.depth1     histogram           433   17825792.0   17825792.0   17825792.0   17825792.0   18874368.0
+# 2026-11-02 11:19:09.416
+db.parse                                 histogram           449       3456.0      47104.0      94208.0     188416.0     196608.0
+db.netdelay.binance.usdt_swap.depth1     histogram           400   17825792.0   17825792.0   17825792.0   22020096.0   23068672.0
+# 2026-11-02 11:19:19.417
+db.parse                                 histogram           324       3200.0      55296.0      94208.0     110592.0     114688.0
+db.netdelay.binance.usdt_swap.depth1     histogram           275   17825792.0   17825792.0   17825792.0   17825792.0   18874368.0
+# 2026-11-02 11:19:29.417
+db.parse                                 histogram           702       1472.0      23552.0      86016.0    7077888.0    7340032.0
+db.netdelay.binance.usdt_swap.depth1     histogram           619   17825792.0   17825792.0   24117248.0   32505856.0   33554432.0
+# 2026-11-02 11:19:39.418
+db.parse                                 histogram           789       2688.0      17408.0      86016.0    1114112.0    1179648.0
+db.netdelay.binance.usdt_swap.depth1     histogram           714   17825792.0   24117248.0   48234496.0   52428800.0   54525952.0
+# 2026-11-02 11:19:49.419
+db.parse                                 histogram           285       3968.0      59392.0    1114112.0    1114112.0    1179648.0
+db.netdelay.binance.usdt_swap.depth1     histogram           240   17825792.0   17825792.0   24117248.0   26214400.0   27262976.0
+# 2026-11-02 11:19:59.419
+db.parse                                 histogram           462       2944.0      38912.0     110592.0    3538944.0    3670016.0
+db.netdelay.binance.usdt_swap.depth1     histogram           405   17825792.0   17825792.0   19922944.0   22020096.0   23068672.0
+# 2026-11-02 11:20:09.420
+db.parse                                 histogram           298       4352.0      47104.0      94208.0    1114112.0    1179648.0
+db.netdelay.binance.usdt_swap.depth1     histogram           264   17825792.0   17825792.0   17825792.0   17825792.0   18874368.0
+# 2026-11-02 11:20:19.420
+db.parse                                 histogram           258       4352.0      55296.0      86016.0     475136.0     491520.0
+db.netdelay.binance.usdt_swap.depth1     histogram           235   17825792.0   17825792.0   17825792.0   17825792.0   18874368.0
+# 2026-11-02 11:20:29.421
+db.parse                                 histogram           526       2688.0      34816.0      94208.0    1114112.0    1179648.0
+db.netdelay.binance.usdt_swap.depth1     histogram           456   17825792.0   19922944.0   22020096.0   22020096.0   23068672.0
+# 2026-11-02 11:20:39.421
+db.parse                                 histogram           293       3712.0      47104.0      94208.0      94208.0      98304.0
+db.netdelay.binance.usdt_swap.depth1     histogram           263   17825792.0   17825792.0   17825792.0   17825792.0   18874368.0
+# 2026-11-02 11:20:49.422
+db.parse                                 histogram           338       2944.0      38912.0      94208.0     102400.0     106496.0
+db.netdelay.binance.usdt_swap.depth1     histogram           310   17825792.0   24117248.0   24117248.0   24117248.0   25165824.0
+# 2026-11-02 11:20:59.422
+db.parse                                 histogram           472       2432.0      23552.0      86016.0     102400.0     106496.0
+db.netdelay.binance.usdt_swap.depth1     histogram           432   17825792.0   22020096.0   26214400.0   26214400.0   27262976.0
+# 2026-11-02 11:21:09.422
+db.parse                                 histogram           325       3968.0      47104.0      94208.0     118784.0     122880.0
+db.netdelay.binance.usdt_swap.depth1     histogram           275   17825792.0   19922944.0   35651584.0   35651584.0   37748736.0
+# 2026-11-02 11:21:19.423
+db.parse                                 histogram           323       3712.0      43008.0      94208.0     102400.0     106496.0
+db.netdelay.binance.usdt_swap.depth1     histogram           300   17825792.0   19922944.0   32505856.0   35651584.0   37748736.0
+# 2026-11-02 11:21:29.423
+db.parse                                 histogram          1175       2432.0       8704.0      77824.0    1114112.0    1179648.0
+db.netdelay.binance.usdt_swap.depth1     histogram          1079   17825792.0   19922944.0   44040192.0   48234496.0   50331648.0
+# 2026-11-02 11:21:39.424
+db.parse                                 histogram           344       4864.0      55296.0      94208.0    1114112.0    1179648.0
+db.netdelay.binance.usdt_swap.depth1     histogram           315   17825792.0   17825792.0   17825792.0   17825792.0   18874368.0
+# 2026-11-02 11:21:49.425
+db.parse                                 histogram           333       3968.0      43008.0      86016.0     102400.0     106496.0
+db.netdelay.binance.usdt_swap.depth1     histogram           298   17825792.0   17825792.0   22020096.0   24117248.0   25165824.0
+# 2026-11-02 11:21:59.425
+db.parse                                 histogram           353       3456.0      38912.0      94208.0     110592.0     114688.0
+db.netdelay.binance.usdt_swap.depth1     histogram           322   17825792.0   17825792.0   17825792.0   19922944.0   20971520.0
+# 2026-11-02 11:22:09.426
+db.parse                                 histogram           510       2944.0      27648.0      94208.0    3801088.0    3932160.0
+db.netdelay.binance.usdt_swap.depth1     histogram           457   17825792.0   22020096.0   24117248.0   24117248.0   25165824.0
+# 2026-11-02 11:22:19.426
+db.parse                                 histogram           283       3456.0      47104.0      94208.0     110592.0     114688.0
+db.netdelay.binance.usdt_swap.depth1     histogram           257   17825792.0   17825792.0   17825792.0   17825792.0   18874368.0
+# 2026-11-02 11:22:29.427
+db.parse                                 histogram           458       2944.0      31744.0      94208.0     688128.0     720896.0
+db.netdelay.binance.usdt_swap.depth1     histogram           415   17825792.0   26214400.0   32505856.0   35651584.0   37748736.0
+# 2026-11-02 11:22:39.428
+db.parse                                 histogram           307       3200.0      59392.0     110592.0     188416.0     196608.0
+db.netdelay.binance.usdt_swap.depth1     histogram           273   17825792.0   17825792.0   17825792.0   17825792.0   18874368.0
+# 2026-11-02 11:22:49.428
+db.parse                                 histogram           240       3712.0      55296.0      94208.0     884736.0     917504.0
+db.netdelay.binance.usdt_swap.depth1     histogram           215   17825792.0   17825792.0   17825792.0   19922944.0   20971520.0
+# 2026-11-02 11:22:59.429
+db.parse                                 histogram          1375       1344.0       6912.0      59392.0     102400.0     114688.0
+db.netdelay.binance.usdt_swap.depth1     histogram          1249   28311552.0   71303168.0  104857600.0  113246208.0  117440512.0
+# 2026-11-02 11:23:09.429
+db.parse                                 histogram           628       2688.0      19456.0      86016.0     126976.0     131072.0
+db.netdelay.binance.usdt_swap.depth1     histogram           571   17825792.0   19922944.0   22020096.0   24117248.0   25165824.0
+# 2026-11-02 11:23:19.430
+db.parse                                 histogram           408       3456.0      38912.0      94208.0    3014656.0    3145728.0
+db.netdelay.binance.usdt_swap.depth1     histogram           351   17825792.0   17825792.0   19922944.0   22020096.0   23068672.0
+# 2026-11-02 11:23:29.430
+db.parse                                 histogram           564       2432.0      34816.0      94208.0    4980736.0    5242880.0
+db.netdelay.binance.usdt_swap.depth1     histogram           505   17825792.0   19922944.0   19922944.0   22020096.0   23068672.0
+# 2026-11-02 11:23:39.431
+db.parse                                 histogram           486       2944.0      31744.0      86016.0    1376256.0    1441792.0
+db.netdelay.binance.usdt_swap.depth1     histogram           434   17825792.0   19922944.0   24117248.0   24117248.0   25165824.0
+# 2026-11-02 11:23:49.432
+db.parse                                 histogram           427       2944.0      31744.0      86016.0      94208.0      98304.0
+db.netdelay.binance.usdt_swap.depth1     histogram           376   17825792.0   17825792.0   19922944.0   22020096.0   23068672.0
+# 2026-11-02 11:23:59.433
+db.parse                                 histogram           396       2944.0      43008.0      94208.0     110592.0     114688.0
+db.netdelay.binance.usdt_swap.depth1     histogram           350   17825792.0   22020096.0   24117248.0   24117248.0   25165824.0
+# 2026-11-02 11:24:09.433
+db.parse                                 histogram           278       3456.0      55296.0     102400.0     110592.0     114688.0
+db.netdelay.binance.usdt_swap.depth1     histogram           249   17825792.0   17825792.0   17825792.0   17825792.0   18874368.0
+# 2026-11-02 11:24:19.434
+db.parse                                 histogram           602       2688.0      23552.0      69632.0    1114112.0    1179648.0
+db.netdelay.binance.usdt_swap.depth1     histogram           547   17825792.0   26214400.0   28311552.0   30408704.0   31457280.0
+# 2026-11-02 11:24:29.434
+db.parse                                 histogram           531       2944.0      31744.0      94208.0    1114112.0    1179648.0
+db.netdelay.binance.usdt_swap.depth1     histogram           467   17825792.0   17825792.0   17825792.0   17825792.0   18874368.0
+# 2026-11-02 11:24:39.434
+db.parse                                 histogram           375       3200.0      43008.0      94208.0    2228224.0    2359296.0
+db.netdelay.binance.usdt_swap.depth1     histogram           335   17825792.0   17825792.0   17825792.0   17825792.0   18874368.0
+# 2026-11-02 11:24:49.434
+db.parse                                 histogram          2044       1856.0       4864.0      43008.0      77824.0     294912.0
+db.netdelay.binance.usdt_swap.depth1     histogram          1877   17825792.0   32505856.0   52428800.0   56623104.0   58720256.0
+# 2026-11-02 11:24:59.435
+db.parse                                 histogram          3452       1472.0       4864.0      29696.0      69632.0    1179648.0
+db.netdelay.binance.usdt_swap.depth1     histogram          3116   17825792.0   39845888.0   71303168.0   79691776.0   92274688.0
+# 2026-11-02 11:25:09.435
+db.parse                                 histogram          2239       1984.0       5376.0      34816.0      77824.0    1179648.0
+db.netdelay.binance.usdt_swap.depth1     histogram          1978   17825792.0   19922944.0   30408704.0   32505856.0   33554432.0
+# 2026-11-02 11:25:19.436
+db.parse                                 histogram          4386       1344.0       4352.0      27648.0      59392.0      90112.0
+db.netdelay.binance.usdt_swap.depth1     histogram          3956   17825792.0   39845888.0   65011712.0   71303168.0   75497472.0
+# 2026-11-02 11:25:29.437
+db.parse                                 histogram          2623       2176.0       5888.0      43008.0     237568.0    5767168.0
+db.netdelay.binance.usdt_swap.depth1     histogram          2286   17825792.0   24117248.0   35651584.0   35651584.0   37748736.0
+# 2026-11-02 11:25:39.437
+db.parse                                 histogram          1672       2432.0       7936.0      47104.0     557056.0    5242880.0
+db.netdelay.binance.usdt_swap.depth1     histogram          1445   17825792.0   28311552.0   44040192.0   48234496.0   50331648.0
+# 2026-11-02 11:25:49.438
+db.parse                                 histogram           875       3200.0      17408.0      69632.0      94208.0      98304.0
+db.netdelay.binance.usdt_swap.depth1     histogram           744   17825792.0   19922944.0   35651584.0   35651584.0   37748736.0
+# 2026-11-02 11:25:59.438
+db.parse                                 histogram           908       2944.0      17408.0      63488.0     110592.0     114688.0
+db.netdelay.binance.usdt_swap.depth1     histogram           776   17825792.0   24117248.0   39845888.0   44040192.0   46137344.0
+# 2026-11-02 11:26:09.438
+db.parse                                 histogram          1214       2432.0      10752.0      59392.0      94208.0     114688.0
+db.netdelay.binance.usdt_swap.depth1     histogram          1072   17825792.0   26214400.0   32505856.0   35651584.0   37748736.0
+# 2026-11-02 11:26:19.439
+db.parse                                 histogram          1046       2688.0      13824.0      69632.0    4980736.0    5242880.0
+db.netdelay.binance.usdt_swap.depth1     histogram           922   17825792.0   28311552.0   39845888.0   44040192.0   46137344.0
+# 2026-11-02 11:26:29.439
+db.parse                                 histogram          1025       2432.0      14848.0      55296.0      94208.0     114688.0
+db.netdelay.binance.usdt_swap.depth1     histogram           892   17825792.0   26214400.0   39845888.0   39845888.0   41943040.0
+# 2026-11-02 11:26:39.440
+db.parse                                 histogram           898       2432.0      17408.0      86016.0    1114112.0    1179648.0
+db.netdelay.binance.usdt_swap.depth1     histogram           800   17825792.0   17825792.0   22020096.0   24117248.0   25165824.0
+# 2026-11-02 11:26:49.441
+db.parse                                 histogram           507       3456.0      34816.0      86016.0     753664.0     786432.0
+db.netdelay.binance.usdt_swap.depth1     histogram           406   17825792.0   17825792.0   17825792.0   19922944.0   20971520.0
+# 2026-11-02 11:26:59.441
+db.parse                                 histogram           728       2944.0      29696.0      86016.0     376832.0     393216.0
+db.netdelay.binance.usdt_swap.depth1     histogram           611   17825792.0   17825792.0   19922944.0   22020096.0   23068672.0
+# 2026-11-02 11:27:09.442
+db.parse                                 histogram          1073       2432.0      12800.0      69632.0      94208.0     131072.0
+db.netdelay.binance.usdt_swap.depth1     histogram           940   17825792.0   19922944.0   39845888.0   39845888.0   41943040.0
+# 2026-11-02 11:27:19.443
+db.parse                                 histogram           971       2432.0      17408.0      77824.0     118784.0     122880.0
+db.netdelay.binance.usdt_swap.depth1     histogram           866   17825792.0   24117248.0   56623104.0   60817408.0   62914560.0
+# 2026-11-02 11:27:29.444
+db.parse                                 histogram           545       2688.0      34816.0      86016.0     622592.0     655360.0
+db.netdelay.binance.usdt_swap.depth1     histogram           468   17825792.0   17825792.0   17825792.0   19922944.0   20971520.0
+# 2026-11-02 11:27:39.445
+db.parse                                 histogram           932       2432.0      21504.0      69632.0     102400.0     106496.0
+db.netdelay.binance.usdt_swap.depth1     histogram           825   17825792.0   22020096.0   35651584.0   35651584.0   37748736.0
+# 2026-11-02 11:27:49.446
+db.parse                                 histogram           992       2176.0      17408.0      63488.0      94208.0      98304.0
+db.netdelay.binance.usdt_swap.depth1     histogram           874   17825792.0   28311552.0   32505856.0   35651584.0   37748736.0
+# 2026-11-02 11:27:59.446
+db.parse                                 histogram           954       2176.0      15872.0      69632.0    1245184.0    1310720.0
+db.netdelay.binance.usdt_swap.depth1     histogram           851   17825792.0   17825792.0   19922944.0   22020096.0   23068672.0
+# 2026-11-02 11:28:09.446
+db.parse                                 histogram           771       2432.0      27648.0      77824.0      94208.0      98304.0
+db.netdelay.binance.usdt_swap.depth1     histogram           678   17825792.0   19922944.0   30408704.0   35651584.0   37748736.0
+# 2026-11-02 11:28:19.446
+db.parse                                 histogram          1062       2176.0      13824.0      69632.0     118784.0    2359296.0
+db.netdelay.binance.usdt_swap.depth1     histogram           955   17825792.0   30408704.0   35651584.0   35651584.0   37748736.0
+# 2026-11-02 11:28:29.447
+db.parse                                 histogram          1043       1984.0      13824.0      77824.0      94208.0     114688.0
+db.netdelay.binance.usdt_swap.depth1     histogram           947   17825792.0   48234496.0   65011712.0   71303168.0   75497472.0
+# 2026-11-02 11:28:39.447
+db.parse                                 histogram           936       2688.0      19456.0      77824.0     102400.0     106496.0
+db.netdelay.binance.usdt_swap.depth1     histogram           811   17825792.0   19922944.0   28311552.0   35651584.0   37748736.0
+# 2026-11-02 11:28:49.448
+db.parse                                 histogram           636       3712.0      25600.0      86016.0    4980736.0    5242880.0
+db.netdelay.binance.usdt_swap.depth1     histogram           540   17825792.0   39845888.0   39845888.0   39845888.0   41943040.0
+# 2026-11-02 11:28:59.449
+db.parse                                 histogram           547       3200.0      34816.0      77824.0    4456448.0    4718592.0
+db.netdelay.binance.usdt_swap.depth1     histogram           477   17825792.0   17825792.0   26214400.0   28311552.0   29360128.0
+# 2026-11-02 11:29:09.449
+db.parse                                 histogram           830       2688.0      17408.0      69632.0      94208.0      98304.0
+db.netdelay.binance.usdt_swap.depth1     histogram           702   17825792.0   52428800.0   79691776.0   88080384.0   92274688.0
+# 2026-11-02 11:29:19.450
+db.parse                                 histogram           567       3200.0      34816.0      69632.0     102400.0     106496.0
+db.netdelay.binance.usdt_swap.depth1     histogram           493   17825792.0   17825792.0   24117248.0   32505856.0   33554432.0
+# 2026-11-02 11:29:29.451
+db.parse                                 histogram           722       2176.0      23552.0      77824.0     102400.0     106496.0
+db.netdelay.binance.usdt_swap.depth1     histogram           650   17825792.0   17825792.0   19922944.0   24117248.0   25165824.0
+# 2026-11-02 11:29:39.451
+db.parse                                 histogram           843       2176.0      15872.0      69632.0     102400.0     106496.0
+db.netdelay.binance.usdt_swap.depth1     histogram           753   17825792.0   26214400.0   35651584.0   35651584.0   37748736.0
+# 2026-11-02 11:29:49.451
+db.parse                                 histogram           716       2688.0      27648.0      63488.0    1114112.0    1179648.0
+db.netdelay.binance.usdt_swap.depth1     histogram           633   17825792.0   17825792.0   24117248.0   26214400.0   27262976.0
+# 2026-11-02 11:29:59.452
+db.parse                                 histogram           515       3200.0      38912.0      86016.0     110592.0     114688.0
+db.netdelay.binance.usdt_swap.depth1     histogram           446   17825792.0   17825792.0   17825792.0   19922944.0   20971520.0
+# 2026-11-02 11:30:09.452
+db.parse                                 histogram          1446       2688.0       9728.0      55296.0    4456448.0    5767168.0
+db.netdelay.binance.usdt_swap.depth1     histogram          1285   17825792.0   19922944.0   24117248.0   30408704.0   31457280.0
+# 2026-11-02 11:30:19.453
+db.parse                                 histogram           535       3712.0      34816.0      77824.0     102400.0     106496.0
+db.netdelay.binance.usdt_swap.depth1     histogram           462   17825792.0   17825792.0   19922944.0   19922944.0   20971520.0
+# 2026-11-02 11:30:29.453
+db.parse                                 histogram           804       2688.0      17408.0      59392.0      94208.0      98304.0
+db.netdelay.binance.usdt_swap.depth1     histogram           698   17825792.0   22020096.0   35651584.0   35651584.0   37748736.0
+# 2026-11-02 11:30:39.454
+db.parse                                 histogram           423       3712.0      38912.0      86016.0     118784.0     122880.0
+db.netdelay.binance.usdt_swap.depth1     histogram           346   17825792.0   24117248.0   26214400.0   26214400.0   27262976.0
+# 2026-11-02 11:30:49.454
+db.parse                                 histogram           644       2944.0      27648.0      77824.0    4980736.0    5242880.0
+db.netdelay.binance.usdt_swap.depth1     histogram           550   17825792.0   17825792.0   19922944.0   22020096.0   23068672.0
+# 2026-11-02 11:30:59.455
+db.parse                                 histogram           771       2944.0      17408.0      77824.0     102400.0     106496.0
+db.netdelay.binance.usdt_swap.depth1     histogram           669   17825792.0   26214400.0   39845888.0   39845888.0   41943040.0
+# 2026-11-02 11:31:09.455
+db.parse                                 histogram           887       1728.0      19456.0      77824.0     344064.0     360448.0
+db.netdelay.binance.usdt_swap.depth1     histogram           790   17825792.0   30408704.0   39845888.0   39845888.0   41943040.0
+# 2026-11-02 11:31:19.456
+db.parse                                 histogram           630       3712.0      31744.0      77824.0     557056.0     589824.0
+db.netdelay.binance.usdt_swap.depth1     histogram           563   17825792.0   17825792.0   24117248.0   26214400.0   27262976.0
+# 2026-11-02 11:31:29.457
+db.parse                                 histogram          1084       2688.0      11776.0      77824.0    1114112.0    1441792.0
+db.netdelay.binance.usdt_swap.depth1     histogram           982   17825792.0   22020096.0   44040192.0   48234496.0   50331648.0
+# 2026-11-02 11:31:39.458
+db.parse                                 histogram           602       3200.0      31744.0      77824.0    1114112.0    1179648.0
+db.netdelay.binance.usdt_swap.depth1     histogram           522   17825792.0   17825792.0   19922944.0   22020096.0   23068672.0
+# 2026-11-02 11:31:49.459
+db.parse                                 histogram           582       3456.0      34816.0     139264.0    1507328.0    1572864.0
+db.netdelay.binance.usdt_swap.depth1     histogram           509   17825792.0   17825792.0   22020096.0   24117248.0   25165824.0
+# 2026-11-02 11:31:59.459
+db.parse                                 histogram           340       5376.0      51200.0      94208.0    1114112.0    1179648.0
+db.netdelay.binance.usdt_swap.depth1     histogram           273   17825792.0   17825792.0   17825792.0   19922944.0   20971520.0
+# 2026-11-02 11:32:09.460
+db.parse                                 histogram           569       2944.0      34816.0      86016.0      94208.0      98304.0
+db.netdelay.binance.usdt_swap.depth1     histogram           492   17825792.0   19922944.0   22020096.0   22020096.0   23068672.0
+# 2026-11-02 11:32:19.460
+db.parse                                 histogram           618       2688.0      29696.0      69632.0     102400.0     106496.0
+db.netdelay.binance.usdt_swap.depth1     histogram           543   17825792.0   22020096.0   26214400.0   28311552.0   29360128.0
+# 2026-11-02 11:32:29.461
+db.parse                                 histogram           585       3200.0      34816.0      77824.0     110592.0     114688.0
+db.netdelay.binance.usdt_swap.depth1     histogram           511   17825792.0   30408704.0   35651584.0   39845888.0   41943040.0
+# 2026-11-02 11:32:39.462
+db.parse                                 histogram           920       2432.0      10752.0      77824.0     102400.0     106496.0
+db.netdelay.binance.usdt_swap.depth1     histogram           849   17825792.0   35651584.0   71303168.0   71303168.0   75497472.0
+# 2026-11-02 11:32:49.463
+db.parse                                 histogram           768       2432.0      25600.0      77824.0     110592.0     114688.0
+db.netdelay.binance.usdt_swap.depth1     histogram           684   17825792.0   17825792.0   26214400.0   28311552.0   29360128.0
+# 2026-11-02 11:32:59.463
+db.parse                                 histogram           592       2944.0      29696.0      77824.0    1114112.0    1179648.0
+db.netdelay.binance.usdt_swap.depth1     histogram           508   17825792.0   17825792.0   22020096.0   24117248.0   25165824.0
+# 2026-11-02 11:33:09.463
+db.parse                                 histogram           713       2688.0      23552.0      77824.0    1114112.0    1179648.0
+db.netdelay.binance.usdt_swap.depth1     histogram           600   17825792.0   24117248.0   32505856.0   35651584.0   37748736.0
+# 2026-11-02 11:33:19.464
+db.parse                                 histogram           795       2688.0      12800.0      86016.0    1114112.0    1179648.0
+db.netdelay.binance.usdt_swap.depth1     histogram           662   17825792.0   52428800.0   60817408.0   60817408.0   62914560.0
+# 2026-11-02 11:33:29.464
+db.parse                                 histogram           910       2432.0      12800.0      69632.0    1114112.0    1179648.0
+db.netdelay.binance.usdt_swap.depth1     histogram           786   17825792.0   24117248.0   35651584.0   35651584.0   37748736.0
+# 2026-11-02 11:33:39.465
+db.parse                                 histogram           822       2688.0      23552.0      69632.0      94208.0      98304.0
+db.netdelay.binance.usdt_swap.depth1     histogram           595   17825792.0   17825792.0   32505856.0   35651584.0   37748736.0
+# 2026-11-02 11:33:49.466
+db.parse                                 histogram           542       3200.0      31744.0      94208.0     253952.0     262144.0
+db.netdelay.binance.usdt_swap.depth1     histogram           466   17825792.0   19922944.0   24117248.0   24117248.0   25165824.0
+# 2026-11-02 11:33:59.467
+db.parse                                 histogram           868       2432.0      21504.0      77824.0     884736.0     917504.0
+db.netdelay.binance.usdt_swap.depth1     histogram           786   17825792.0   39845888.0   48234496.0   52428800.0   54525952.0
+# 2026-11-02 11:34:09.467
+db.parse                                 histogram           562       2688.0      29696.0      86016.0    5505024.0    5767168.0
+db.netdelay.binance.usdt_swap.depth1     histogram           498   17825792.0   17825792.0   17825792.0   19922944.0   20971520.0
+# 2026-11-02 11:34:19.467
+db.parse                                 histogram          1056       1856.0       9728.0      63488.0      94208.0     786432.0
+db.netdelay.binance.usdt_swap.depth1     histogram           935   17825792.0   24117248.0   35651584.0   39845888.0   41943040.0
+# 2026-11-02 11:34:29.468
+db.parse                                 histogram           586       2688.0      34816.0      77824.0     102400.0     106496.0
+db.netdelay.binance.usdt_swap.depth1     histogram           505   17825792.0   22020096.0   24117248.0   26214400.0   27262976.0
+# 2026-11-02 11:34:39.469
+db.parse                                 histogram           731       2688.0      21504.0      77824.0     110592.0     114688.0
+db.netdelay.binance.usdt_swap.depth1     histogram           657   17825792.0   22020096.0   28311552.0   28311552.0   29360128.0
+# 2026-11-02 11:34:49.470
+db.parse                                 histogram           484       2944.0      29696.0     102400.0     688128.0     720896.0
+db.netdelay.binance.usdt_swap.depth1     histogram           429   17825792.0   17825792.0   19922944.0   22020096.0   23068672.0
+# 2026-11-02 11:34:59.470
+db.parse                                 histogram           373       3456.0      47104.0      86016.0      94208.0      98304.0
+db.netdelay.binance.usdt_swap.depth1     histogram           320   17825792.0   17825792.0   17825792.0   17825792.0   18874368.0
+# 2026-11-02 11:35:09.471
+db.parse                                 histogram           762       2688.0      23552.0      86016.0    8126464.0    8388608.0
+db.netdelay.binance.usdt_swap.depth1     histogram           679   17825792.0   24117248.0   24117248.0   24117248.0   25165824.0
+# 2026-11-02 11:35:19.472
+db.parse                                 histogram           638       2176.0      34816.0      94208.0     507904.0     524288.0
+db.netdelay.binance.usdt_swap.depth1     histogram           554   17825792.0   17825792.0   17825792.0   19922944.0   20971520.0
+# 2026-11-02 11:35:29.472
+db.parse                                 histogram           761       2432.0      29696.0      69632.0     102400.0     106496.0
+db.netdelay.binance.usdt_swap.depth1     histogram           678   17825792.0   26214400.0   28311552.0   28311552.0   29360128.0
+# 2026-11-02 11:35:39.473
+db.parse                                 histogram           977       2432.0      11776.0      77824.0     344064.0     360448.0
+db.netdelay.binance.usdt_swap.depth1     histogram           890   17825792.0   26214400.0   32505856.0   32505856.0   33554432.0
+# 2026-11-02 11:35:49.473
+db.parse                                 histogram           483       2944.0      34816.0      86016.0     110592.0     114688.0
+db.netdelay.binance.usdt_swap.depth1     histogram           427   17825792.0   17825792.0   17825792.0   19922944.0   20971520.0
+# 2026-11-02 11:35:59.473
+db.parse                                 histogram           810       2432.0      14848.0      86016.0    3538944.0    3670016.0
+db.netdelay.binance.usdt_swap.depth1     histogram           754   17825792.0   17825792.0   19922944.0   22020096.0   23068672.0
+# 2026-11-02 11:36:09.474
+db.parse                                 histogram           721       3200.0      29696.0      94208.0    3801088.0    3932160.0
+db.netdelay.binance.usdt_swap.depth1     histogram           616   17825792.0   24117248.0   35651584.0   39845888.0   41943040.0
+# 2026-11-02 11:36:19.475
+db.parse                                 histogram          1119       2688.0      29696.0      86016.0     622592.0     720896.0
+db.netdelay.binance.usdt_swap.depth1     histogram          1042   17825792.0   19922944.0   22020096.0   26214400.0   27262976.0
+# 2026-11-02 11:36:29.475
+db.parse                                 histogram           597       2688.0      38912.0     102400.0    4980736.0    5242880.0
+db.netdelay.binance.usdt_swap.depth1     histogram           550   17825792.0   19922944.0   19922944.0   22020096.0   23068672.0
+# 2026-11-02 11:36:39.476
+db.parse                                 histogram           937       2432.0      13824.0      86016.0    1114112.0    1179648.0
+db.netdelay.binance.usdt_swap.depth1     histogram           879   17825792.0   17825792.0   19922944.0   39845888.0   41943040.0
+# 2026-11-02 11:36:49.476
+db.parse                                 histogram          1494       2432.0       7936.0      47104.0      77824.0     114688.0
+db.netdelay.binance.usdt_swap.depth1     histogram          1386   17825792.0   24117248.0   28311552.0   30408704.0   31457280.0
