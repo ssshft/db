@@ -1,6 +1,7 @@
 #include "base/BaseMarket.h"
 #include "key_util.h"
 #include "SpinBackoff.h"
+#include "hft_metrics.h"   // HFT_SCOPE：parseMarketData 的段耗时（-I ../include 已覆盖）
 
 
 md::BaseUnit::BaseUnit(sm::SecurityManager* s, ExchangeType exchTy, InstType instTy, md::MarketType marketTy, std::vector<md::InstrumentInfo>& instInfoVec, const char* host, int port, const char* password) {
@@ -129,6 +130,40 @@ void md::BaseUnit::pushRaw(const char* data, size_t len, int64_t tsNet) {
     // kDropped 是背压，由调用方按需观测 mdRing->dropped()，这里不打日志（否则刷屏）
 }
 
+// 网络耗时 = 本地收到 − 交易所事件时间。
+void md::BaseUnit::recordNetDelay(int64_t tsRecv, int64_t tsEvent) {
+    if (tsEvent <= 0) {
+        HFT_CNT("db.netdelay.noevent");
+        return;
+    }
+    if (tsRecv < tsEvent) {
+        HFT_CNT("db.netdelay.negative");
+        return;
+    }
+
+    if (exchangeTypeEnum == BINANCE && instTypeEnum == USDT_SWAP && marketTypeEnum == md::DEPTH1) {
+        HFT_RECORD_NS("db.netdelay.binance.usdt_swap.depth1", static_cast<double>(tsRecv - tsEvent) * 1000.0);
+    }
+    else if (exchangeTypeEnum == BINANCE && instTypeEnum == USDT_SWAP && marketTypeEnum == md::DEPTH5) {
+        HFT_RECORD_NS("db.netdelay.binance.usdt_swap.depth5", static_cast<double>(tsRecv - tsEvent) * 1000.0);
+    }
+    else if (exchangeTypeEnum == BINANCE && instTypeEnum == USDT_SWAP && marketTypeEnum == md::DEPTH10) {
+        HFT_RECORD_NS("db.netdelay.binance.usdt_swap.depth10", static_cast<double>(tsRecv - tsEvent) * 1000.0);
+    }
+    else if (exchangeTypeEnum == BINANCE && instTypeEnum == USDT_SWAP && marketTypeEnum == md::DEPTH20) {
+        HFT_RECORD_NS("db.netdelay.binance.usdt_swap.depth20", static_cast<double>(tsRecv - tsEvent) * 1000.0);
+    }
+    else if (exchangeTypeEnum == BINANCE && instTypeEnum == USDT_SWAP && marketTypeEnum == md::TRADES) {
+        HFT_RECORD_NS("db.netdelay.binance.usdt_swap.trades", static_cast<double>(tsRecv - tsEvent) * 1000.0);
+    }
+    else if (exchangeTypeEnum == GATEIO && instTypeEnum == USDT_SWAP && marketTypeEnum == md::DEPTH1) {
+        HFT_RECORD_NS("db.netdelay.gateio.usdt_swap.depth1", static_cast<double>(tsRecv - tsEvent) * 1000.0);
+    }
+    else if (exchangeTypeEnum == GATEIO && instTypeEnum == USDT_SWAP && marketTypeEnum == md::TRADES) {
+        HFT_RECORD_NS("db.netdelay.gateio.usdt_swap.trades", static_cast<double>(tsRecv - tsEvent) * 1000.0);
+    }
+}
+
 bool md::BaseUnit::resolveInst(const std::string& originInstId, md::InstrumentInfo& info, std::string& key) {
     if (originInstId.empty()) {
         return false;
@@ -173,6 +208,10 @@ void md::BaseUnit::consume() {
         try {
             if (mdRing->peek(msg, tsNet)) {
                 pending = true;
+                // 段耗时：一个 unit 一个消费线程，17 家交易所共用这一行
+                // （parseMarketData 是虚函数，加在调用点就不用改 17 个实现）。
+                // 抛异常时 Scope 也会析构并记一条 —— 那是"解析失败花了多久"，不是脏样本。
+                HFT_SCOPE("db.parse");
                 parseMarketData(*msg, tsNet);   // ← 解析发生在 r 被钉住的期间
                 mdRing->release();                 // ← 读完才发布 r_
                 pending = false;

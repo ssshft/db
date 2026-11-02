@@ -88,6 +88,9 @@ namespace md {
         // 六家的 parseMarketData 都要做这一步，抄六遍容易漏 smc 查不到时的日志。
         bool resolveInst(const std::string& originInstId, md::InstrumentInfo& info, std::string& key);
 
+        // 网络耗时：本地收到 − 交易所事件时间（两者都是墙钟 µs）。
+        void recordNetDelay(int64_t tsRecv, int64_t tsEvent);
+
         bool overflowLogged_{false};   // pushRaw 的一次性告警标志（每个 unit 一个）
     };
 

@@ -695,6 +695,7 @@ void md::BinanceUnit::parseMarketData(const std::string& msg, int64_t tsNet) {
             depth1.tsTrans = tsTrans * 1000;
             depth1.tsEvent = tsEvent * 1000;
             depth1.tsRecv = tsNet;
+            recordNetDelay(tsNet, depth1.tsEvent);
             depth1.bp1 = crypto::fast_atod(bidPriceStr) * info.reduceNumber;
             depth1.bv1 = crypto::fast_atod(bidVolStr) * info.magnifyNumber;
             depth1.ap1 = crypto::fast_atod(askPriceStr) * info.reduceNumber;
@@ -723,6 +724,7 @@ void md::BinanceUnit::parseMarketData(const std::string& msg, int64_t tsNet) {
             depth5.tsTrans = tsTrans * 1000;
             depth5.tsEvent = tsEvent * 1000;
             depth5.tsRecv = tsNet;
+            recordNetDelay(tsNet, depth5.tsEvent);
 
             auto bidsArray = data["b"];
             std::string_view bidPrice[5];
@@ -819,6 +821,7 @@ void md::BinanceUnit::parseMarketData(const std::string& msg, int64_t tsNet) {
             depth10.tsTrans = tsTrans * 1000;
             depth10.tsEvent = tsEvent * 1000;
             depth10.tsRecv = tsNet;
+            recordNetDelay(tsNet, depth10.tsEvent);
 
             auto bidsArray = data["b"];
             std::string_view bidPrice[10];
@@ -935,6 +938,7 @@ void md::BinanceUnit::parseMarketData(const std::string& msg, int64_t tsNet) {
             depth20.tsTrans = tsTrans * 1000;
             depth20.tsEvent = tsEvent * 1000;
             depth20.tsRecv = tsNet;
+            recordNetDelay(tsNet, depth20.tsEvent);
 
             auto bidsArray = data["b"];
             std::string_view bidPrice[20];
@@ -1120,6 +1124,7 @@ void md::BinanceUnit::parseMarketData(const std::string& msg, int64_t tsNet) {
             trades.tsTrans = tsTrans * 1000;
             trades.tsEvent = tsEvent * 1000;
             trades.tsRecv = tsNet;
+            recordNetDelay(tsNet, trades.tsEvent);
             trades.tsParse = crypto::getCurrentTime();
 
 #ifdef NEED_SHM
