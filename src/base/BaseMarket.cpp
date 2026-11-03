@@ -5,30 +5,6 @@
 #include "hft_metrics.h"   
 
 
-// ---- 线程绑核 ----
-// 核号在这里一次性发给 unit：按 unit 创建顺序，给每个**自旋** unit（DEPTH1/TRADES）发一个，列表用完就不发了。
-void md::BaseMarket::setCpuCores(const std::vector<int>& cores) {
-    size_t k = 0;
-    for (md::BaseUnit* u : _units) {
-        if (marketTypeEnum != DEPTH1 && marketTypeEnum != TRADES) { // DEPTH5/10/20、KLINE、FUNDING_RATE）不占核
-            continue;   
-        }
-
-        if (k < cores.size()) {
-            u->cpuCore = cores[k++];
-        }
-        else {
-            // 配了核但不够用：多半是币对变多 / tokenLot 调小导致自旋 unit 数涨了。
-            // 空列表是"不绑"，属于正常配置，这里不告警。
-            if (!cores.empty()) {
-                LOG_WARN("cpucores exhausted: {} only has {} cores configured, this {} unit stays unpinned", exchId, cores.size(), md::MarketTypeEnum2StrMap[u->marketTypeEnum]);
-            }
-        }
-    }
-    LOG_INFO("{} cpu pin: {} units pinned, {} cores configured", exchId, k, cores.size());
-}
-
-
 md::BaseUnit::BaseUnit(sm::SecurityManager* s, ExchangeType exchTy, InstType instTy, md::MarketType marketTy, std::vector<md::InstrumentInfo>& instInfoVec, const char* host, int port, const char* password) {
     smc = s;
     exchangeTypeEnum = exchTy;
@@ -233,6 +209,14 @@ void md::BaseUnit::subWebsocekt() {
     pWsClient->start();
 }
 
+void md::BaseUnit::setCpuCore(int core) {
+    cpuCore = core;
+}
+
+md::MarketType md::BaseUnit::getMarketType() {
+    return marketTypeEnum;
+}
+
 void md::BaseUnit::consume() {
     const std::string* msg = nullptr;
     int64_t tsNet = 0;
@@ -322,6 +306,32 @@ md::BaseMarket::BaseMarket(sm::SecurityManager* s, const char* exId, std::vector
 
 md::BaseMarket::~BaseMarket() {
 
+}
+
+
+// ---- 线程绑核 ----
+// 核号在这里一次性发给 unit：按 unit 创建顺序，给每个**自旋** unit（DEPTH1/TRADES）发一个，列表用完就不发了。
+void md::BaseMarket::setCpuCores(const std::vector<int>& cores) {
+    size_t k = 0;
+    for (md::BaseUnit* u : _units) {
+        md::MarketType marketType =  u->getMarketType();
+        if (marketType != DEPTH1 && marketType != TRADES) { // DEPTH5/10/20、KLINE、FUNDING_RATE）不占核
+            continue;   
+        }
+
+        if (k < cores.size()) {
+            int core = cores[k++];
+            u->setCpuCore(core);
+        }
+        else {
+            // 配了核但不够用：多半是币对变多 / tokenLot 调小导致自旋 unit 数涨了。
+            // 空列表是"不绑"，属于正常配置，这里不告警。
+            if (!cores.empty()) {
+                LOG_WARN("cpucores exhausted: {} only has {} cores configured, this {} unit stays unpinned", exchId, cores.size(), md::MarketTypeEnum2StrMap[u->marketTypeEnum]);
+            }
+        }
+    }
+    LOG_INFO("{} cpu pin: {} units pinned, {} cores configured", exchId, k, cores.size());
 }
 
 // ---- 启动 ----

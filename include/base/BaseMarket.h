@@ -42,6 +42,9 @@ namespace md {
         void consume();
         void subWebsocekt();
 
+        void setCpuCore(int core);
+        md::MarketType getMarketType();
+
         virtual void generateSubBody() = 0;
         virtual void parseMarketData(const std::string& msg, int64_t tsNet) = 0;
         virtual void onWebsocketMsg(const uint8_t* data, size_t len, bool isBinary, int64_t ns) = 0;
@@ -49,7 +52,6 @@ namespace md {
         virtual void onClose(int code, const std::string& reason);
         virtual void onError(const std::string& msg);
     
-
     protected:
         ExchangeType exchangeTypeEnum;
         InstType instTypeEnum;
