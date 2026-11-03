@@ -327,7 +327,7 @@ void md::BaseMarket::setCpuCores(const std::vector<int>& cores) {
             // 配了核但不够用：多半是币对变多 / tokenLot 调小导致自旋 unit 数涨了。
             // 空列表是"不绑"，属于正常配置，这里不告警。
             if (!cores.empty()) {
-                LOG_WARN("cpucores exhausted: {} only has {} cores configured, this {} unit stays unpinned", exchId, cores.size(), md::MarketTypeEnum2StrMap[u->marketTypeEnum]);
+                LOG_WARN("cpucores exhausted: {} only has {} cores configured, this {} unit stays unpinned", exchId, cores.size(), md::MarketTypeEnum2StrMap[marketType]);
             }
         }
     }
