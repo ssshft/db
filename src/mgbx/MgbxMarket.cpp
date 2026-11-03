@@ -327,20 +327,8 @@ md::MgbxMarket::MgbxMarket(sm::SecurityManager* s, const char* exId, std::vector
         md::MgbxUnit* unit = new md::MgbxUnit(smc, info.exchangeTypeEnum, info.instTypeEnum, info.marketTypeEnum,
                                               info.vInstInfo, _host, _port, _passwd);
         unit->generateSubBody();
-        unitVec.push_back(unit);
+        _units.push_back(unit);
     }
 }
 
 md::MgbxMarket::~MgbxMarket() {}
-
-void md::MgbxMarket::start() {
-    for (size_t i = 0; i < unitVec.size(); ++i) {
-        // FUNDING_RATE 的 unit 在 generateSubBody 里已经报错并留空 url，
-        // 这里不能再 start（否则 WsClient 会因为 url 为空抛 invalid_argument）。
-        if (unitVec[i]->isRestOnly()) {
-            continue;
-        }
-        unitVec[i]->start();
-        std::this_thread::sleep_for(std::chrono::microseconds(100));
-    }
-}

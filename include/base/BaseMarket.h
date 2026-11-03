@@ -76,6 +76,9 @@ namespace md {
 
         simdjson::ondemand::parser parser;
 
+        // consume 线程的绑核号（-1 = 不绑）
+        int cpuCore{-1};
+
         // ---- 新接入交易所（HTX/BITGET/MEXC/KUCOIN/BINGX/XT）共用的两个小工具 ----
         //
         // 把一帧原始报文写进 ring。比直接调 mdRing->write 多两件事：
@@ -100,9 +103,21 @@ namespace md {
         BaseMarket(sm::SecurityManager* s, const char* exId, std::vector<std::string>& instTypeVec, std::vector<std::string>& marketTypeVec, std::vector<std::string>& instIdVec, int lot = 30, const char* host = "127.0.0.1", int port = 9379, const char* passwd = "");
         virtual ~BaseMarket();
         void generateUnitInfo();
-        virtual void start() = 0;
+
+        // 唯一的 start 实现：遍历 _units 逐个起线程（见 BaseMarket.cpp）。
+        void start();
+
+        // 线程绑核：配置里每个交易所给一个**核列表**（cpucores，例如 [0,1,2]），
+        // 这里按 unit 创建顺序，给每个**自旋** unit（DEPTH1/TRADES）发一个核，用完就不绑。
+        void setCpuCores(const std::vector<int>& cores);
 
     protected:
+        // 本 market 建出来的 unit —— **唯一**的持有者（各交易所在构造时 push 进来）。
+        // 三件事都靠它：分配核号（setCpuCores）、启动（start）、以及析构时能不能 delete。
+        // 析构仍然留在各交易所自己手里：目前只有 3 家 SBE 会 delete，其余 17 家是空析构
+        // （本来就泄漏，进程活到退出，不在本次改动范围内）。
+        std::vector<BaseUnit*> _units;
+
         sm::SecurityManager* smc{nullptr};
         std::vector<std::string> _instTypeVec;
         std::vector<std::string> _marketTypeVec;

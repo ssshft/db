@@ -359,24 +359,11 @@ md::BinanceSbeMarket::BinanceSbeMarket(sm::SecurityManager* s, const char* exId,
         auto& info = unitInfoVec[i];
         md::BinanceSbeUnit* unit = new md::BinanceSbeUnit(smc, info.exchangeTypeEnum, info.instTypeEnum, info.marketTypeEnum, info.vInstInfo, sbeAccount, _host, _port, _passwd);
         unit->generateSubBody();
-        binanceSbeUnitVec.push_back(unit);
+        _units.push_back(unit);
     }
 
 }
 
 md::BinanceSbeMarket::~BinanceSbeMarket() {
-    for (size_t i = 0; i < binanceSbeUnitVec.size(); ++i) {
-        if (binanceSbeUnitVec[i]) {
-            delete binanceSbeUnitVec[i];
-            binanceSbeUnitVec[i] = nullptr;
-        }
-    }
-}
-
-
-void md::BinanceSbeMarket::start() {
-    for (size_t i = 0; i < binanceSbeUnitVec.size(); ++i) {
-        binanceSbeUnitVec[i]->start();
-        std::this_thread::sleep_for(std::chrono::microseconds(100));
-    }
+    for (auto* u : _units) delete u;
 }

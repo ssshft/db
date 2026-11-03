@@ -1253,19 +1253,11 @@ md::BinanceMarket::BinanceMarket(sm::SecurityManager* s, const char* exId, std::
         auto& info = unitInfoVec[i];
         md::BinanceUnit* unit = new md::BinanceUnit(smc, info.exchangeTypeEnum, info.instTypeEnum, info.marketTypeEnum, info.vInstInfo, _host, _port, _passwd);
         unit->generateSubBody();
-        binanceUnitVec.push_back(unit);
+        _units.push_back(unit);
     }
 
 }
 
 md::BinanceMarket::~BinanceMarket() {
 
-}
-
-
-void md::BinanceMarket::start() {
-    for (size_t i = 0; i < binanceUnitVec.size(); ++i) {
-        binanceUnitVec[i]->start();
-        std::this_thread::sleep_for(std::chrono::microseconds(100));
-    }
 }

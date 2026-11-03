@@ -33,9 +33,6 @@ public:
     void parseMarketData(const std::string& msg, int64_t tsNet) override;
     void onWebsocketMsg(const uint8_t* data, size_t len, bool isBinary, int64_t ns) override;
 
-    bool isRestOnly() const { return marketTypeEnum == md::FUNDING_RATE; }
-    void startRestOnly();
-
 private:
     bool fetchFunding(const md::InstrumentInfo& info, md::FundingRate& fr);
 
@@ -49,10 +46,6 @@ public:
                  std::vector<std::string>& marketTypeVec, std::vector<std::string>& instIdVec, int lot = 30,
                  const char* host = "127.0.0.1", const int port = 9379, const char* passwd = "");
     ~BitgetMarket();
-    void start() override;
-
-private:
-    std::vector<BitgetUnit*> bitgetUnitVec;
 };
 
 } // namespace md

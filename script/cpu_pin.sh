@@ -113,7 +113,37 @@
 #   db（tag 见 json 的 "tag"，如 DB_small_swap；pid 文件 /run/<tag>.pid）
 #     · consume()          × unit 数  → 只有 DEPTH1 / TRADES 这两档要**独占**；
 #                                       其余已退避睡眠，留 housekeeping 即可
+#       ⚠️ db 现在**支持自己绑核**：每个交易所在 `etc/*db*.json` 的交易所对象里写
+#          `cpucores`（数组，空 = 不绑），例如 `"cpucores": [4, 5, 6]`。
+#          创建 unit 时**按顺序**给每个**自旋** unit 取一个核；列表用完剩下的就不绑
+#          （会打一条 `cpucores exhausted` 警告）。
+#          实现在 `BaseMarket::setCpuCores()`：DbOperation 建完 market 后调
+#          `mMarket[exchId]->setCpuCores(node.cpuCores)`，market 遍历自己的 `_units`
+#          逐个赋 `cpuCore`（各交易所在构造时把 unit 指针 push 进 `_units`）。
+#          `_units` 是**唯一**的 unit 容器：20 家原来各自的 binanceUnitVec / unitVec /
+#          okxSbeUnitVec … 已全部删除，`start()` 也收到 `BaseMarket::start()` 里统一实现
+#          （各交易所不再声明 start）。所以加新交易所时只要 push 进 `_units` 就行，
+#          绑核、启动、析构 delete 三件事自动覆盖。
+#          **没有全局/静态状态**，与交易所构造顺序无关。
+#          只有 DEPTH1 / TRADES 会取核 —— 判据和 `consume()` 末尾那个 if 一致，
+#          DEPTH5/10/20、KLINE、FUNDING_RATE 都 sleep_for，不占核。
+#          所以数组长度 = 自旋 unit 数 = DEPTH1 unit 数 + TRADES unit 数
+#          （unit 数 = ceil(币对数 / tokenLot)，coin / 非 coin 两组分开算）。
+#          为什么不是逐个 unit 写：unit 是 `generateUnitInfo()` 按
+#          marketType × instType × tokenLot **派生**出来的，配置里没有"unit"这个条目。
+#          启动日志 `Unit construct complete ... cpu: N` 会逐个打出分配结果，用来核对。
+#          🔴 键必须写在**交易所对象里面**，不能写成顶层扁平 key ——
+#             `Config::get_exchange_md_info()` 会遍历所有顶层成员并对每个值调
+#             `HasMember()`，顶层放一个标量会直接踩 rapidjson 断言。
+#          ⚠️ 填了之后**必须撤掉本脚本对 db 的手工 pin**（taskset 会覆盖配置值）。
 #     · WS io_thread_      × unit 数  → 不绑（要跟网卡中断同核，见上面那段）
+#     · FundingRestPoller  × 走 REST 的家数 → 不绑，但它**藏了一颗 100% 的核**：
+#                                       `loop()` 自己睡 1 s（`FundingRestPoller.h:113`），可它每 60 s
+#                                       调一次 `fetchFunding()` → `Net::Instance().syncGet()`，
+#                                       每家懒建一个 RestClient（`Net.h:21`），worker 默认纯自旋
+#                                       ⇒ 11 家 = **11 颗核烧在"60 秒一次的活"上**（实测见下面那条）。
+#                                       修法同飞书：给这些 syncGet 传 `idle_sleep_us = 1000`
+#                                       （`Net.h` 已支持该参数，默认 0 不动其他调用方）。
 #     · main              × 1         → 不绑（1 ms 循环）
 #   dbp（tag = dbprocess；pid 文件 /run/dbprocess.pid）
 #     · Execute()          × 1        → **独占 1 颗**（dbp 只有这一个热线程，
@@ -122,11 +152,80 @@
 #     · UpdatePairList()   × 1        → 不绑（sleep 10 s，每 5 分钟读一次 pairlist.xml）
 #     ⇒ dbp 不管多少对子都只要 **1 颗**：它是"一个线程扫全部订阅者"
 #       （`dbpserver.cpp:445-470` 的三个 for），不是 db 那种"一 unit 一线程"。
-#   tb / utrade_hft：尚未逐个盘点，别照抄上面的结论。
+#     ⚠️ dbp 现在**支持自己绑核**：`etc/dbprocess.json` 的 `dbprocess.cpuexecute`
+#       = 物理核号（-1 = 不绑），线程体第一行 `crypto::set_cpu_self()` 生效
+#       （`program_util.h`）。**只给需要独占的线程开键**，UpdatePairList / main 不绑。
+#       **一旦配置里填了非 -1，就必须把本脚本对这个进程的手工 pin 撤掉** ——
+#       脚本是"按 CPU 占用认线程再 taskset"，它会覆盖配置里的核号，两边打架。
+#       推荐：dbp 走配置（确定性强），脚本只负责 db/tb/utrade。
+#   tb（tag 见 tb.json 的 "tag"，如 TB；pid 文件 /run/<tag>.pid）
+#     · execute()          × 1        → **独占**（`TbOperation.cpp:133`：轮询 vTcmd +
+#                                       rcmdInnerQueue + tb2OmsRCommandInnerQueue，跑 OMS）
+#     · executeTcmd()      × 1        → **独占**（`TbOperation.cpp:136`：出队 → 建 JSON →
+#                                       交给交易所客户端；它自己不发包）
+#     · RestClient worker  × 账号数   → **独占**（`BeastRestClient.h:319` 起、`:540` 循环；
+#                                       纯自旋 `ioc_.poll()` + 64×pause + yield，没有 sleep。
+#                                       **它在报单路径上**：asyncRequest push → 它 pop →
+#                                       try_dispatch → async_write。睡了每单就加 ≤sleep 的延迟）
+#       ⚠️ 一个账号一颗核，**一单不发也烧满**。账号多时这是个真问题（见下）。
+#     ⚠️ tb 现在**支持自己绑核**，键分两个文件：
+#         `etc/tb.json`（扁平 key，和 dbp 的 cpuexecute 同一套风格）
+#             `cpuexecute`     → execute() 的核号（-1 = 不绑）
+#             `cpuexecutetcmd` → executeTcmd() 的核号（-1 = 不绑）
+#         `etc/trade_config.json` → `TB.tb_accounts.<name>[0].accounts[i].cpuCore`
+#             → 第 i 个**账号条目**的 REST worker 核号（-1 = 不绑，键不写也行）。
+#               一个条目 = 一个 instType = 一个 unit = 一个 worker，所以是逐个显式写，
+#               不是"给个 base 往后数"。
+#         ⚠️ 两个自旋线程 + N 个 REST worker 都填了非 -1 之后，**必须撤掉本脚本对 tb
+#            的手工 pin**，否则 taskset 会覆盖配置值。
+#         ⚠️ REST worker 走 `RestClientConfig::cpu_core`（`BeastRestClient.h:147`，run()
+#            第一行自钉），**不要**再给它设 idle_sleep_us —— 它在报单路径上。
+#       ⚠️ `RestClientConfig::cpu_core`（`BeastRestClient.h:147`，默认 -1）能自己绑核，
+#          一旦有人设了它，就会和本脚本抢同一个线程 —— 二者只能用一个。
+#     · WsClient io_thread × 账号数   → 不绑（收回报 + simdjson 解析 + 填 RCommand + 入队，
+#                                       单次唤醒是 µs 级不是 ns 级，但绝大多数时间睡在 epoll）
+#     · listenKeyRenewLoop × 账号数   → 不绑（cv wait 30 min）
+#     ⇒ tb 的核数 = **2 + 账号数**（账号数 = trade_config.json 里所有
+#       TB.tb_accounts.<name>[0].accounts[] 的条目数，每个条目一个 unit）
+#   utrade_hft（tag 见 config.json 的 "tag"，如 utrade_hft；pid 文件 /run/<tag>.pid）
+#     · heavy_work()       × 1        → **独占**（`base_strategy.h:60` 起、`:91` 循环；
+#                                       一轮 = ut.rpt + ut.sweep + ut.timer，纯 `spin::backoff` 无 sleep）
+#       ⚠️ 这条**支持自己绑核**：`etc/config.json` 的 `op.cpuheavywork` = 物理核号
+#          （-1 = 不绑，键不写也行），线程体第一行 `crypto::set_cpu_self()` 生效。
+#          填了非 -1 就别再让本脚本钉它 —— 脚本的 taskset 会覆盖配置里的核号。
+#     · SignalWork()       × 1        → 不绑（T_signal，`PairTradingContext.cpp:150`，sleep 1 s。
+#                                       但每 60 s 对**全部对子**做 Prune+Build ≈ 885 µs/对子 + 落盘
+#                                       ⇒ 500 对子 = **442 ms 的突发**，见下面的告警）
+#     · LarkRebot::Run()   × 1        → 不绑（`LarkRebot.cpp:11`，usleep 1 ms）
+#     · RestClient worker  × 0 或 1   → **不绑**。⚠️ **懒创建**：第一次发飞书告警时
+#                                       `Net::Instance()` 才建 RestClient（`BeastRestClient.h:319`），
+#                                       **启动时 pin 看不到它**，会落在 housekeeping。
+#                                       ⚠️ 它默认是 100% 自旋（`run()` 的空闲分支 64×pause+yield）。
+#                                       开关已经做好：`RestClientConfig::idle_sleep_us`，
+#                                       `Net::syncPost` 末尾那个参数。**但 `LarkRebot.cpp:84`
+#                                       目前没传** ⇒ 还是自旋。要关掉就给那次调用补 `, 1000`
+#                                       （实测空闲 CPU 99.5% → 0.3%，代价每条告警多等 ≤1 ms）。
+#     ⇒ utrade 的核数 = **1**（飞书客户端那条要按上面补参数才不再吃核）
+#   ⚠️ utrade 可能是**多进程**部署（一个 tag 一个进程，各带自己的 shm 通道），
+#      每个进程都要 1 颗 —— 别只按"一个 utrade"算。
+#      （tb 的 trade_config.json 里有个 `utrade.tags: [utrade_btc, utrade_eth,
+#      utrade_doge]`，但 **tb 的代码从没读过这个字段**，是死配置；实际起几个
+#      进程得看运维启动脚本，不能拿这个当依据。）
 #
-#   🔴 布局：db 的 DEPTH1 consume（生产者）和 dbp 的 Execute（消费者）是**跨进程**
-#      共享内存的上下游 ⇒ 放同一个 NUMA node，最好相邻核；跨 socket 要过 UPI。
+#   🔴 布局：db 的 DEPTH1 consume → dbp 的 Execute → utrade 的 heavy_work → tb 的 execute →
+#      executeTcmd → REST worker，是一条**跨进程、多级 SPSC 串联**的流水线。
+#      相邻两级放同一个 NUMA node、最好相邻核；跨 socket 要过 UPI。
 #      反过来，两个 100% 自旋的线程**绝不能同核**（分时 ⇒ p99 翻倍）。
+#
+#   🔴 tb 的隐患：RestClient worker 每条线程恒定 100% 核，而它真正的负载只有
+#      "每秒几单"。现在 `RestClientConfig::idle_sleep_us` 已经能把空闲分支改成睡眠
+#      （`BeastRestClient.h`），但 tb 是**报单路径**，默认 0 不要动；真嫌核多可以试
+#      10~20 µs（对 5~50 ms 的交易所往返是 0.04~0.4%），要不要改是另一个话题。
+#
+#   🔴 utrade 的 T_signal 会污染 `ut.sweep` 的 p99：它每 60 s 突发几百毫秒做统计，
+#      虽然自己在 housekeeping、heavy_work 在隔离核，但**两者共用 LLC 和内存带宽**，
+#      而 heavy_work 的 sweep 正是密集读共享内存。所以看到 `ut.sweep` p99 每 60 s
+#      一个尖峰，先怀疑 T_signal，别当成"行情变慢"。
 #
 # 【为什么 pin 是靠"CPU 占用"认线程，而不是靠名字】
 #   这套代码里没有任何 pthread_setname_np，所有线程的 comm 都是进程名（"DB"），

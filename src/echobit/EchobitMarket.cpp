@@ -366,15 +366,8 @@ md::EchobitMarket::EchobitMarket(sm::SecurityManager* s, const char* exId, std::
         md::EchobitUnit* unit = new md::EchobitUnit(smc, info.exchangeTypeEnum, info.instTypeEnum,
                                                     info.marketTypeEnum, info.vInstInfo, _host, _port, _passwd);
         unit->generateSubBody();
-        unitVec.push_back(unit);
+        _units.push_back(unit);
     }
 }
 
 md::EchobitMarket::~EchobitMarket() {}
-
-void md::EchobitMarket::start() {
-    for (size_t i = 0; i < unitVec.size(); ++i) {
-        unitVec[i]->start();          // 三档全部走 WS（含 FUNDING_RATE），没有 REST-only
-        std::this_thread::sleep_for(std::chrono::microseconds(100));
-    }
-}

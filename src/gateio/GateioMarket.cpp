@@ -1441,18 +1441,10 @@ md::GateioMarket::GateioMarket(sm::SecurityManager* s, const char* exId, std::ve
         auto& info = unitInfoVec[i];
         md::GateioUnit* unit = new md::GateioUnit(smc, info.exchangeTypeEnum, info.instTypeEnum, info.marketTypeEnum, info.vInstInfo, _host, _port, _passwd);
         unit->generateSubBody();
-        gateioUnitVec.push_back(unit);
+        _units.push_back(unit);
     }
 }
 
 md::GateioMarket::~GateioMarket() {
 
-}
-
-
-void md::GateioMarket::start() {
-    for (size_t i = 0; i < gateioUnitVec.size(); ++i) {
-        gateioUnitVec[i]->start();
-        std::this_thread::sleep_for(std::chrono::microseconds(100));
-    }
 }

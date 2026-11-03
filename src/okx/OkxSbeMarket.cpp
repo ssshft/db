@@ -402,18 +402,10 @@ md::OkxSbeMarket::OkxSbeMarket(sm::SecurityManager* s, const char* exId, std::ve
         auto& info = unitInfoVec[i];
         auto* unit = new md::OkxSbeUnit(smc, info.exchangeTypeEnum, info.instTypeEnum, info.marketTypeEnum, info.vInstInfo, sbeAccount, _host, _port, _passwd);
         unit->generateSubBody();
-        okxSbeUnitVec.push_back(unit);
+        _units.push_back(unit);
     }
 }
 
 md::OkxSbeMarket::~OkxSbeMarket() {
-    for (auto* u : okxSbeUnitVec) delete u;
-    okxSbeUnitVec.clear();
-}
-
-void md::OkxSbeMarket::start() {
-    for (auto* u : okxSbeUnitVec) {
-        u->start();
-        std::this_thread::sleep_for(std::chrono::microseconds(100));
-    }
+    for (auto* u : _units) delete u;
 }

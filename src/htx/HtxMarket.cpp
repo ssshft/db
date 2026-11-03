@@ -19,7 +19,11 @@ md::HtxUnit::HtxUnit(sm::SecurityManager* s, ExchangeType exchTy, InstType instT
 }
 
 void md::HtxUnit::generateSubBody() {
-    // 资金费率没有 WS 通道 → 不建连接（<X>Market::start() 会走 startRestOnly）
+    // 资金费率没有 WS 通道 → 这里留空 cfg.url 直接返回。
+    // ⚠️ isRestOnly()/startRestOnly() 那套分支已删除（只维护 binance/okx/gateio/bybit），
+    //    BaseMarket::start() 现在会照常 start() 这个 unit ⇒ WsClient::validate 因 url 为空
+    //    抛 invalid_argument，被 BaseUnit::start() 的 try/catch 接住打一条 LOG_ERROR。
+    //    不影响进程，等 HTX 要确认功能时再补资金费率的取数方式。
     if (marketTypeEnum == md::FUNDING_RATE) {
         LOG_INFO("HTX {} FUNDING_RATE uses REST polling, no ws connection", InstTypeEnum2StrMap[instTypeEnum]);
         return;
@@ -299,12 +303,6 @@ bool md::HtxUnit::fetchFunding(const md::InstrumentInfo& info, md::FundingRate& 
     return true;
 }
 
-void md::HtxUnit::startRestOnly() {
-    mFundingPoller.start(
-        [this](const md::InstrumentInfo& i, md::FundingRate& fr) { return this->fetchFunding(i, fr); },
-        exchangeTypeEnum, instTypeEnum, &vInstInfo, &mFundingRatePublisher, 60);
-}
-
 md::HtxMarket::HtxMarket(sm::SecurityManager* s, const char* exId, std::vector<std::string>& instTypeVec,
                          std::vector<std::string>& marketTypeVec, std::vector<std::string>& instIdVec, int lot,
                          const char* host, const int port, const char* passwd)
@@ -314,20 +312,8 @@ md::HtxMarket::HtxMarket(sm::SecurityManager* s, const char* exId, std::vector<s
         md::HtxUnit* unit = new md::HtxUnit(smc, info.exchangeTypeEnum, info.instTypeEnum, info.marketTypeEnum,
                                             info.vInstInfo, _host, _port, _passwd);
         unit->generateSubBody();
-        htxUnitVec.push_back(unit);
+        _units.push_back(unit);
     }
 }
 
 md::HtxMarket::~HtxMarket() {}
-
-void md::HtxMarket::start() {
-    for (size_t i = 0; i < htxUnitVec.size(); ++i) {
-        if (htxUnitVec[i]->isRestOnly()) {
-            htxUnitVec[i]->startRestOnly();
-        }
-        else {
-            htxUnitVec[i]->start();
-            std::this_thread::sleep_for(std::chrono::microseconds(100));
-        }
-    }
-}

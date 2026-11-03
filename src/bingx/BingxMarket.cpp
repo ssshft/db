@@ -278,12 +278,6 @@ bool md::BingxUnit::fetchFunding(const md::InstrumentInfo& info, md::FundingRate
     return true;
 }
 
-void md::BingxUnit::startRestOnly() {
-    mFundingPoller.start(
-        [this](const md::InstrumentInfo& i, md::FundingRate& fr) { return this->fetchFunding(i, fr); },
-        exchangeTypeEnum, instTypeEnum, &vInstInfo, &mFundingRatePublisher, 60);
-}
-
 md::BingxMarket::BingxMarket(sm::SecurityManager* s, const char* exId, std::vector<std::string>& instTypeVec,
                              std::vector<std::string>& marketTypeVec, std::vector<std::string>& instIdVec,
                              int lot, const char* host, const int port, const char* passwd)
@@ -293,20 +287,8 @@ md::BingxMarket::BingxMarket(sm::SecurityManager* s, const char* exId, std::vect
         md::BingxUnit* unit = new md::BingxUnit(smc, info.exchangeTypeEnum, info.instTypeEnum,
                                                 info.marketTypeEnum, info.vInstInfo, _host, _port, _passwd);
         unit->generateSubBody();
-        bingxUnitVec.push_back(unit);
+        _units.push_back(unit);
     }
 }
 
 md::BingxMarket::~BingxMarket() {}
-
-void md::BingxMarket::start() {
-    for (size_t i = 0; i < bingxUnitVec.size(); ++i) {
-        if (bingxUnitVec[i]->isRestOnly()) {
-            bingxUnitVec[i]->startRestOnly();
-        }
-        else {
-            bingxUnitVec[i]->start();
-            std::this_thread::sleep_for(std::chrono::microseconds(100));
-        }
-    }
-}

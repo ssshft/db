@@ -721,19 +721,11 @@ md::OkxMarket::OkxMarket(sm::SecurityManager* s, const char* exId, std::vector<s
         auto& info = unitInfoVec[i];
         md::OkxUnit* unit = new md::OkxUnit(smc, info.exchangeTypeEnum, info.instTypeEnum, info.marketTypeEnum, info.vInstInfo, _host, _port, _passwd);
         unit->generateSubBody();
-        okxUnitVec.push_back(unit);
+        _units.push_back(unit);
     }
 
 }
 
 md::OkxMarket::~OkxMarket() {
 
-}
-
-
-void md::OkxMarket::start() {
-    for (size_t i = 0; i < okxUnitVec.size(); ++i) {
-        okxUnitVec[i]->start();
-        std::this_thread::sleep_for(std::chrono::microseconds(100));
-    }
 }

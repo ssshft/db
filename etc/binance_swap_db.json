@@ -12,6 +12,7 @@
   },
   "BINANCE":{
     "tokenLot":80,
+    "cpucores": [],
     "instType": ["USDT_SWAP"],
     "marketType": ["DEPTH1", "FUNDING_RATE"],
     "instId": [

@@ -712,18 +712,10 @@ md::GateioSbeMarket::GateioSbeMarket(sm::SecurityManager* s, const char* exId, s
         auto& info = unitInfoVec[i];
         auto* unit = new md::GateioSbeUnit(smc, info.exchangeTypeEnum, info.instTypeEnum, info.marketTypeEnum, info.vInstInfo, sbeAccount, _host, _port, _passwd);
         unit->generateSubBody();
-        gateioSbeUnitVec.push_back(unit);
+        _units.push_back(unit);
     }
 }
 
 md::GateioSbeMarket::~GateioSbeMarket() {
-    for (auto* u : gateioSbeUnitVec) delete u;
-    gateioSbeUnitVec.clear();
-}
-
-void md::GateioSbeMarket::start() {
-    for (auto* u : gateioSbeUnitVec) {
-        u->start();
-        std::this_thread::sleep_for(std::chrono::microseconds(100));
-    }
+    for (auto* u : _units) delete u;
 }

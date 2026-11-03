@@ -53,10 +53,6 @@ public:
     void parseMarketData(const std::string& msg, int64_t tsNet) override;
     void onWebsocketMsg(const uint8_t* data, size_t len, bool isBinary, int64_t ns) override;
 
-    // MGBX 没有资金费率接口 ⇒ 这个 unit 什么都不做，start() 里要跳过它
-    // （cfg.url 为空时 WsClient::validate 会抛 invalid_argument）。
-    bool isRestOnly() const { return marketTypeEnum == md::FUNDING_RATE; }
-
 private:
     void parseDepth(const std::string& msg, int64_t tsNet);
     void parseDeal(const std::string& msg, int64_t tsNet);
@@ -70,10 +66,6 @@ public:
                std::vector<std::string>& marketTypeVec, std::vector<std::string>& instIdVec, int lot = 30,
                const char* host = "127.0.0.1", const int port = 9379, const char* passwd = "");
     ~MgbxMarket();
-    void start() override;
-
-private:
-    std::vector<MgbxUnit*> unitVec;
 };
 
 } // namespace md

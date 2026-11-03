@@ -125,6 +125,14 @@ bool DbOperation::preStart(Config* config) {
             // 进程照跑、日志干净、一条行情都没有 —— 最费时间的排查。
             LOG_WARN("DB does not support exchangeId: {}, skipped (check config key spelling)", exchId);
         }
+
+        // 线程绑核：market 已经建好（unit 都在里面了），把本交易所的核列表交给它，
+        // 由它自己按顺序发给每个自旋 unit。没有全局/静态状态，也不用管构造顺序。
+        // 上面没有匹配到任何分支时 mMarket 里没有这个 key，find 不到就跳过。
+        auto mit = mMarket.find(exchId);
+        if (mit != mMarket.end()) {
+            mit->second->setCpuCores(node.cpuCores);
+        }
     }
 
 

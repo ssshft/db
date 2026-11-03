@@ -37,10 +37,6 @@ public:
     void parseMarketData(const std::string& msg, int64_t tsNet) override;
     void onWebsocketMsg(const uint8_t* data, size_t len, bool isBinary, int64_t ns) override;
 
-    // FUNDING_RATE 不建 WS 连接，只跑 REST 轮询；<X>Market::start() 据此分支
-    bool isRestOnly() const { return marketTypeEnum == md::FUNDING_RATE; }
-    void startRestOnly();
-
 private:
     bool fetchFunding(const md::InstrumentInfo& info, md::FundingRate& fr);
 
@@ -54,10 +50,6 @@ public:
               std::vector<std::string>& marketTypeVec, std::vector<std::string>& instIdVec, int lot = 30,
               const char* host = "127.0.0.1", const int port = 9379, const char* passwd = "");
     ~HtxMarket();
-    void start() override;
-
-private:
-    std::vector<HtxUnit*> htxUnitVec;
 };
 
 } // namespace md

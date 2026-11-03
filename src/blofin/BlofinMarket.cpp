@@ -280,12 +280,6 @@ bool md::BlofinUnit::fetchFunding(const md::InstrumentInfo& info, md::FundingRat
     return false;
 }
 
-void md::BlofinUnit::startRestOnly() {
-    mFundingPoller.start(
-        [this](const md::InstrumentInfo& i, md::FundingRate& fr) { return this->fetchFunding(i, fr); },
-        exchangeTypeEnum, instTypeEnum, &vInstInfo, &mFundingRatePublisher, 60);
-}
-
 md::BlofinMarket::BlofinMarket(sm::SecurityManager* s, const char* exId, std::vector<std::string>& instTypeVec,
                                std::vector<std::string>& marketTypeVec, std::vector<std::string>& instIdVec,
                                int lot, const char* host, const int port, const char* passwd)
@@ -295,20 +289,8 @@ md::BlofinMarket::BlofinMarket(sm::SecurityManager* s, const char* exId, std::ve
         md::BlofinUnit* unit = new md::BlofinUnit(smc, info.exchangeTypeEnum, info.instTypeEnum,
                                                   info.marketTypeEnum, info.vInstInfo, _host, _port, _passwd);
         unit->generateSubBody();
-        unitVec.push_back(unit);
+        _units.push_back(unit);
     }
 }
 
 md::BlofinMarket::~BlofinMarket() {}
-
-void md::BlofinMarket::start() {
-    for (size_t i = 0; i < unitVec.size(); ++i) {
-        if (unitVec[i]->isRestOnly()) {
-            unitVec[i]->startRestOnly();
-        }
-        else {
-            unitVec[i]->start();
-            std::this_thread::sleep_for(std::chrono::microseconds(100));
-        }
-    }
-}

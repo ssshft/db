@@ -1,7 +1,32 @@
 #include "base/BaseMarket.h"
 #include "key_util.h"
 #include "SpinBackoff.h"
-#include "hft_metrics.h"   // HFT_SCOPE：parseMarketData 的段耗时（-I ../include 已覆盖）
+#include "program_util.h" 
+#include "hft_metrics.h"   
+
+
+// ---- 线程绑核 ----
+// 核号在这里一次性发给 unit：按 unit 创建顺序，给每个**自旋** unit（DEPTH1/TRADES）发一个，列表用完就不发了。
+void md::BaseMarket::setCpuCores(const std::vector<int>& cores) {
+    size_t k = 0;
+    for (md::BaseUnit* u : _units) {
+        if (marketTypeEnum != DEPTH1 && marketTypeEnum != TRADES) { // DEPTH5/10/20、KLINE、FUNDING_RATE）不占核
+            continue;   
+        }
+
+        if (k < cores.size()) {
+            u->cpuCore = cores[k++];
+        }
+        else {
+            // 配了核但不够用：多半是币对变多 / tokenLot 调小导致自旋 unit 数涨了。
+            // 空列表是"不绑"，属于正常配置，这里不告警。
+            if (!cores.empty()) {
+                LOG_WARN("cpucores exhausted: {} only has {} cores configured, this {} unit stays unpinned", exchId, cores.size(), md::MarketTypeEnum2StrMap[u->marketTypeEnum]);
+            }
+        }
+    }
+    LOG_INFO("{} cpu pin: {} units pinned, {} cores configured", exchId, k, cores.size());
+}
 
 
 md::BaseUnit::BaseUnit(sm::SecurityManager* s, ExchangeType exchTy, InstType instTy, md::MarketType marketTy, std::vector<md::InstrumentInfo>& instInfoVec, const char* host, int port, const char* password) {
@@ -12,6 +37,7 @@ md::BaseUnit::BaseUnit(sm::SecurityManager* s, ExchangeType exchTy, InstType ins
     vInstInfo = instInfoVec;
     latestDataUpdateTime = 0;
     pWsClient = nullptr;
+
 
     int slotSize = 512;
     int maxMsg = 512;
@@ -96,7 +122,7 @@ md::BaseUnit::BaseUnit(sm::SecurityManager* s, ExchangeType exchTy, InstType ins
     }
 #endif
 
-    LOG_INFO("Unit construct complete, exchId: {} instType: {} marketType: {} instInfo size: {}", ExchangeTypeEnum2StrMap[exchangeTypeEnum], InstTypeEnum2StrMap[instTypeEnum], MarketTypeEnum2StrMap[marketTypeEnum], vInstInfo.size());
+    LOG_INFO("Unit construct complete, exchId: {} instType: {} marketType: {} instInfo size: {} cpu: {}", ExchangeTypeEnum2StrMap[exchangeTypeEnum], InstTypeEnum2StrMap[instTypeEnum], MarketTypeEnum2StrMap[marketTypeEnum], vInstInfo.size(), cpuCore);
 }
 
 md::BaseUnit::~BaseUnit() {
@@ -108,7 +134,14 @@ md::BaseUnit::~BaseUnit() {
 
 void md::BaseUnit::start() {
     try {
-        std::thread parseThread(&BaseUnit::consume, this);
+        // 绑核写在线程体第一行：这条线程是 detach 出去的，外面拿不到 std::thread 对象，
+        std::thread parseThread([this] {
+            if (cpuCore >= 0 && crypto::set_cpu_self(cpuCore) != 0) {
+                LOG_ERROR("db unit consume: pin to core {} failed, running unpinned, exchId: {} marketType: {}",
+                          cpuCore, ExchangeTypeEnum2StrMap[exchangeTypeEnum], md::MarketTypeEnum2StrMap[marketTypeEnum]);
+            }
+            consume();
+        });
         parseThread.detach();
 
         subWebsocekt();
@@ -289,6 +322,15 @@ md::BaseMarket::BaseMarket(sm::SecurityManager* s, const char* exId, std::vector
 
 md::BaseMarket::~BaseMarket() {
 
+}
+
+// ---- 启动 ----
+// 唯一的 start：按 unit 创建顺序逐个起线程，WS 之间错开 100 µs（同一瞬间二十个连接一起握手会被交易所限流）。
+void md::BaseMarket::start() {
+    for (md::BaseUnit* u : _units) {
+        u->start();
+        std::this_thread::sleep_for(std::chrono::microseconds(100));
+    }
 }
 
 void md::BaseMarket::generateUnitInfo() {

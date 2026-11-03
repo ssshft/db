@@ -287,12 +287,6 @@ bool md::KucoinUnit::fetchFunding(const md::InstrumentInfo& info, md::FundingRat
     return true;
 }
 
-void md::KucoinUnit::startRestOnly() {
-    mFundingPoller.start(
-        [this](const md::InstrumentInfo& i, md::FundingRate& fr) { return this->fetchFunding(i, fr); },
-        exchangeTypeEnum, instTypeEnum, &vInstInfo, &mFundingRatePublisher, 60);
-}
-
 md::KucoinMarket::KucoinMarket(sm::SecurityManager* s, const char* exId, std::vector<std::string>& instTypeVec,
                                std::vector<std::string>& marketTypeVec, std::vector<std::string>& instIdVec,
                                int lot, const char* host, const int port, const char* passwd)
@@ -302,20 +296,8 @@ md::KucoinMarket::KucoinMarket(sm::SecurityManager* s, const char* exId, std::ve
         md::KucoinUnit* unit = new md::KucoinUnit(smc, info.exchangeTypeEnum, info.instTypeEnum,
                                                   info.marketTypeEnum, info.vInstInfo, _host, _port, _passwd);
         unit->generateSubBody();
-        kucoinUnitVec.push_back(unit);
+        _units.push_back(unit);
     }
 }
 
 md::KucoinMarket::~KucoinMarket() {}
-
-void md::KucoinMarket::start() {
-    for (size_t i = 0; i < kucoinUnitVec.size(); ++i) {
-        if (kucoinUnitVec[i]->isRestOnly()) {
-            kucoinUnitVec[i]->startRestOnly();
-        }
-        else {
-            kucoinUnitVec[i]->start();
-            std::this_thread::sleep_for(std::chrono::microseconds(100));
-        }
-    }
-}

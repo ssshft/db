@@ -238,12 +238,6 @@ bool md::MexcUnit::fetchFunding(const md::InstrumentInfo& info, md::FundingRate&
     return true;
 }
 
-void md::MexcUnit::startRestOnly() {
-    mFundingPoller.start(
-        [this](const md::InstrumentInfo& i, md::FundingRate& fr) { return this->fetchFunding(i, fr); },
-        exchangeTypeEnum, instTypeEnum, &vInstInfo, &mFundingRatePublisher, 60);
-}
-
 md::MexcMarket::MexcMarket(sm::SecurityManager* s, const char* exId, std::vector<std::string>& instTypeVec,
                            std::vector<std::string>& marketTypeVec, std::vector<std::string>& instIdVec, int lot,
                            const char* host, const int port, const char* passwd)
@@ -253,20 +247,8 @@ md::MexcMarket::MexcMarket(sm::SecurityManager* s, const char* exId, std::vector
         md::MexcUnit* unit = new md::MexcUnit(smc, info.exchangeTypeEnum, info.instTypeEnum, info.marketTypeEnum,
                                               info.vInstInfo, _host, _port, _passwd);
         unit->generateSubBody();
-        mexcUnitVec.push_back(unit);
+        _units.push_back(unit);
     }
 }
 
 md::MexcMarket::~MexcMarket() {}
-
-void md::MexcMarket::start() {
-    for (size_t i = 0; i < mexcUnitVec.size(); ++i) {
-        if (mexcUnitVec[i]->isRestOnly()) {
-            mexcUnitVec[i]->startRestOnly();
-        }
-        else {
-            mexcUnitVec[i]->start();
-            std::this_thread::sleep_for(std::chrono::microseconds(100));
-        }
-    }
-}

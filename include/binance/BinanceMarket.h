@@ -45,9 +45,5 @@ namespace md {
     public:
         BinanceMarket(sm::SecurityManager* s, const char* exId, std::vector<std::string>& instTypeVec, std::vector<std::string>& marketTypeVec, std::vector<std::string>& instIdVec, int lot = 30, const char* host = "127.0.0.1", const int port = 9379, const char* passwd = "");
         ~BinanceMarket();
-        virtual void start();
-
-    private:
-        std::vector<BinanceUnit*> binanceUnitVec;
     };
 }
