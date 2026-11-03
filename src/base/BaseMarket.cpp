@@ -204,6 +204,31 @@ void md::BaseUnit::consume() {
     const std::string* msg = nullptr;
     int64_t tsNet = 0;
     bool pending = false;                    // 已 peek、还没 release
+
+    // 空闲睡眠时长（µs）。只有 tick→trade 路径上的流值得全速自旋，其余按更新频率睡。
+    // 目的**不是**省延迟（这些流本来就不在路径上），是把核还回去：一个 unit 一个线程，
+    long long idleSleepUs = 1000;
+    switch (marketTypeEnum) {
+        case md::DEPTH5:
+        case md::DEPTH10:
+        case md::DEPTH20:
+            idleSleepUs = 10; // cpu占用高的话，可以调大该值
+            break;
+        case md::FUNDING_RATE: 
+            idleSleepUs = 1000;  
+            break;
+        case md::KLINE_1m:
+        case md::KLINE_1h:
+        case md::KLINE_2h:
+        case md::KLINE_4h:
+        case md::KLINE_8h:     
+            idleSleepUs = 10000; 
+            break;
+        default:               
+            idleSleepUs = 1000;  
+            break; 
+    }
+
     while (1) {
         try {
             if (mdRing->peek(msg, tsNet)) {
@@ -225,7 +250,14 @@ void md::BaseUnit::consume() {
             } 
             LOG_ERROR("{}.{}.{} exception {} happened, msg: {}", ExchangeTypeEnum2StrMap[exchangeTypeEnum], InstTypeEnum2StrMap[instTypeEnum], md::MarketTypeEnum2StrMap[marketTypeEnum], e.what(), msg);
         }
-        spin::cpu_relax();
+        
+        if (marketTypeEnum == md::DEPTH1 || marketTypeEnum == md::TRADES) {
+            spin::cpu_relax();
+        }
+        else {
+            std::this_thread::sleep_for(std::chrono::microseconds(idleSleepUs));
+        }
+        
     }
 }
 
